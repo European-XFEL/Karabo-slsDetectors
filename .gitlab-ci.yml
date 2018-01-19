@@ -1,0 +1,93 @@
+before_script:
+    - echo '*** Install cmake - needed by slsDetectorsPackage ***'
+    - export http_proxy="http://exflwgs06.desy.de:3128/"
+    - export https_proxy="http://exflwgs06.desy.de:3128/"
+    - export REL_OS_NAME=$(lsb_release -is)
+    - >
+      if [ "$REL_OS_NAME" = "CentOS" ]; then
+        yum install -y cmake
+      elif [ "$REL_OS_NAME" = "Ubuntu" ]; then
+        apt-get update
+        apt-get install -y cmake
+      fi;
+    - unset http_proxy
+    - unset https_proxy
+
+.release_build_template: &release_build
+  script:
+    - export REL_OS_NAME=$(lsb_release -is)
+    - export REL_OS_VERS=$(lsb_release -rs | sed -r "s/^([0-9]+).*/\1/")
+    - export REL_ARCH=$(uname -m)
+    - export REL_PROJECT_NAME=$CI_PROJECT_NAME
+    - export REL_BUILD_DIR=$CI_PROJECT_DIR/dist/Release/GNU-Linux-x86
+    - export REL_TAG=$CI_COMMIT_REF_NAME
+    - export REL_ARTIFACT_DEST=karaboDevices/$REL_PROJECT_NAME/tags/$CI_COMMIT_REF_NAME
+    - export KARABO_TAG=$(echo $REL_TAG | sed -r "s/^([0-9]+.[0-9]+.[0-9]+)-([0-9]+.[0-9]+.[0-9]+)/\2/")
+    - export REL_ARTIFACT_NAME=$REL_PROJECT_NAME-$REL_TAG-$KARABO_TAG-$REL_OS_NAME-$REL_OS_VERS-$REL_ARCH-Release.sh
+    - curl http://exflserv05.desy.de/karabo/karaboFramework/tags/$KARABO_TAG/karabo-$KARABO_TAG-Release-$REL_OS_NAME-$REL_OS_VERS-x86_64.sh > karabo.sh
+    - bash karabo.sh --prefix=/root
+    - source /root/karabo/activate
+    - pushd $CI_PROJECT_DIR
+    - karabo -g https://$XFEL_TOKEN@git.xfel.eu/gitlab install $REL_PROJECT_NAME $REL_TAG
+    - export NUM_JOBS=$(grep "processor" /proc/cpuinfo | wc -l)
+    - make -j$NUM_JOBS build CONF=Release package
+    - echo package/$REL_ARTIFACT_NAME
+    - mv package/*sh $REL_ARTIFACT_NAME
+    - echo $REL_ARTIFACT_DEST
+    - sshpass -p "$XDATA_PWD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null xdata@exflserv05 "mkdir -p /var/www/html/karabo/$REL_ARTIFACT_DEST"
+    - sshpass -p "$XDATA_PWD" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $REL_ARTIFACT_NAME xdata@exflserv05:/var/www/html/karabo/$REL_ARTIFACT_DEST
+  only:
+    - /^(\d+\.)(\d+\.)(\d+)-(\d+\.)(\d+\.)(\d+)((a|b|rc)\d+)?$/
+  except:
+    - branches 
+
+.test_build_template: &test_build
+  script:
+    - export REL_OS_NAME=$(lsb_release -is)
+    - export REL_OS_VERS_LONG=$(lsb_release -rs | sed -r "s/^([0-9]+).*/\1/")
+    - export REL_PROJECT_NAME=$CI_PROJECT_NAME
+    - export REL_TAG=$CI_BUILD_REF_NAME
+    - export REL_BUILD_DIR=$CI_PROJECT_DIR/dist/Release/GNU-Linux-x86/
+    - export REL_ARTIFACT_DEST=karaboDevices/$REL_PROJECT_NAME/tags/$REL_TAG
+    - export REL_ARTIFACT_NAME=libslsReceiver-$REL_TAG-$REL_OS_NAME-$REL_OS_VERS_LONG.so
+    - export KARABO_TAG="latest_build"
+    - curl http://exflserv05.desy.de/karabo/karaboFramework/tags/$KARABO_TAG/karabo-$KARABO_TAG-Release-$REL_OS_NAME-$REL_OS_VERS_LONG-x86_64.sh > karabo.sh
+    - bash karabo.sh --prefix=/root
+    - source /root/karabo/activate
+    - pushd $CI_PROJECT_DIR
+    - karabo -g https://$XFEL_TOKEN@git.xfel.eu/gitlab install $REL_PROJECT_NAME $REL_TAG
+    - export NUM_JOBS=$(grep "processor" /proc/cpuinfo | wc -l)
+    - make -j$NUM_JOBS build CONF=Release
+    - make test CONF=Release
+  only:
+    - branches
+  except:
+    - master
+
+
+##### Release build #####
+release:ubuntu14:
+  image: europeanxfel/karabo-ci:ubuntu-14
+  <<: *release_build
+    
+release:ubuntu16:
+  image: europeanxfel/karabo-ci:ubuntu-16
+  <<: *release_build
+    
+release:centos7:
+  image: europeanxfel/karabo-ci:centos-7
+  <<: *release_build
+
+##### Test build #####
+test:ubuntu14:
+  image: europeanxfel/karabo-ci:ubuntu-14
+  <<: *test_build
+
+test:ubuntu16:
+  image: europeanxfel/karabo-ci:ubuntu-16
+  <<: *test_build
+
+test:centos7:
+  image: europeanxfel/karabo-ci:centos-7
+  <<: *test_build
+
