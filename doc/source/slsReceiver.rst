@@ -19,8 +19,8 @@ derived class, it can easily added to the slsReceiver package. You
 have to create the source and header files (see
 :ref:`slsReceiver-hh-file` and :ref:`slsReceiver-cc-file` Sections)
 and add them to the Netbeans project. You also have to compile the
-project in Netbeans (Debug and Release mode) in order to have the
-Makefiles updated.
+project in Netbeans (Debug, Release and Simulation mode) in order to
+have the Makefiles updated.
 
 Do not forget to "git add" the new files.
 
@@ -81,20 +81,12 @@ This is the minimal MyReceiver.hh:
 
 	    virtual ~MyReceiver();
 
-	private: // State-machine call-backs (override)
-
-	private: // Functions
-
 	private: // Raw data unpacking
 
-	    unsigned short getPacketSize();
-	    unsigned short getFrameNumber(const char* data, size_t idx);
-	    unsigned short getPacketNumber(const char* data, size_t idx);
-	    void getAdcAndGain(const char* data, size_t idx,
-                               std::vector<unsigned short>& adc,
-                               std::vector<unsigned short>& gain);
-
-	private: // Members
+            size_t getDetectorSize();
+            std::vector<unsigned long long> getDisplayShape();
+            std::vector<unsigned long long> getDaqShape(unsigned short framesperTrain);
+            void unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned short* gain);
 
 	};
 
@@ -108,13 +100,13 @@ You probably don't need anything more than that.
 Some functions are pure virtual in SlsReceiver and must be defined in
 the derived class:
 
-* getPacketSize
+* getDetectorSize
 
-* getFrameNumber
+* getDisplayShape
 
-* getPacketNumber
+* getDaqShape
 
-* getAdcAndGain
+* unpackRawData
 
 
 .. _slsReceiver-cc-file:
@@ -125,21 +117,24 @@ MyReceiver.cc file
 The pure virtual functions which must be defined in the derived class
 are:
 
-.. function:: unsigned short getPacketSize()
+.. function:: size_t getDetectorSize() 
 
-   return the byte size of a data packet.
+   returns the size of the detector (i.e. the number of channels, or pixels).
 
-.. function:: unsigned short getFrameNumber(const char* data, size_t idx)
+.. function:: std::vector<unsigned long long> getDisplayShape()
 
-   return the frame number of the packet <idx> in given <data>.
+   returns the shape of one frame (can be 1- or 2-d).
 
-.. function:: unsigned short getPacketNumber(const char* data, size_t idx)
+.. function:: std::vector<unsigned long long> getDaqShape(unsigned short framesPerTrain)
 
-   return the packet number of the packet <idx> in given <data>.
+   returns the shape of the data as needed by the DAQ (frames are grouped per
+   train before being sent to the DAQ, therefore it is 2- or 3-d;
+   moreover the DAQ wants the first dimension to be the fastest changing,
+   the last dimension the slowest).
 
-.. function:: void getAdcAndGain(const char* data, size_t idx, std::vector<unsigned short>& adc, std::vector<unsigned short>& gain)
+.. function:: void unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned short* gain)
 
-   fill-up the <adc> and <gain> vectors with the ADC and gain values
+   fill-up the <adc> and <gain> buffers with the ADC and gain values
    contained in <data> for the packet <idx>.
 
 
@@ -154,23 +149,12 @@ match the raw data format of the detector:
     USING_KARABO_NAMESPACES
 
     // e.g. Gotthard channels
-    #define MY_CHANNELS 640
+    #define MY_CHANNELS 1280
 
-    // e.g. Gotthard raw data
-    #define MY_OFFSET              2
-    #define MY_HEADER_LENGTH       2
-    #define MY_UNUSED_LENGTH       4
-    #define MY_PACKET_SIZE      1286 // = MY_HEADER_LENGTH + 2*MY_CHANNELS \
-        + MY_UNUSED_LENGTH
-
-    // Gotthard raw data: unpacking frame/packet bytes
-    #define MY_FRAME_MASK     0xFFFE
-    #define MY_FRAME_OFFSET        1
-    #define MY_PACKET_MASK    0x0001
-
-    // Gotthard raw data: unpacking adc/gain bytes
+    // e.g. Gotthard raw data: unpacking adc/gain bytes
     #define MY_ADC_MASK       0x3FFF
     #define MY_GAIN_MASK      0xC000
+    #define MY_GAIN_OFFSET        14
 
     namespace karabo {
 
@@ -178,6 +162,30 @@ match the raw data format of the detector:
             SlsReceiver, MyReceiver)
 
 	void MyReceiver::expectedParameters(Schema& expected) {
+            Schema displayData;
+
+            // This is the schema for data display in the GUI,
+            // in this example for 1-d data
+            NODE_ELEMENT(displayData).key("data")
+                    .displayedName("Data")
+                    .commit();
+
+            VECTOR_UINT16_ELEMENT(displayData).key("data.adc")
+                    .displayedName("ADC")
+                    .description("The ADC counts.")
+                    .readOnly()
+                    .commit();
+
+            VECTOR_UINT16_ELEMENT(displayData).key("data.gain")
+                    .displayedName("Gain")
+                    .description("The ADC gain.")
+                    .readOnly()
+                    .commit();
+
+            OUTPUT_CHANNEL(expected).key("display")
+                    .displayedName("Display")
+                    .dataSchema(displayData)
+                    .commit();
 	}
 
 	MyReceiver::MyReceiver(const karabo::util::Hash& config) :
@@ -187,60 +195,30 @@ match the raw data format of the detector:
 	MyReceiver::~MyReceiver() {
 	}
 
-	unsigned short MyReceiver::getPacketSize() {
-	    return MY_PACKET_SIZE;
+	unsigned short MyReceiver::getDetectorSize() {
+	    return MY_CHANNELS;
 	}
 
-	// Get frame number for packet at position <idx> in <data>
-	unsigned short MyReceiver::getFrameNumber(const char* data,
-                size_t idx) {
+        std::vector<unsigned long long> MyReceiver::getDisplayShape() {
+            return {this->getDetectorSize()};
+        }
 
-            // Base address of the <idx> packet
-	    const char* packet = data + idx*MY_PACKET_SIZE + MY_OFFSET;
+        std::vector<unsigned long long> MyReceiver::getDaqShape(unsigned short framesPerTrain) {
+            // DAQ first dimension is fastest changing one
+            return {this->getDetectorSize(), framesPerTrain};
+        }
 
-	    unsigned short frameNumber = 
-                (reinterpret_cast<const unsigned short*>(packet))[0];
-	    frameNumber = (frameNumber & MY_FRAME_MASK) >
-                MY_FRAME_OFFSET;
+        void MyReceiver::unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned short* gain) {
+            // e.g. For Gotthard:
+            const size_t frameSize = this->getDetectorSize();
+            size_t offset = sizeof(unsigned short) * idx * frameSize;
+            const char* ptr = data + offset; // Base address of the <idx> frame
 
-	    return frameNumber;
-	}
-
-	// Get packet number for packet at position <idx> in <data>
-	unsigned short MyReceiver::getPacketNumber(const char* data, 
-                size_t idx) {
-
-            // Base address of the <idx> packet
-	    const char* packet = data + idx*MY_PACKET_SIZE + MY_OFFSET;
-
-	    unsigned short packetNumber = 
-                (reinterpret_cast<const unsigned short*>(packet))[0];
-	    packetNumber = packetNumber & MY_PACKET_MASK;
-
-	    return packetNumber;
-	}
-
-	// Get ADC counts and gain for packet at position <idx> in <data>
-	void MyReceiver::getAdcAndGain(const char* data, size_t idx, 
-                std::vector<unsigned short>& adc, 
-                std::vector<unsigned short>& gain) {
-
-            // Base address of the <idx> packet
-	    const char* packet = data + idx*MY_PACKET_SIZE + MY_OFFSET;
-	    packet += MY_HEADER_LENGTH; // base address for adc/gain
-
-	    // Resize vectors
-	    adc.resize(MY_CHANNELS);
-	    gain.resize(MY_CHANNELS);
-
-	    for (size_t i=0; i<MY_CHANNELS; ++i) {
-		adc.at(i) = (reinterpret_cast<const unsigned 
-                    short*>(packet))[i] & MY_ADC_MASK;
-		gain.at(i) = (reinterpret_cast<const 
-                    unsigned short*>(packet))[i] & MY_GAIN_MASK;
-	    }
-
-	}
+            for (size_t i = 0; i < frameSize; ++i) {
+                adc[i] = (reinterpret_cast<const unsigned short*> (ptr))[i] & MY_ADC_MASK;
+                gain[i] = ((reinterpret_cast<const unsigned short*> (ptr))[i] & MY_GAIN_MASK) >> MY_GAIN_OFFSET;
+            }
+        }
 
     } /* namespace karabo */
 
