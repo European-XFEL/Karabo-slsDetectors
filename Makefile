@@ -2,22 +2,22 @@ SUBDIRS = slsDetectorsSimulation slsControl slsReceiver
 
 .PHONY: build package test $(SUBDIRS)
 
-ifdef CONF
-DISTDIR = dist/$(CONF)
-else
-DISTDIR = dist/Debug
+CONF ?= Debug
+DISTDIR = dist/$(CONF)/GNU-Linux-x86
+
+ifndef KARABO
+	KARABO := $(shell cat ${HOME}/.karabo/karaboFramework)
 endif
 
 build: slsDetectorsSimulation
 	$(MAKE) -C slsControl build
 	$(MAKE) -C slsReceiver build
-	mkdir -p $(DISTDIR)
-	cp -a slsControl/$(DISTDIR)/* $(DISTDIR)
-	cp -a slsReceiver/$(DISTDIR)/* $(DISTDIR)
 
-package: slsDetectorsSimulation
-	$(MAKE) -C slsControl package
-	$(MAKE) -C slsReceiver package
+package: build
+	mkdir -p $(DISTDIR)
+	cp -a slsControl/$(DISTDIR)/*.so $(DISTDIR)
+	cp -a slsReceiver/$(DISTDIR)/*.so $(DISTDIR)
+	@$(KARABO)/bin/.bundle-cppplugin.sh dist $(CONF) GNU-Linux-x86
 
 test: slsDetectorsSimulation
 	$(MAKE) -C slsControl test
