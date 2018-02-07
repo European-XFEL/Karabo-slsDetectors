@@ -12,11 +12,11 @@ endif
 build: slsDetectorsSimulation
 	$(MAKE) -C slsControl build
 	$(MAKE) -C slsReceiver build
-
-package: build
 	mkdir -p $(DISTDIR)
 	cp -a slsControl/$(DISTDIR)/*.so $(DISTDIR)
 	cp -a slsReceiver/$(DISTDIR)/*.so $(DISTDIR)
+
+package: build
 	@$(KARABO)/bin/.bundle-cppplugin.sh dist $(CONF) GNU-Linux-x86
 
 test: slsDetectorsSimulation
