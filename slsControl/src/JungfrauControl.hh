@@ -1,5 +1,4 @@
 /*
- * $Id: JungfrauDetector.hh 12381 2014-01-15 16:27:07Z parenti $
  *
  * Author: <andrea.parenti@xfel.eu>
  * 
@@ -23,7 +22,6 @@ namespace karabo {
 
     class JungfrauControl : public karabo::SlsControl {
     public:
-
         KARABO_CLASSINFO(JungfrauControl, "JungfrauControl", "2.2")
 
         JungfrauControl(const karabo::util::Hash& config);
@@ -32,13 +30,10 @@ namespace karabo {
 
         static void expectedParameters(karabo::util::Schema& expected);
 
-     private:
-
-	void powerOn();
-
-    	const char* getCalibrationString() const;
-
-   	const char* getSettingsString() const;
+    private:
+        void powerOn();
+        const char* getCalibrationString() const;
+        const char* getSettingsString() const;
 
     };
 
