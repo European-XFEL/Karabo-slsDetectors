@@ -49,6 +49,8 @@ namespace karabo {
 
         void acquireBlocking(const boost::system::error_code& ec);
 
+        void startPoll();
+        void stopPoll();
         void pollHardware(const boost::system::error_code& ec);
         void getPathsByTag(std::vector<std::string >& paths, const std::string& tags);
 

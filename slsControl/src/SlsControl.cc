@@ -36,9 +36,8 @@ namespace karabo {
     SlsControl::~SlsControl() {
         // Stop deadline timers
         m_connect = false;
-        m_poll = false;
         m_connect_timer.cancel();
-        m_poll_timer.cancel();
+        this->stopPoll();
 
         if (m_SLS != NULL) {
             delete m_SLS;
@@ -676,11 +675,7 @@ namespace karabo {
                 this->updateState(State::ERROR);
             }
 
-            // Start polling
-            m_poll = true;
-            m_poll_timer.expires_from_now(boost::posix_time::seconds(this->get<unsigned int>("pollingInterval")));
-            m_poll_timer.async_wait(karabo::util::bind_weak(&SlsControl::pollHardware, this, boost::asio::placeholders::error));
-
+            this->startPoll();
         } else if (m_connect) {
             if (this->getState() != State::UNKNOWN) this->updateState(State::UNKNOWN);
             m_connect_timer.expires_at(m_connect_timer.expires_at() + boost::posix_time::milliseconds(m_reconnectTime));
@@ -691,14 +686,31 @@ namespace karabo {
     }
 
     void SlsControl::acquireBlocking(const boost::system::error_code& ec) {
+        KARABO_LOG_FRAMEWORK_DEBUG << "In acquireBlocking";
         if (ec) {
             return;
         }
 
-        KARABO_LOG_FRAMEWORK_DEBUG << "In acquireBlocking";
+        KARABO_LOG_FRAMEWORK_DEBUG << "Stop polling, as it would interfere with acquisition";
+        this->stopPoll();
+
         m_SLS->startMeasurement(); // Blocking function - will return when acquisition is over!
+
+        KARABO_LOG_FRAMEWORK_DEBUG << "Restart polling";
+        this->startPoll();
         this->updateState(State::ON);
         KARABO_LOG_FRAMEWORK_DEBUG << "Quitting acquireBlocking";
+    }
+
+    void SlsControl::startPoll() {
+        m_poll = true;
+        m_poll_timer.expires_from_now(boost::posix_time::seconds(1));
+        m_poll_timer.async_wait(karabo::util::bind_weak(&SlsControl::pollHardware, this, boost::asio::placeholders::error));
+    }
+
+    void SlsControl::stopPoll() {
+        m_poll = false;
+        m_poll_timer.cancel();
     }
 
     void SlsControl::pollHardware(const boost::system::error_code& ec) {
@@ -714,13 +726,6 @@ namespace karabo {
             m_connect = true;
             m_connect_timer.expires_from_now(boost::posix_time::milliseconds(0));
             m_connect_timer.async_wait(karabo::util::bind_weak(&SlsControl::connect, this, boost::asio::placeholders::error));
-            return;
-        }
-
-        if (this->getState() == State::ACQUIRING) {
-            // Polling during acquisition would interfere with it
-            m_poll_timer.expires_at(m_poll_timer.expires_at() + boost::posix_time::seconds(1));
-            m_poll_timer.async_wait(karabo::util::bind_weak(&SlsControl::pollHardware, this, boost::asio::placeholders::error));
             return;
         }
 
