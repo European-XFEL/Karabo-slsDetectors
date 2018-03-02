@@ -1237,6 +1237,15 @@ namespace karabo {
 
         }
 
+        if (incomingReconfiguration.has("pollingInterval") && m_poll) {
+            // Stop and restart polling, such that new pollingInterval will be applied
+            m_poll = false;
+            m_poll_timer.cancel();
+            m_poll = true;
+            m_poll_timer.expires_from_now(boost::posix_time::seconds(1));
+            m_poll_timer.async_wait(karabo::util::bind_weak(&SlsControl::pollHardware, this, boost::asio::placeholders::error));
+        }
+
         KARABO_LOG_DEBUG << "Quitting SlsControl::preReconfigure";
     }
 
