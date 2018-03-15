@@ -749,10 +749,10 @@ namespace karabo {
 
         char* args[1];
         Hash h;
-        for (std::vector<std::string>::iterator it = paths.begin(); it != paths.end(); ++it) {
+        for (auto it = paths.begin(); it != paths.end(); ++it) {
             try {
                 std::string alias = this->getAliasFromKey<std::string >(*it); // key=*it
-                Types::ReferenceType type = this->getValueType(*it);
+                auto type = this->getValueType(*it);
                 args[0] = const_cast<char*> (alias.c_str());
                 if (Types::isSimple(type)) {
                     std::string reply = m_SLS->getCommand(1, args, 0);
@@ -760,7 +760,7 @@ namespace karabo {
                     KARABO_LOG_FRAMEWORK_DEBUG << "Command: " << args[0] << ". Reply: " << reply;
                 } else { // isVector
                     std::vector<std::string> reply;
-                    for (unsigned int i = 0; i < m_numberOfModules; ++i) {
+                    for (size_t i = 0; i < m_numberOfModules; ++i) {
                         reply.push_back(m_SLS->getCommand(1, args, i));
                     }
                     h.set(*it, reply);
@@ -794,13 +794,13 @@ namespace karabo {
 
     void SlsControl::sendBaseConfiguration() {
         // Get detector and receiver information
-        std::vector<std::string> hostnames = this->get<std::vector<std::string> >("detectorHostName");
-        std::vector<std::string> detectorips = this->get<std::vector<std::string> >("detectorIp");
+        auto hostnames = this->get<std::vector<std::string> >("detectorHostName");
+        auto detectorips = this->get<std::vector<std::string> >("detectorIp");
 
-        std::vector<std::string> rx_hostnames = this->get<std::vector<std::string> > ("rxHostname");
-        std::vector<unsigned short> rx_tcpports = this->get<std::vector<unsigned short> >("rxTcpPort");
-        std::vector<std::string> rx_udpips = this->get<std::vector<std::string> >("rxUdpIp");
-        std::vector<unsigned short> rx_udpports = this->get<std::vector<unsigned short> >("rxUdpPort");
+        auto rx_hostnames = this->get<std::vector<std::string> > ("rxHostname");
+        auto rx_tcpports = this->get<std::vector<unsigned short> >("rxTcpPort");
+        auto rx_udpips = this->get<std::vector<std::string> >("rxUdpIp");
+        auto rx_udpports = this->get<std::vector<unsigned short> >("rxUdpPort");
 
         // Check that all vectors have the same size
         if (hostnames.size() != m_numberOfModules) {
@@ -917,7 +917,7 @@ namespace karabo {
 
         const Schema& fullSchema = this->getFullSchema();
         std::string key, alias;
-        for (Hash::const_iterator it = flat.begin(); it != flat.end(); ++it) {
+        for (auto it = flat.begin(); it != flat.end(); ++it) {
 
             try {
                 key = it->getKey();
@@ -935,16 +935,16 @@ namespace karabo {
                     this->sendConfiguration(alias, value);
 
                 } else if (Types::isVector(type)) {
-                    std::vector<std::string> values = configHash.getAs<std::string, std::vector>(key);
+                    auto values = configHash.getAs<std::string, std::vector>(key);
                     if (values.size() == 0) {
                         continue; // ignore key
                     } else if (values.size() == 1) {
                         // send same value to all
-                        for (int i = 0; i < m_numberOfModules; ++i) {
+                        for (size_t i = 0; i < m_numberOfModules; ++i) {
                             this->sendConfiguration(alias, values[0], i);
                         }
                     } else if (values.size() == m_numberOfModules) {
-                        for (int i = 0; i < values.size(); ++i) {
+                        for (size_t i = 0; i < values.size(); ++i) {
                             this->sendConfiguration(alias, values[i], i);
                         }
                     } else {
@@ -1000,7 +1000,7 @@ namespace karabo {
     bool SlsControl::areDetectorsOnline() {
         KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::areDetectorsOnline";
 
-        std::vector<std::string> hosts = this->get<std::vector<std::string> >("detectorHostName");
+        auto hosts = this->get<std::vector<std::string> >("detectorHostName");
         std::vector<unsigned short> ports;
         try {
             ports = this->get<std::vector<unsigned short> >("detectorHostPort");
@@ -1032,8 +1032,8 @@ namespace karabo {
     bool SlsControl::areReceiversOnline() {
         KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::areReceiversOnline";
 
-        std::vector<std::string> hosts = get<std::vector<std::string> >("rxHostname");
-        std::vector<unsigned short> ports = get<std::vector<unsigned short> >("rxTcpPort");
+        auto hosts = get<std::vector<std::string> >("rxHostname");
+        auto ports = get<std::vector<unsigned short> >("rxTcpPort");
         if (ports.size() < hosts.size()) {
             KARABO_LOG_FRAMEWORK_ERROR << "len(rxTcpPort) < len(rxHostname)";
         }
@@ -1147,7 +1147,7 @@ namespace karabo {
             int narg = tokens.size() + 1;
             char* args[narg];
             args[0] = (char*) command.c_str();
-            for (int i = 0; i < tokens.size(); ++i)
+            for (size_t i = 0; i < tokens.size(); ++i)
                 args[i + 1] = const_cast<char*> (tokens.at(i).c_str());
 
             std::string reply = m_SLS->putCommand(narg, args, pos);
