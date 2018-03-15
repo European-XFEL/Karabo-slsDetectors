@@ -224,7 +224,7 @@ match the raw data format of the detector:
 
 
 Simulation Mode
-===============
+---------------
 
 To compile the slsReceiver in simulation mode, just run
 

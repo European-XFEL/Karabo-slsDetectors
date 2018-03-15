@@ -11,6 +11,37 @@ slsReceiver provided with the slsDetectorPackage, or a SlsReceiver
 Karabo device.
 
 
+Mandatory parameters
+--------------------
+
+The SlsControl device has the following mandatory vector parameters:
+
+* `detectorHostName`: corresponds to PSI's `hostname` parameter, and represents
+  the hostname(s) or IP address(es) of the detector module(s) to be controlled;
+* `detectorIp`: corresponds to PSI's `detectorip` parameter;
+* `rxHostname`: corresponds to PSI's `rx_hostname` parameter;
+* `rxTcpPort`: corresponds to PSI's `rx_tcpport` parameter;
+* `rxUdpIp`: corresponds to PSI's `rx_udpip` parameter;
+* `rxUdpPort`: corresponds to PSI's `rx_udpport` parameter;
+
+All these vectors must have the same length.
+
+
+Optional parameters
+-------------------
+
+The SlsControl device has several optional parameters; please be aware that:
+
+* simple (i.e. `scalar`) reconfigurable parameters tagged as `sls` are sent 
+  to all the modules;
+* vector reconfigurable parameters tagged as `sls` must have zero, one, or as
+  many elements as the number of modules. If the vector has only one element, 
+  this value will be sent to all modules;
+* parameters tagged as `readOnConnect` will be read from the module(s) as
+  soon as a connection is established;
+* parameters tagged as `poll` will be regularly read from the module(s).
+
+
 How to create a control device based on slsControl
 ==================================================
 
@@ -149,7 +180,7 @@ add more detector specific expected parameters as described in the
 
 
 Simulation Mode
-===============
+---------------
 
 To compile slsControl in simulation mode, just run
 

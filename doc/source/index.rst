@@ -11,7 +11,7 @@ Contents:
 .. toctree::
    intro
    installation
-   slsDetector
+   slsControl
    slsReceiver
    :maxdepth: 2
 
