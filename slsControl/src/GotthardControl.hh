@@ -1,5 +1,4 @@
 /*
- * $Id: GotthardDetector.hh 12381 2014-01-15 16:27:07Z parenti $
  *
  * Author: <andrea.parenti@xfel.eu>
  * 
@@ -10,7 +9,6 @@
 
 #ifndef KARABO_GOTTHARDCONTROL_HH
 #define KARABO_GOTTHARDCONTROL_HH
-
 
 #include <karabo/karabo.hpp>
 
@@ -23,7 +21,6 @@ namespace karabo {
 
     class GotthardControl : public karabo::SlsControl {
     public:
-
         KARABO_CLASSINFO(GotthardControl, "GotthardControl", "2.2")
 
         GotthardControl(const karabo::util::Hash& config);
@@ -31,12 +28,10 @@ namespace karabo {
         virtual ~GotthardControl();
 
         static void expectedParameters(karabo::util::Schema& expected);
-     
-     private:
 
-    	const char* getCalibrationString() const;
-
-   	const char* getSettingsString() const;
+    private: // functions
+        const char* getCalibrationString() const;
+        const char* getSettingsString() const;
 
     };
 
