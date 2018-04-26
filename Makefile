@@ -23,6 +23,12 @@ test: slsDetectorsSimulation
 	$(MAKE) -C slsControl test
 	$(MAKE) -C slsReceiver test
 
+clean:
+	$(MAKE) -C slsControl clean
+	$(MAKE) -C slsReceiver clean
+	$(MAKE) -C slsDetectorsSimulation clean
+	rm -f $(DISTDIR)/*.so
+
 slsDetectorsSimulation:
 ifeq ($(CONF),Simulation)
 	$(MAKE) -C $@ CONF=Release
