@@ -38,7 +38,7 @@ namespace karabo {
         virtual void preReconfigure(karabo::util::Hash& incomingReconfiguration);
 
     private: // Slots
-        void acquire();
+        void start();
         void stop();
         void reset();
 
