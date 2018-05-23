@@ -25,7 +25,7 @@ namespace karabo {
     m_acquire_timer(EventLoop::getIOService()) {
         KARABO_INITIAL_FUNCTION(initialize);
 
-        KARABO_SLOT(acquire);
+        KARABO_SLOT(start);
         KARABO_SLOT(stop);
         KARABO_SLOT(reset);
 
@@ -64,8 +64,8 @@ namespace karabo {
                 .setNewDefaultValue(State::INIT)
                 .commit();
 
-        SLOT_ELEMENT(expected).key("acquire")
-                .displayedName("Acquire")
+        SLOT_ELEMENT(expected).key("start")
+                .displayedName("Start")
                 .description("Starts acquisition")
                 .allowedStates(State::ON)
                 .commit();
@@ -576,7 +576,7 @@ namespace karabo {
 
     }
 
-    void SlsControl::acquire() {
+    void SlsControl::start() {
         try {
             const std::string filePath = this->get<std::string >("dataStorage.filePath");
             if (fs::is_regular_file(filePath)) {
