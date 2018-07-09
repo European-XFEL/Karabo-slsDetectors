@@ -34,7 +34,7 @@ namespace karabo {
 
         OVERWRITE_ELEMENT(expected).key("settings") // From base class
                 .setNewDefaultValue("dynamicgain")
-                .setNewOptions("dynamicgain lowgain mediumgain highgain veryhighgain")
+                .setNewOptions("dynamicgain dynamichg0 fixgain1 fixgain2 forceswitchg1 forceswitchg2")
                 .commit();
 
         INT16_ELEMENT(expected).key("rOnline")
