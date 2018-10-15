@@ -13,7 +13,7 @@ class detectorData;
 class slsDetectorUsers {
 public:
 
-    slsDetectorUsers(int id = 0);
+    slsDetectorUsers(int& ret, int id = 0);
 
     virtual ~slsDetectorUsers();
 

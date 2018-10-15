@@ -351,11 +351,10 @@ namespace karabo {
         self->updateState(State::PASSIVE);
     }
 
-    void SlsReceiver::rawDataReadyCallBack(uint64_t currFrameNum, uint32_t expLength, uint32_t packetNumber, uint64_t bunchId, uint64_t timestamp,
-            uint16_t modId, uint16_t xCoord, uint16_t yCoord, uint16_t zCoord, uint32_t debug, uint16_t roundRNumber, uint8_t detType, uint8_t version,
-            char* dataPointer, uint32_t dataSize, void* context) {
-
+    void SlsReceiver::rawDataReadyCallBack(char* metadata, char* dataPointer, uint32_t dataSize, void* context) {
         Self* self = static_cast<Self*>(context);
+        slsReceiverDefs::sls_receiver_header* header = reinterpret_cast<slsReceiverDefs::sls_receiver_header*>(metadata);
+        slsReceiverDefs::sls_detector_header detectorHeader = header->detHeader;
 
         if (self->m_adc == NULL || self->m_gain == NULL) {
             self->logWarning("rawDataReadyCallBack: m_adc or m_gain not yet inititalized. Skip!");
@@ -464,7 +463,7 @@ namespace karabo {
                 try {
                     self->unpackRawData(dataPointer, i, self->m_adc + offset,
                             self->m_gain + offset);
-                    self->m_frameNumber[self->m_accumulatedFrames] = currFrameNum;
+                    self->m_frameNumber[self->m_accumulatedFrames] = detectorHeader.frameNumber;
                     self->m_timestamp[self->m_accumulatedFrames] = currentTime;
                     self->m_accumulatedFrames += 1;
                 } catch (std::exception& e) {
@@ -477,23 +476,23 @@ namespace karabo {
             if (self->m_lastFrameNum == 0) {
                 // First frame received
                 self->m_lastRateTime = currentTime;
-                self->m_lastFrameNum = currFrameNum;
-            } else if (elapsedTime > 1. && currFrameNum > self->m_lastFrameNum) {
+                self->m_lastFrameNum = detectorHeader.frameNumber;
+            } else if (elapsedTime > 1. && detectorHeader.frameNumber > self->m_lastFrameNum) {
                 // Log frame rate once per second
-                const double frameRateIn = (currFrameNum - self->m_lastFrameNum) / elapsedTime; // Detector rate
+                const double frameRateIn = (detectorHeader.frameNumber - self->m_lastFrameNum) / elapsedTime; // Detector rate
                 const double frameRateOut = self->m_frameCount / elapsedTime; // Receiver rate
 
                 Hash h("frameRateIn", frameRateIn, "frameRateOut", frameRateOut);
                 self->set(h);
 
-                KARABO_LOG_FRAMEWORK_DEBUG << "Current Frame: " << currFrameNum << " Last Frame: " << self->m_lastFrameNum << " Elapsed time [s]: " << elapsedTime;
+                KARABO_LOG_FRAMEWORK_DEBUG << "Current Frame: " << detectorHeader.frameNumber << " Last Frame: " << self->m_lastFrameNum << " Elapsed time [s]: " << elapsedTime;
                 KARABO_LOG_FRAMEWORK_INFO << "Frame rate (detector) " << frameRateIn << " Hz";
                 KARABO_LOG_FRAMEWORK_INFO << "Frame rate (receiver) " << frameRateOut << " Hz";
                 KARABO_LOG_FRAMEWORK_INFO << "Train ID " << trainId;
 
                 self->m_frameCount = 0;
                 self->m_lastRateTime = currentTime;
-                self->m_lastFrameNum = currFrameNum;
+                self->m_lastFrameNum = detectorHeader.frameNumber;
             }
 
         } catch (std::exception& e) {

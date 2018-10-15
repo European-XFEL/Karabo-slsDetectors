@@ -28,9 +28,7 @@ public:
 
     void registerCallBackAcquisitionFinished(void (*func)(uint64_t nf, void*), void *arg);
 
-    void registerCallBackRawDataReady(void (*func)(uint64_t frameNumber, uint32_t expLength, uint32_t packetNumber, uint64_t bunchId, uint64_t timestamp,
-            uint16_t modId, uint16_t xCoord, uint16_t yCoord, uint16_t zCoord, uint32_t debug, uint16_t roundRNumber, uint8_t detType, uint8_t version,
-            char* datapointer, uint32_t datasize, void*), void *arg);
+    void registerCallBackRawDataReady(void (*func)(char* metadata, char* datapointer, uint32_t datasize, void*), void *arg);
 
     slsReceiver* receiver;
 
@@ -39,8 +37,7 @@ private:
     void *m_pStartAcquisition;
     void (*m_acquisitionFinishedCallBack)(uint64_t, void*);
     void *m_pAcquisitionFinished;
-    void (*m_rawDataReadyCallBack)(uint64_t, uint32_t, uint32_t, uint64_t, uint64_t, uint16_t, uint16_t, uint16_t, uint16_t, uint32_t, uint16_t, uint8_t, uint8_t,
-            char*, uint32_t, void*);
+    void (*m_rawDataReadyCallBack)(char*, char*, uint32_t, void*);
     void *m_pRawDataReady;
 
 private: // Simulation properties
@@ -57,6 +54,7 @@ private: // Simulation properties
     uint64_t m_frameCounter;
     int m_currAcqFrameCounter;
     int m_currFileFirstFrame;
+    slsReceiverDefs::sls_receiver_header m_header;
     char m_data[sizeof(short) * SLS_CHANNELS];
     uint32_t m_dataSize;
     int m_fileWriteOption;

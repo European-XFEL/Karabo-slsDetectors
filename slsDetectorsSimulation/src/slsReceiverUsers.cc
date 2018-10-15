@@ -81,9 +81,7 @@ void slsReceiverUsers::registerCallBackAcquisitionFinished(void (*func)(uint64_t
 
 }
 
-void slsReceiverUsers::registerCallBackRawDataReady(void (*func)(uint64_t frameNumber, uint32_t expLength, uint32_t packetNumber, uint64_t bunchId, uint64_t timestamp,
-        uint16_t modId, uint16_t xCoord, uint16_t yCoord, uint16_t zCoord, uint32_t debug, uint16_t roundRNumber, uint8_t detType, uint8_t version,
-        char* datapointer, uint32_t datasize, void*), void *arg) {
+void slsReceiverUsers::registerCallBackRawDataReady(void (*func)(char* metadata, char* datapointer, uint32_t datasize, void*), void *arg) {
     m_rawDataReadyCallBack = func;
     m_pRawDataReady = arg;
 }
@@ -183,17 +181,24 @@ void* slsReceiverUsers::tcpWorker(void* self) {
                         receiver->m_frameCounter += 1;
                         try {
                             if (receiver->m_rawDataReadyCallBack != NULL) {
-                                const uint64_t frameNumber = receiver->m_frameCounter;
-                                const uint32_t expLength = 0;
-                                const uint32_t packetNumber = 2;
-                                const uint64_t bunchId = 0;
-                                const uint64_t timestamp = 0;
-                                const uint16_t modId = 0 ;
-                                const uint16_t xCoord = 0, yCoord = 0, zCoord = 0;
-                                const uint32_t debug = 0;
-                                const uint16_t roundRNumber = 0;
-                                const uint8_t detType = 4; // Gotthard
-                                const uint8_t version = 1;
+                                // Fill-up header
+                                slsReceiverDefs::sls_detector_header* detectorHeader = &(receiver->m_header.detHeader);
+
+                                detectorHeader->frameNumber = receiver->m_frameCounter;
+                                detectorHeader->expLength = 0;
+                                detectorHeader->packetNumber = 2;
+                                detectorHeader->bunchId = 0;
+                                detectorHeader->timestamp = 0;
+                                detectorHeader->modId = 0 ;
+                                detectorHeader->row = 0;
+                                detectorHeader->column = 0;
+                                detectorHeader->reserved = 0;
+                                detectorHeader->debug = 0;
+                                detectorHeader->roundRNumber = 0;
+                                detectorHeader->detType = 4; // Gotthard
+                                detectorHeader->version = 1;
+                                receiver->m_header.packetsMask.reset();
+
                                 char* dataPointer = receiver->m_data;
                                 const uint32_t dataSize = receiver->m_dataSize;
 
@@ -219,9 +224,9 @@ void* slsReceiverUsers::tcpWorker(void* self) {
                                     adc_and_gain[i] |= (gain << 14); // Pack gain together with ADC value
                                 }
 
-                                // Pass frame to callback
-                                receiver->m_rawDataReadyCallBack(frameNumber, expLength, packetNumber, bunchId, timestamp, modId, xCoord, yCoord,
-                                        zCoord, debug, roundRNumber, detType, version, dataPointer, dataSize, receiver->m_pRawDataReady);
+                                // Pass frame and metadata to callback
+                                char* metadata = reinterpret_cast<char*>(&receiver->m_header);
+                                receiver->m_rawDataReadyCallBack(metadata, dataPointer, dataSize, receiver->m_pRawDataReady);
 
                                 // Open new file if needed
                                 if (receiver->m_enableWriteToFile) {
