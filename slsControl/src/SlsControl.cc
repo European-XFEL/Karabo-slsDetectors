@@ -634,8 +634,16 @@ namespace karabo {
             m_numberOfModules = 0;
         }
 
+        // TODO this code should be moved to connect, so that it can be retried
+        // if ret != 0
         KARABO_LOG_FRAMEWORK_DEBUG << "Creating m_SLS...";
-        m_SLS = new slsDetectorUsers(0);
+        int ret = 1;
+        m_SLS = new slsDetectorUsers(ret, 0);
+        if (ret != 0) {
+            KARABO_LOG_FRAMEWORK_DEBUG << "    failed!";
+            if (m_SLS != NULL) delete m_SLS;
+            return;
+        }
         KARABO_LOG_FRAMEWORK_DEBUG << "    done!";
 
         m_connect = true;

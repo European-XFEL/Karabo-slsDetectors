@@ -9,7 +9,7 @@
 #include "sls_simulation_defs.h"
 #include "slsDetectorUsers.h"
 
-slsDetectorUsers::slsDetectorUsers(int id) {
+slsDetectorUsers::slsDetectorUsers(int& ret, int id) {
     m_id = id;
     m_online = true;
     m_status = 0; // idle
@@ -77,7 +77,7 @@ slsDetectorUsers::slsDetectorUsers(int id) {
 
     m_keepRunning = true;
     m_neededFrames = 0;
-    int ret = pthread_create(&m_dataThread, NULL, dataWorker, (void*) this);
+    ret = pthread_create(&m_dataThread, NULL, dataWorker, (void*) this);
 }
 
 slsDetectorUsers::~slsDetectorUsers() {
@@ -985,7 +985,7 @@ void* slsDetectorUsers::dataWorker(void* self) {
             continue;
         } else if (detector->m_status == 5) {
             boost::this_thread::sleep(boost::posix_time::microseconds(delay_us + exptime_us));
-            //std::cout << "Sending 'rawdata' command to receiver" << std::endl;
+            // std::cout << "Sending 'rawdata' command to receiver" << std::endl;
             detector->toReceiver("rawdata"); // receiver must generate data
             --(detector->m_neededFrames);
             if (period_us > exptime_us)

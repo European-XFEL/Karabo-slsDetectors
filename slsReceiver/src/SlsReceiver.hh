@@ -66,9 +66,7 @@ namespace karabo {
 
         static void acquisitionFinishedCallBack(size_t totalFramesCaught, void* context);
 
-        static void rawDataReadyCallBack(uint64_t currFrameNum, uint32_t expLength, uint32_t packetNumber, uint64_t bunchId, uint64_t timestamp,
-            uint16_t modId, uint16_t xCoord, uint16_t yCoord, uint16_t zCoord, uint32_t debug, uint16_t roundRNumber, uint8_t detType, uint8_t version,
-            char* dataPointer, uint32_t dataSize, void* context);
+        static void rawDataReadyCallBack(char* metadata, char* dataPointer, uint32_t dataSize, void* context);
 
         void logWarning(const std::string& message);
 	
@@ -89,7 +87,7 @@ namespace karabo {
         slsReceiverUsers* m_receiver;
 
         // For frame rate calculation
-        int m_lastFrameNum;
+        unsigned long long m_lastFrameNum;
         double m_lastRateTime;
 
         // Detector data (accumulated per train)
