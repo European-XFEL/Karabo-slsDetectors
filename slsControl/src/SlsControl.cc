@@ -605,7 +605,19 @@ namespace karabo {
 
     void SlsControl::stop() {
         KARABO_LOG_FRAMEWORK_DEBUG << "In stop";
-        m_SLS->stopMeasurement();
+
+        // The following call is supposed to stop acquisition, but sometimes hangs
+        // (observed in SlsDetectorPackage 3.0):
+        // m_SLS->stopMeasurement();
+        // therefore I sent "status stop" with putCommand, which does not show
+        // the same problem.
+
+        char* args[2];
+        args[0] = const_cast<char*>("status");
+        args[1] = const_cast<char*>("stop");
+        const std::string reply = m_SLS->putCommand(2, args);
+        KARABO_LOG_FRAMEWORK_INFO << "Acquisition stopped. Reply: " << reply;
+
         KARABO_LOG_FRAMEWORK_DEBUG << "Quitting stop";
         this->updateState(State::ON);
     }
