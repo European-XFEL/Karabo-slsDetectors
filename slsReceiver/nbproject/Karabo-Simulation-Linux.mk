@@ -92,19 +92,19 @@ ${OBJECTDIR}/src/SlsReceiver.o: src/SlsReceiver.cc
 .build-tests-conf: .build-conf ${TESTFILES}
 ${TESTDIR}/TestFiles/f1: ${TESTDIR}/src/tests/SlsReceiverTest.o ${TESTDIR}/src/tests/test_runner.o ${OBJECTFILES:%.o=%_nomain.o}
 	${MKDIR} -p ${TESTDIR}/TestFiles
-	${LINK.cc}   -o ${TESTDIR}/TestFiles/f1 $^ ${LDLIBSOPTIONS} -L${KARABO}/extern/lib -L${KARABO}/lib -Wl,-rpath,${KARABO}/extern/lib -Wl,-rpath,${KARABO}/lib -lkarabo `cppunit-config --libs`   
+	${LINK.cc}   -o ${TESTDIR}/TestFiles/f1 $^ ${LDLIBSOPTIONS} -L${KARABO}/extern/lib -L${KARABO}/lib -Wl,-rpath,${KARABO}/extern/lib -Wl,-rpath,${KARABO}/lib -lkarabo `pkg-config cppunit --libs`   
 
 
 ${TESTDIR}/src/tests/SlsReceiverTest.o: src/tests/SlsReceiverTest.cc 
 	${MKDIR} -p ${TESTDIR}/src/tests
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -DSLS_RECEIVER_FUNCTION_LIST -DSLS_SIMULATION -I${KARABO}/extern/include -I${KARABO}/include -I. `pkg-config --cflags karaboDependencies` -std=c++11 `cppunit-config --cflags` -MMD -MP -MF "$@.d" -o ${TESTDIR}/src/tests/SlsReceiverTest.o src/tests/SlsReceiverTest.cc
+	$(COMPILE.cc) -g -DSLS_RECEIVER_FUNCTION_LIST -DSLS_SIMULATION -I${KARABO}/extern/include -I${KARABO}/include -I. `pkg-config --cflags karaboDependencies` -std=c++11 `pkg-config cppunit --cflags` -MMD -MP -MF "$@.d" -o ${TESTDIR}/src/tests/SlsReceiverTest.o src/tests/SlsReceiverTest.cc
 
 
 ${TESTDIR}/src/tests/test_runner.o: src/tests/test_runner.cc 
 	${MKDIR} -p ${TESTDIR}/src/tests
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -DSLS_RECEIVER_FUNCTION_LIST -DSLS_SIMULATION -I${KARABO}/extern/include -I${KARABO}/include -I. `pkg-config --cflags karaboDependencies` -std=c++11 `cppunit-config --cflags` -MMD -MP -MF "$@.d" -o ${TESTDIR}/src/tests/test_runner.o src/tests/test_runner.cc
+	$(COMPILE.cc) -g -DSLS_RECEIVER_FUNCTION_LIST -DSLS_SIMULATION -I${KARABO}/extern/include -I${KARABO}/include -I. `pkg-config --cflags karaboDependencies` -std=c++11 `pkg-config cppunit --cflags` -MMD -MP -MF "$@.d" -o ${TESTDIR}/src/tests/test_runner.o src/tests/test_runner.cc
 
 
 ${OBJECTDIR}/src/GotthardReceiver_nomain.o: ${OBJECTDIR}/src/GotthardReceiver.o src/GotthardReceiver.cc 
