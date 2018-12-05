@@ -38,12 +38,6 @@ OBJECTFILES= \
 	${OBJECTDIR}/src/slsDetectorUsers.o \
 	${OBJECTDIR}/src/slsReceiverUsers.o
 
-# Test Directory
-TESTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}/tests
-
-# Test Files
-TESTFILES= \
-	${TESTDIR}/TestFiles/f1
 
 # C Compiler Flags
 CFLAGS=
@@ -81,60 +75,6 @@ ${OBJECTDIR}/src/slsReceiverUsers.o: src/slsReceiverUsers.cc
 
 # Subprojects
 .build-subprojects:
-
-# Build Test Targets
-.build-tests-conf: .build-conf ${TESTFILES}
-${TESTDIR}/TestFiles/f1: ${TESTDIR}/tests/TestAll.o ${TESTDIR}/tests/detectorsSimulationTestRunner.o ${OBJECTFILES:%.o=%_nomain.o}
-	${MKDIR} -p ${TESTDIR}/TestFiles
-	${LINK.cc}   -o ${TESTDIR}/TestFiles/f1 $^ ${LDLIBSOPTIONS} -lcppunit `cppunit-config --libs`   
-
-
-${TESTDIR}/tests/TestAll.o: tests/TestAll.cc 
-	${MKDIR} -p ${TESTDIR}/tests
-	${RM} "$@.d"
-	$(COMPILE.cc) -g -I${KARABO}/include -I${KARABO}/extern/include `pkg-config --cflags karaboDependencies` -std=c++11 `cppunit-config --cflags` -MMD -MP -MF "$@.d" -o ${TESTDIR}/tests/TestAll.o tests/TestAll.cc
-
-
-${TESTDIR}/tests/detectorsSimulationTestRunner.o: tests/detectorsSimulationTestRunner.cc 
-	${MKDIR} -p ${TESTDIR}/tests
-	${RM} "$@.d"
-	$(COMPILE.cc) -g -I${KARABO}/include -I${KARABO}/extern/include `pkg-config --cflags karaboDependencies` -std=c++11 `cppunit-config --cflags` -MMD -MP -MF "$@.d" -o ${TESTDIR}/tests/detectorsSimulationTestRunner.o tests/detectorsSimulationTestRunner.cc
-
-
-${OBJECTDIR}/src/slsDetectorUsers_nomain.o: ${OBJECTDIR}/src/slsDetectorUsers.o src/slsDetectorUsers.cc 
-	${MKDIR} -p ${OBJECTDIR}/src
-	@NMOUTPUT=`${NM} ${OBJECTDIR}/src/slsDetectorUsers.o`; \
-	if (echo "$$NMOUTPUT" | ${GREP} '|main$$') || \
-	   (echo "$$NMOUTPUT" | ${GREP} 'T main$$') || \
-	   (echo "$$NMOUTPUT" | ${GREP} 'T _main$$'); \
-	then  \
-	    ${RM} "$@.d";\
-	    $(COMPILE.cc) -g -I${KARABO}/include -I${KARABO}/extern/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/slsDetectorUsers_nomain.o src/slsDetectorUsers.cc;\
-	else  \
-	    ${CP} ${OBJECTDIR}/src/slsDetectorUsers.o ${OBJECTDIR}/src/slsDetectorUsers_nomain.o;\
-	fi
-
-${OBJECTDIR}/src/slsReceiverUsers_nomain.o: ${OBJECTDIR}/src/slsReceiverUsers.o src/slsReceiverUsers.cc 
-	${MKDIR} -p ${OBJECTDIR}/src
-	@NMOUTPUT=`${NM} ${OBJECTDIR}/src/slsReceiverUsers.o`; \
-	if (echo "$$NMOUTPUT" | ${GREP} '|main$$') || \
-	   (echo "$$NMOUTPUT" | ${GREP} 'T main$$') || \
-	   (echo "$$NMOUTPUT" | ${GREP} 'T _main$$'); \
-	then  \
-	    ${RM} "$@.d";\
-	    $(COMPILE.cc) -g -I${KARABO}/include -I${KARABO}/extern/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/slsReceiverUsers_nomain.o src/slsReceiverUsers.cc;\
-	else  \
-	    ${CP} ${OBJECTDIR}/src/slsReceiverUsers.o ${OBJECTDIR}/src/slsReceiverUsers_nomain.o;\
-	fi
-
-# Run Test Targets
-.test-conf:
-	@if [ "${TEST}" = "" ]; \
-	then  \
-	    ${TESTDIR}/TestFiles/f1 || true; \
-	else  \
-	    ./${TEST} || true; \
-	fi
 
 # Clean Targets
 .clean-conf: ${CLEAN_SUBPROJECTS}

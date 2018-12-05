@@ -6,7 +6,7 @@
             <name>slsDetectorsSimulation</name>
             <c-extensions/>
             <cpp-extensions>cc</cpp-extensions>
-            <header-extensions>h,hh</header-extensions>
+            <header-extensions>h</header-extensions>
             <sourceEncoding>UTF-8</sourceEncoding>
             <make-dep-projects/>
             <sourceRootList/>
