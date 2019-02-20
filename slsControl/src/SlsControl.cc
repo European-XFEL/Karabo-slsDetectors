@@ -605,7 +605,11 @@ namespace karabo {
 
     void SlsControl::stop() {
         KARABO_LOG_FRAMEWORK_DEBUG << "In stop";
-
+        m_SLS->stopMeasurement();
+        
+        // The below mentioned change is not working on SlsDetectorPackage 4.0
+        
+        /*
         // The following call is supposed to stop acquisition, but sometimes hangs
         // (observed in SlsDetectorPackage 3.0):
         // m_SLS->stopMeasurement();
@@ -617,7 +621,7 @@ namespace karabo {
         args[1] = const_cast<char*>("stop");
         const std::string reply = m_SLS->putCommand(2, args);
         KARABO_LOG_FRAMEWORK_INFO << "Acquisition stopped. Reply: " << reply;
-
+        */
         KARABO_LOG_FRAMEWORK_DEBUG << "Quitting stop";
         this->updateState(State::ON);
     }
