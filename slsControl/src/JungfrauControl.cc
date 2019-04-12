@@ -48,6 +48,31 @@ namespace karabo {
                 .allowedStates(State::ON)
                 .commit();
 
+        INT16_ELEMENT(expected).key("storageCells")
+                .alias("storagecells")
+                .tags("sls")
+                .displayedName("Storage Cells")
+                .description("Number of additional storage cells. "
+                "For very advanced users only!")
+                .assignmentOptional().defaultValue(0)
+                .minInc(0).maxInc(15)
+                .reconfigurable()
+                .expertAccess()
+                .allowedStates(State::ON)
+                .commit();
+
+        INT16_ELEMENT(expected).key("storageCellStart")
+                .alias("storagecell_start")
+                .tags("sls")
+                .displayedName("Storage Cell Start")
+                .description("First storage cell to be used. "
+                "For very advanced users only!")
+                .assignmentOptional().defaultValue(15)
+                .minInc(0).maxInc(15)
+                .reconfigurable()
+                .expertAccess()
+                .allowedStates(State::ON)
+                .commit();
     }
 
     void JungfrauControl::powerOn() {
