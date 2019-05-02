@@ -73,6 +73,18 @@ namespace karabo {
                 .expertAccess()
                 .allowedStates(State::ON)
                 .commit();
+
+       UINT32_ELEMENT(expected).key("rxUdpSocketSize")
+                .alias("rx_udpsocksize")
+                .tags("sls")
+                .displayedName("Receiver(s) UDP Socket Size")
+                .description("For very advanced users only!")
+                .assignmentOptional().defaultValue(1048576000)
+                .minInc(104857600).maxInc(1048576000)
+                .reconfigurable()
+                .expertAccess()
+                .allowedStates(State::ON)
+                .commit();
     }
 
     void JungfrauControl::powerOn() {
