@@ -437,6 +437,8 @@ namespace karabo {
                 size_t byteSize = size * sizeof(unsigned short);
                 std::memset(self->m_adc, 0, byteSize);
                 std::memset(self->m_gain, 0, byteSize);
+                std::memset(self->m_frameNumber.data(), 0, self->m_frameNumber.size() * sizeof(unsigned long long));
+                std::memset(self->m_timestamp.data(), 0, self->m_timestamp.size() * sizeof(double));
                 self->m_lastTimestamp = actualTimestamp;
                 self->m_accumulatedFrames = 0;
             }
