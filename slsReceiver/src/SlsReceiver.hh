@@ -95,6 +95,7 @@ namespace karabo {
         unsigned short m_accumulatedFrames;
         unsigned short* m_adc;
         unsigned short* m_gain;
+        std::vector<unsigned char> m_memoryCell;
         std::vector<unsigned long long> m_frameNumber;
         std::vector<double> m_timestamp;
 

@@ -13,6 +13,9 @@
 
 #include "SlsReceiver.hh"
 
+// Undefine GRAY from slsdetectos/ansi.h, which would clash with karabo::xms::Encoding::GRAY
+#undef GRAY
+
 USING_KARABO_NAMESPACES
 
 namespace karabo {
@@ -79,6 +82,12 @@ namespace karabo {
                 .displayedName("Gain")
                 .description("The ADC gains.")
                 .dtype(karabo::util::Types::UINT16)
+                .readOnly()
+                .commit();
+
+        VECTOR_UINT8_ELEMENT(outputData).key("data.memoryCell")
+                .displayedName("Memory Cell")
+                .description("The number of the memory cell used to store the image (only for Jungfrau).")
                 .readOnly()
                 .commit();
 
@@ -288,6 +297,7 @@ namespace karabo {
             self->m_accumulatedFrames = 0;
             self->m_adc = new unsigned short [size];
             self->m_gain = new unsigned short [size];
+            self->m_memoryCell.resize(framesPerTrain);
             self->m_frameNumber.resize(framesPerTrain);
             self->m_timestamp.resize(framesPerTrain);
 
@@ -389,6 +399,7 @@ namespace karabo {
                 Hash output;
                 output.set("data.adc", adcTrainData);
                 output.set("data.gain", gainTrainData);
+                output.set("data.memoryCell", self->m_memoryCell);
                 output.set("data.frameNumber", self->m_frameNumber);
                 output.set("data.timestamp", self->m_timestamp);
                 self->writeChannel("output", output, self->m_lastTimestamp);
@@ -422,9 +433,11 @@ namespace karabo {
 				// Use IMAGEDATA and NDArrays otherwise
         			const Dims shape = displayShape; 
                                 NDArray imgArray(adcOffset, self->getDetectorSize(), NDArray::NullDeleter());
-                                ImageData adcData(imgArray, shape, karabo::xms::Encoding::EncodingType(0) /*karabo::xms::Encoding::GRAY*/, 16);
+                                ImageData adcData(imgArray, shape, karabo::xms::Encoding::GRAY, 14);
 
-                		NDArray gainData(gainOffset, self->getDetectorSize(), NDArray::NullDeleter(), shape);
+
+                                NDArray gainArray(gainOffset, self->getDetectorSize(), NDArray::NullDeleter());
+                                ImageData gainData(gainArray, shape, karabo::xms::Encoding::GRAY, 2);
 
                         	display.set("data.adc", adcData);
                         	display.set("data.gain", gainData);
@@ -437,6 +450,7 @@ namespace karabo {
                 size_t byteSize = size * sizeof(unsigned short);
                 std::memset(self->m_adc, 0, byteSize);
                 std::memset(self->m_gain, 0, byteSize);
+                std::memset(self->m_memoryCell.data(), 255, self->m_memoryCell.size() * sizeof(unsigned char));
                 std::memset(self->m_frameNumber.data(), 0, self->m_frameNumber.size() * sizeof(unsigned long long));
                 std::memset(self->m_timestamp.data(), 0, self->m_timestamp.size() * sizeof(double));
                 self->m_lastTimestamp = actualTimestamp;
@@ -465,7 +479,13 @@ namespace karabo {
                 try {
                     self->unpackRawData(dataPointer, i, self->m_adc + offset,
                             self->m_gain + offset);
+                    if (self->get<std::string>("classId") == "JungfrauReceiver") {
+                        // "For firmware ID #181206, the number of the storage cell used to store
+                        // the image is encoded in the bits 11-8 of the debug field."
+                        self->m_memoryCell[self->m_accumulatedFrames] = (detectorHeader.debug >> 8) & 0xF;
+                    }
                     self->m_frameNumber[self->m_accumulatedFrames] = detectorHeader.frameNumber;
+
                     self->m_timestamp[self->m_accumulatedFrames] = currentTime;
                     self->m_accumulatedFrames += 1;
                 } catch (std::exception& e) {
@@ -538,6 +558,13 @@ namespace karabo {
                 .description("The ADC gains.")
                 .dtype(karabo::util::Types::UINT16)
                 .shape(karabo::util::toString(daqShape))
+                .readOnly()
+                .commit();
+
+        VECTOR_UINT8_ELEMENT(daqData).key("data.memoryCell")
+                .displayedName("Memory Cell")
+                .description("The number of the memory cell used to store the image (only for Jungfrau).")
+                .maxSize(framesPerTrain)
                 .readOnly()
                 .commit();
 
