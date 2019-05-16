@@ -40,11 +40,9 @@ namespace karabo {
                 .description("The ADC counts.")
                 .commit();
 
-        NDARRAY_ELEMENT(displayData).key("data.gain")
+        IMAGEDATA_ELEMENT(displayData).key("data.gain")
                 .displayedName("Gain")
                 .description("The ADC gain.")
-                .dtype(Types::UINT16)
-		.shape(dims)
                 .commit();
 
         OUTPUT_CHANNEL(expected).key("display")
