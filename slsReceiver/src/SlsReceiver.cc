@@ -301,6 +301,11 @@ namespace karabo {
             self->m_frameNumber.resize(framesPerTrain);
             self->m_timestamp.resize(framesPerTrain);
 
+            // Reset vectors to default
+            std::memset(self->m_memoryCell.data(), 255, self->m_memoryCell.size() * sizeof(unsigned char));
+            std::memset(self->m_frameNumber.data(), 0, self->m_frameNumber.size() * sizeof(unsigned long long));
+            std::memset(self->m_timestamp.data(), 0, self->m_timestamp.size() * sizeof(double));
+
             // Set start values
             const karabo::util::Timestamp& actualTimestamp = self->getActualTimestamp();
             self->m_lastTimestamp = actualTimestamp;
