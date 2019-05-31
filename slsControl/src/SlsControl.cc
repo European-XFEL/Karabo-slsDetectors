@@ -578,22 +578,6 @@ namespace karabo {
 
     void SlsControl::start() {
         try {
-            const std::string filePath = this->get<std::string >("dataStorage.filePath");
-            if (fs::is_regular_file(filePath)) {
-                throw KARABO_IO_EXCEPTION(std::string("Path ") + filePath + " exists but is a file");
-            } else if (fs::is_directory(filePath)) {
-                // Check that directory is writable
-                if (access(filePath.c_str(), W_OK) != 0) {
-                    throw KARABO_IO_EXCEPTION(std::string("Cannot write into directory ") + filePath);
-                }
-            } else {
-                // Output directory does not exist -> try to create it
-                bool success = fs::create_directories(filePath);
-                if (!success) {
-                    throw KARABO_IO_EXCEPTION(std::string("Cannot create directory ") + filePath);
-                }
-            }
-
             this->updateState(State::ACQUIRING);
             m_acquire_timer.expires_from_now(boost::posix_time::milliseconds(0));
             m_acquire_timer.async_wait(karabo::util::bind_weak(&SlsControl::acquireBlocking, this, boost::asio::placeholders::error));
