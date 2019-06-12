@@ -79,7 +79,7 @@ namespace karabo {
         virtual std::vector<unsigned long long> getDisplayShape() = 0;
         virtual std::vector<unsigned long long> getDaqShape(unsigned short framesPerTrain) = 0;
 
-        virtual void unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned short* gain) = 0;
+        virtual void unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain) = 0;
 
     private: // Members
 
@@ -94,7 +94,7 @@ namespace karabo {
         karabo::util::Timestamp m_lastTimestamp;
         unsigned short m_accumulatedFrames;
         unsigned short* m_adc;
-        unsigned short* m_gain;
+        unsigned char* m_gain;
         std::vector<unsigned char> m_memoryCell;
         std::vector<unsigned long long> m_frameNumber;
         std::vector<double> m_timestamp;

@@ -71,7 +71,7 @@ namespace karabo {
         return {JUNGFRAU_PIXEL_X, JUNGFRAU_PIXEL_Y, framesPerTrain};
     }
 
-    void JungfrauReceiver::unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned short* gain) {
+    void JungfrauReceiver::unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain) {
 	const size_t frameSize = this->getDetectorSize();
         size_t offset = sizeof(unsigned short) * idx * frameSize;
         const char* ptr = data + offset; // Base address of the <idx> frame
