@@ -55,7 +55,7 @@ namespace karabo {
         std::vector<unsigned long long> getDisplayShape();
         std::vector<unsigned long long> getDaqShape(unsigned short framesPerTrain);
 
-        void unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned short* gain);
+        void unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain);
 
     private: // Members
 

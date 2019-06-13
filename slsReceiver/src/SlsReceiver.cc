@@ -81,7 +81,7 @@ namespace karabo {
         NDARRAY_ELEMENT(outputData).key("data.gain")
                 .displayedName("Gain")
                 .description("The ADC gains.")
-                .dtype(karabo::util::Types::UINT16)
+                .dtype(karabo::util::Types::UINT8)
                 .readOnly()
                 .commit();
 
@@ -296,7 +296,7 @@ namespace karabo {
             const size_t size = self->getDetectorSize() * framesPerTrain;
             self->m_accumulatedFrames = 0;
             self->m_adc = new unsigned short [size];
-            self->m_gain = new unsigned short [size];
+            self->m_gain = new unsigned char [size];
             self->m_memoryCell.resize(framesPerTrain);
             self->m_frameNumber.resize(framesPerTrain);
             self->m_timestamp.resize(framesPerTrain);
@@ -421,14 +421,14 @@ namespace karabo {
                     const unsigned short frameToDisplay = self->get<unsigned short>("frameToDisplay");
                     if (frameToDisplay < framesPerTrain) {
                         const unsigned short* adcOffset = self->m_adc + frameToDisplay * self->getDetectorSize();
-                        const unsigned short* gainOffset = self->m_gain + frameToDisplay * self->getDetectorSize();
+                        const unsigned char* gainOffset = self->m_gain + frameToDisplay * self->getDetectorSize();
 			auto displayShape = self->getDisplayShape();
                         Hash display;
 
 			if (displayShape.size() == 1) {
 				// Use simple vectors for accommodating 1-dimensional arrays
                         	std::vector<unsigned short> adcData;
-                        	std::vector<unsigned short> gainData;
+                                std::vector<unsigned char> gainData;
                         	adcData.assign(adcOffset, adcOffset + self->getDetectorSize());
                         	gainData.assign(gainOffset, gainOffset + self->getDetectorSize());
 
@@ -452,9 +452,8 @@ namespace karabo {
                 }
 
                 // Reset whatever is needed
-                size_t byteSize = size * sizeof(unsigned short);
-                std::memset(self->m_adc, 0, byteSize);
-                std::memset(self->m_gain, 0, byteSize);
+                std::memset(self->m_adc, 0, size * sizeof(unsigned short));
+                std::memset(self->m_gain, 0, size * sizeof(unsigned char));
                 std::memset(self->m_memoryCell.data(), 255, self->m_memoryCell.size() * sizeof(unsigned char));
                 std::memset(self->m_frameNumber.data(), 0, self->m_frameNumber.size() * sizeof(unsigned long long));
                 std::memset(self->m_timestamp.data(), 0, self->m_timestamp.size() * sizeof(double));
@@ -561,7 +560,7 @@ namespace karabo {
         NDARRAY_ELEMENT(daqData).key("data.gain")
                 .displayedName("Gain")
                 .description("The ADC gains.")
-                .dtype(karabo::util::Types::UINT16)
+                .dtype(karabo::util::Types::UINT8)
                 .shape(karabo::util::toString(daqShape))
                 .readOnly()
                 .commit();
