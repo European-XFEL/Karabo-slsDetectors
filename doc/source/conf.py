@@ -351,7 +351,6 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 
 #we add a custum function to work with intersphinx
 import slumber
-import json
 
 # the RTDHOST should be set to localhost if you only compile on RTD
 # otherwise it needs to be set to the server hosting the internal RTD
