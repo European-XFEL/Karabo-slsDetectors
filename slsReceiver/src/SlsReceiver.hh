@@ -68,6 +68,15 @@ namespace karabo {
 
         static void rawDataReadyCallBack(char* metadata, char* dataPointer, uint32_t dataSize, void* context);
 
+        /**
+         * The base implementation returns true if meta("trainId") is incremented w.r.t. meta("lastTrainId").
+         * May be overridden in derived classes for specific behavior.
+         * 
+         * @param meta
+         * @return true if a new trainId is arrived
+         */
+        virtual bool isNewTrain(const karabo::util::Hash& meta);
+
         void logWarning(const std::string& message);
 	
 	// Make output schema fit for DAQ
