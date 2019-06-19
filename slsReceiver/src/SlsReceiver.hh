@@ -11,6 +11,8 @@
 #ifndef KARABO_SLSRECEIVER_HH
 #define KARABO_SLSRECEIVER_HH
 
+#include <boost/interprocess/sync/interprocess_semaphore.hpp>
+
 #include <karabo/karabo.hpp>
 
 #ifndef SLS_SIMULATION
@@ -27,11 +29,67 @@
  */
 namespace karabo {
 
+    // Detector data (accumulated per train)
+    struct DetectorData {
+        DetectorData() : mutex(1), adc(0), gain(0) {};
+
+        ~DetectorData() {
+            this->free();
+        }
+
+        // Semaphore to protect and synchronize access
+        boost::interprocess::interprocess_semaphore mutex;
+
+        karabo::util::Timestamp lastTimestamp;
+        unsigned short accumulatedFrames;
+        size_t size;
+        unsigned short* adc;
+        unsigned char* gain;
+        std::vector<unsigned char> memoryCell;
+        std::vector<unsigned long long> frameNumber;
+        std::vector<double> timestamp;
+
+        void free() {
+            if (adc != NULL) {
+                delete [] adc;
+            }
+            if (gain != NULL) {
+                delete [] gain;
+            }
+            size = 0;
+        }
+
+        void resize(size_t detectorSize, unsigned short framesPerTrain) {
+            this->free();
+
+            size = detectorSize * framesPerTrain;
+            adc = new unsigned short [size];
+            gain = new unsigned char [size];
+
+            memoryCell.resize(framesPerTrain);
+            frameNumber.resize(framesPerTrain);
+            timestamp.resize(framesPerTrain);
+        }
+
+        void reset() {
+            accumulatedFrames = 0;
+            std::memset(adc, 0, size * sizeof(unsigned short));
+            std::memset(gain, 0, size * sizeof(unsigned char));
+            std::memset(memoryCell.data(), 255, memoryCell.size() * sizeof(unsigned char));
+            std::memset(frameNumber.data(), 0, frameNumber.size() * sizeof(unsigned long long));
+            std::memset(timestamp.data(), 0, timestamp.size() * sizeof(double));
+        }
+
+        void resetTimestamp(const karabo::util::Timestamp& actualTimestamp) {
+            lastTimestamp = actualTimestamp;
+        }
+    };
+
     class SlsReceiver : public karabo::core::Device<> {
     public:
 
         // Add reflection and version information to this class
-        KARABO_CLASSINFO(SlsReceiver, "SlsReceiver", "2.0")
+        KARABO_CLASSINFO(SlsReceiver, "SlsReceiver", "2.5")
 
         /**
          * Necessary method as part of the factory/configuration system
@@ -82,6 +140,8 @@ namespace karabo {
 	// Make output schema fit for DAQ
         void updateOutputSchema(unsigned short framesPerTrain);
 
+        // Write to OUTPUT channels
+        void writeToOutputs(unsigned char idx, const karabo::util::Timestamp& actualTimestamp);
 
     private: // Raw data unpacking
         virtual size_t getDetectorSize() = 0;
@@ -100,19 +160,16 @@ namespace karabo {
         double m_lastRateTime;
 
         // Detector data (accumulated per train)
-        karabo::util::Timestamp m_lastTimestamp;
-        unsigned short m_accumulatedFrames;
-        unsigned short* m_adc;
-        unsigned char* m_gain;
-        std::vector<unsigned char> m_memoryCell;
-        std::vector<unsigned long long> m_frameNumber;
-        std::vector<double> m_timestamp;
+        // Use one for receiving data, the other one for writing to output channels
+        unsigned char m_detectorDataIdx;
+        DetectorData m_detectorData[2];
 
         // For rate calculation
         long long m_frameCount;
 
         const unsigned short m_maxWarnPerAcq;
         unsigned short m_warnCounter;
+
     };
 
 } /* namespace karabo */
