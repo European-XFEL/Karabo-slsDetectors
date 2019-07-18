@@ -48,6 +48,7 @@ namespace karabo {
     private: // State-machine call-backs (override)
 
     private: // Functions
+        virtual bool isNewTrain(const karabo::util::Hash& meta);
 
     private: // Raw data unpacking
 

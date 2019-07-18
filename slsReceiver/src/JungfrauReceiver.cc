@@ -49,12 +49,53 @@ namespace karabo {
                 .displayedName("Display")
                 .dataSchema(displayData)
                 .commit();
+
+        BOOL_ELEMENT(expected).key("burstMode")
+                .displayedName("Burst Mode")
+                .description("The Jungfrau is operated in \"burst mode\", "
+                "namely with external trigger and more than one memory cell.")
+                .assignmentOptional().defaultValue(false)
+                .reconfigurable()
+                .allowedStates(State::PASSIVE)
+                .commit();
+
+        INT16_ELEMENT(expected).key("storageCellStart")
+                .displayedName("Storage Cell Start")
+                .description("First storage cell used by the Jungfrau. It is usually 15.")
+                .assignmentOptional().defaultValue(15)
+                .minInc(0).maxInc(15)
+                .reconfigurable()
+                .allowedStates(State::PASSIVE)
+                .commit();
+
     }
 
     JungfrauReceiver::JungfrauReceiver(const karabo::util::Hash& config) : SlsReceiver(config) {
     }
 
     JungfrauReceiver::~JungfrauReceiver() {
+    }
+
+    bool JungfrauReceiver::isNewTrain(const karabo::util::Hash& meta) {
+        const auto trainId = meta.get<unsigned long long>("trainId");
+        const auto lastTrainId = meta.get<unsigned long long>("lastTrainId");
+
+        if (this->get<bool>("burstMode")) {
+            const auto storageCellStart = this->get<short>("storageCellStart");
+            const auto memoryCell = meta.get<unsigned char>("memoryCell");
+            if (memoryCell == storageCellStart) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        // "Standard" mode
+        if (trainId > lastTrainId) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     size_t JungfrauReceiver::getDetectorSize() {

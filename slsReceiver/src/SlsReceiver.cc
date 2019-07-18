@@ -383,7 +383,20 @@ namespace karabo {
             const unsigned long long lastTrainId = self->m_lastTimestamp.getTrainId();
             const double currentTime = actualTimestamp.toTimestamp();
             const double elapsedTime = currentTime - self->m_lastRateTime;
-            if ((trainId != lastTrainId) || (trainId == 0 && self->m_accumulatedFrames >= framesPerTrain)) {
+
+            Hash meta;
+            meta.set("trainId", trainId);
+            meta.set("lastTrainId", lastTrainId);
+
+            unsigned char memoryCell = 255; // Valid memory cells are 0-15
+            if (self->get<std::string>("classId") == "JungfrauReceiver") {
+                // "For firmware ID #181206, the number of the storage cell used to store
+                // the image is encoded in the bits 11-8 of the debug field."
+                memoryCell = (detectorHeader.debug >> 8) & 0xF;
+                meta.set("memoryCell", memoryCell);
+            }
+
+            if ((self->isNewTrain(meta) && self->m_accumulatedFrames > 0) || (trainId == 0 && self->m_accumulatedFrames >= framesPerTrain)) {
                 // New trainId, or NO trainId but enough frames collected
                 const size_t size = self->getDetectorSize() * framesPerTrain;
 		
@@ -483,11 +496,7 @@ namespace karabo {
                 try {
                     self->unpackRawData(dataPointer, i, self->m_adc + offset,
                             self->m_gain + offset);
-                    if (self->get<std::string>("classId") == "JungfrauReceiver") {
-                        // "For firmware ID #181206, the number of the storage cell used to store
-                        // the image is encoded in the bits 11-8 of the debug field."
-                        self->m_memoryCell[self->m_accumulatedFrames] = (detectorHeader.debug >> 8) & 0xF;
-                    }
+                    self->m_memoryCell[self->m_accumulatedFrames] = memoryCell;
                     self->m_frameNumber[self->m_accumulatedFrames] = detectorHeader.frameNumber;
 
                     self->m_timestamp[self->m_accumulatedFrames] = currentTime;
@@ -525,6 +534,17 @@ namespace karabo {
             self->log() << KARABO_LOG_PRIORITY_WARN << "rawDataReadyCallBack: " << e.what();
         } catch (...) {
             self->log() << KARABO_LOG_PRIORITY_WARN << "rawDataReadyCallBack: other exception";
+        }
+    }
+
+    bool SlsReceiver::isNewTrain(const karabo::util::Hash& meta) {
+        const auto trainId = meta.get<unsigned long long>("trainId");
+        const auto lastTrainId = meta.get<unsigned long long>("lastTrainId");
+
+        if (trainId > lastTrainId) {
+            return true;
+        } else {
+            return false;
         }
     }
 
