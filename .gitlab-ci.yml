@@ -1,18 +1,3 @@
-before_script:
-    - echo '*** Install cmake - needed by slsDetectorsPackage ***'
-    - export http_proxy="http://exflwgs06.desy.de:3128/"
-    - export https_proxy="http://exflwgs06.desy.de:3128/"
-    - export REL_OS_NAME=$(lsb_release -is)
-    - >
-      if [ "$REL_OS_NAME" = "CentOS" ]; then
-        yum install -y cmake
-      elif [ "$REL_OS_NAME" = "Ubuntu" ]; then
-        apt-get update
-        apt-get install -y cmake
-      fi;
-    - unset http_proxy
-    - unset https_proxy
-
 .release_build_template: &release_build
   script:
     - export REL_OS_NAME=$(lsb_release -is)
