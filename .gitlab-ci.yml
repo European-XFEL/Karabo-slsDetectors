@@ -1,18 +1,3 @@
-before_script:
-    - echo '*** Install cmake - needed by slsDetectorsPackage ***'
-    - export http_proxy="http://exflwgs06.desy.de:3128/"
-    - export https_proxy="http://exflwgs06.desy.de:3128/"
-    - export REL_OS_NAME=$(lsb_release -is)
-    - >
-      if [ "$REL_OS_NAME" = "CentOS" ]; then
-        yum install -y cmake
-      elif [ "$REL_OS_NAME" = "Ubuntu" ]; then
-        apt-get update
-        apt-get install -y cmake
-      fi;
-    - unset http_proxy
-    - unset https_proxy
-
 .release_build_template: &release_build
   script:
     - export REL_OS_NAME=$(lsb_release -is)
@@ -70,6 +55,10 @@ before_script:
 release:ubuntu16:
   image: europeanxfel/karabo-ci:ubuntu-16
   <<: *release_build
+
+release:ubuntu18:
+  image: europeanxfel/karabo-ci:ubuntu-18
+  <<: *release_build
     
 release:centos7:
   image: europeanxfel/karabo-ci:centos-7
@@ -79,6 +68,10 @@ release:centos7:
 
 test:ubuntu16:
   image: europeanxfel/karabo-ci:ubuntu-16
+  <<: *test_build
+
+test:ubuntu18:
+  image: europeanxfel/karabo-ci:ubuntu-18
   <<: *test_build
 
 test:centos7:
