@@ -137,8 +137,7 @@ namespace karabo {
         }
     }
 
-    SlsReceiver::SlsReceiver(const karabo::util::Hash& config) : Device<>(config), m_receiver(0), m_adc(0), m_gain(0),
-            m_maxWarnPerAcq(10) {
+    SlsReceiver::SlsReceiver(const karabo::util::Hash& config) : Device<>(config), m_receiver(0), m_maxWarnPerAcq(10) {
         KARABO_INITIAL_FUNCTION(initialize);
         KARABO_SLOT(reset);
     }
@@ -291,27 +290,21 @@ namespace karabo {
             self->m_frameCount = 0;
             self->updateState(State::ACTIVE);
 
-            // Allocate memory for data
-            const unsigned short framesPerTrain = self->get<unsigned short>("framesPerTrain");
-            const size_t size = self->getDetectorSize() * framesPerTrain;
-            self->m_accumulatedFrames = 0;
-            self->m_adc = new unsigned short [size];
-            self->m_gain = new unsigned char [size];
-            self->m_memoryCell.resize(framesPerTrain);
-            self->m_frameNumber.resize(framesPerTrain);
-            self->m_timestamp.resize(framesPerTrain);
-
-            // Reset vectors to default
-            std::memset(self->m_memoryCell.data(), 255, self->m_memoryCell.size() * sizeof(unsigned char));
-            std::memset(self->m_frameNumber.data(), 0, self->m_frameNumber.size() * sizeof(unsigned long long));
-            std::memset(self->m_timestamp.data(), 0, self->m_timestamp.size() * sizeof(double));
-
             // Set start values
             const karabo::util::Timestamp& actualTimestamp = self->getActualTimestamp();
-            self->m_lastTimestamp = actualTimestamp;
             self->m_lastRateTime = actualTimestamp.toTimestamp();
             self->m_lastFrameNum = 0;
             self->m_warnCounter = 0;
+
+            // Allocate memory for data
+            const unsigned short framesPerTrain = self->get<unsigned short>("framesPerTrain");
+            self->m_detectorData[0].resize(self->getDetectorSize(), framesPerTrain);
+            self->m_detectorData[1].resize(self->getDetectorSize(), framesPerTrain);
+
+            // Reset detector data
+            self->m_detectorDataIdx = 0;
+            self->m_detectorData[0].reset();
+            self->m_detectorData[1].reset();
 
         } catch (std::exception& e) {
             self->log() << KARABO_LOG_PRIORITY_WARN << "startAcquisitionCallBack: " << e.what();
@@ -348,15 +341,6 @@ namespace karabo {
             self->signalEndOfStream("daqOutput");
             self->signalEndOfStream("display");
 
-            // Free memory
-            if (self->m_adc != NULL) {
-                delete [] self->m_adc;
-                self->m_adc = NULL;
-            }
-            if (self->m_gain != NULL) {
-                delete [] self->m_gain;
-                self->m_gain = NULL;
-            }
         } catch (std::exception& e) {
             self->log() << KARABO_LOG_PRIORITY_WARN << "acquisitionFinishedCallBack: " << e.what();
         } catch (...) {
@@ -371,107 +355,39 @@ namespace karabo {
         slsReceiverDefs::sls_receiver_header* header = reinterpret_cast<slsReceiverDefs::sls_receiver_header*>(metadata);
         slsReceiverDefs::sls_detector_header detectorHeader = header->detHeader;
 
-        if (self->m_adc == NULL || self->m_gain == NULL) {
-            self->logWarning("rawDataReadyCallBack: m_adc or m_gain not yet inititalized. Skip!");
-            return;
-        }
-
         try {
             const unsigned short framesPerTrain = self->get<unsigned short>("framesPerTrain");
+            // Current time
             const karabo::util::Timestamp& actualTimestamp = self->getActualTimestamp();
-            const unsigned long long trainId = actualTimestamp.getTrainId();
-            const unsigned long long lastTrainId = self->m_lastTimestamp.getTrainId();
             const double currentTime = actualTimestamp.toTimestamp();
+            const unsigned long long trainId = actualTimestamp.getTrainId();
+            // Detector data, trainId, elapsed time
+            DetectorData* detectorData = &(self->m_detectorData[self->m_detectorDataIdx]);
+            const unsigned long long lastTrainId = detectorData->lastTimestamp.getTrainId();
             const double elapsedTime = currentTime - self->m_lastRateTime;
 
             Hash meta;
             meta.set("trainId", trainId);
             meta.set("lastTrainId", lastTrainId);
 
-            unsigned char memoryCell = 255; // Valid memory cells are 0-15
-            if (self->get<std::string>("classId") == "JungfrauReceiver") {
-                // "For firmware ID #181206, the number of the storage cell used to store
-                // the image is encoded in the bits 11-8 of the debug field."
-                memoryCell = (detectorHeader.debug >> 8) & 0xF;
-                meta.set("memoryCell", memoryCell);
-            }
+            unsigned char memoryCell = self->getMemoryCell(detectorHeader);
+            meta.set("memoryCell", memoryCell);
 
-            if ((self->isNewTrain(meta) && self->m_accumulatedFrames > 0) || (trainId == 0 && self->m_accumulatedFrames >= framesPerTrain)) {
-                // New trainId, or NO trainId but enough frames collected
-                const size_t size = self->getDetectorSize() * framesPerTrain;
-		
-		// The Pipeline shape is an array of display shapes		
-                auto vPPShape = self->getDisplayShape();
-		vPPShape.insert(vPPShape.begin(), framesPerTrain);
-                const Dims ppShape = vPPShape;
+            if ((self->isNewTrain(meta) && detectorData->accumulatedFrames > 0) || (trainId == 0 && detectorData->accumulatedFrames >= framesPerTrain)) {
+                // A call to 'writeToOutputs' will be posted if:
+                // 1) 'isNewTrain' returns true AND at least one frame has been accumulated;
+                // OR
+                // 2) 'trainId' is 0 AND 'framesPerTrain' frames are accumulated.
+                // If the SlsReceiver receives trainIds from a TimeServer, condition 1) will be satisfied as soon as a new train starts,
+                // in case there is no connection to TimeServer 2) will be satisfied when 'detectorData' is full.
 
-                const Dims daqShape = self->getDaqShape(framesPerTrain);
-                NDArray adcTrainData(self->m_adc, size, NDArray::NullDeleter(), ppShape); // No-copy constructor
-                NDArray gainTrainData(self->m_gain, size, NDArray::NullDeleter(), ppShape); // No-copy constructor
+                detectorData->mutex.wait(); // "lock", then process detectorData in the event loop
+                EventLoop::getIOService().post(karabo::util::bind_weak(&SlsReceiver::writeToOutputs, self, self->m_detectorDataIdx, actualTimestamp));
 
-                //self->log() << KARABO_LOG_FRAMEWORK_DEBUG << "Ready to output data. trainId=" << trainId <<
-                //        " lastTrainId=" << lastTrainId << " accumulatedFrames=" << self->m_accumulatedFrames;
-
-                // Send unpacked data to output channel - for PP
-
-                Hash output;
-                output.set("data.adc", adcTrainData);
-                output.set("data.gain", gainTrainData);
-                output.set("data.memoryCell", self->m_memoryCell);
-                output.set("data.frameNumber", self->m_frameNumber);
-                output.set("data.timestamp", self->m_timestamp);
-                self->writeChannel("output", output, self->m_lastTimestamp);
-
-                // Reshape ADC/gain arrays and send them to DAQ
-                adcTrainData.setShape(daqShape);
-                gainTrainData.setShape(daqShape);
-                output.set("data.adc", adcTrainData);
-                output.set("data.gain", gainTrainData);
-                self->writeChannel("daqOutput", output, self->m_lastTimestamp);
-
-                if (self->get<bool>("onlineDisplayEnable")) {
-                    // Send unpacked data to output channel - for GUI
-                    const unsigned short frameToDisplay = self->get<unsigned short>("frameToDisplay");
-                    if (frameToDisplay < framesPerTrain) {
-                        const unsigned short* adcOffset = self->m_adc + frameToDisplay * self->getDetectorSize();
-                        const unsigned char* gainOffset = self->m_gain + frameToDisplay * self->getDetectorSize();
-			auto displayShape = self->getDisplayShape();
-                        Hash display;
-
-			if (displayShape.size() == 1) {
-				// Use simple vectors for accommodating 1-dimensional arrays
-                        	std::vector<unsigned short> adcData;
-                                std::vector<unsigned char> gainData;
-                        	adcData.assign(adcOffset, adcOffset + self->getDetectorSize());
-                        	gainData.assign(gainOffset, gainOffset + self->getDetectorSize());
-
-                        	display.set("data.adc", adcData);
-                        	display.set("data.gain", gainData);
-			} else {
-				// Use IMAGEDATA and NDArrays otherwise
-        			const Dims shape = displayShape; 
-                                NDArray imgArray(adcOffset, self->getDetectorSize(), NDArray::NullDeleter());
-                                ImageData adcData(imgArray, shape, karabo::xms::Encoding::GRAY, 14);
-
-
-                                NDArray gainArray(gainOffset, self->getDetectorSize(), NDArray::NullDeleter());
-                                ImageData gainData(gainArray, shape, karabo::xms::Encoding::GRAY, 2);
-
-                        	display.set("data.adc", adcData);
-                        	display.set("data.gain", gainData);
-			}
-                        self->writeChannel("display", display, self->m_lastTimestamp);
-                    }
-                }
-
-                // Reset whatever is needed
-                std::memset(self->m_adc, 0, size * sizeof(unsigned short));
-                std::memset(self->m_gain, 0, size * sizeof(unsigned char));
-                std::memset(self->m_memoryCell.data(), 255, self->m_memoryCell.size() * sizeof(unsigned char));
-                std::memset(self->m_frameNumber.data(), 0, self->m_frameNumber.size() * sizeof(unsigned long long));
-                std::memset(self->m_timestamp.data(), 0, self->m_timestamp.size() * sizeof(double));
-                self->m_lastTimestamp = actualTimestamp;
-                self->m_accumulatedFrames = 0;
+                // Use next DetectorData object for receiving data
+                self->m_detectorDataIdx = (self->m_detectorDataIdx + 1) % 2;
+                detectorData = &(self->m_detectorData[self->m_detectorDataIdx]);
+                detectorData->resetTimestamp(actualTimestamp);
             }
 		
             const size_t frameSize = sizeof(unsigned short) * self->getDetectorSize();
@@ -484,27 +400,35 @@ namespace karabo {
                 return;
             }
 
-            if (self->m_accumulatedFrames >= framesPerTrain) {
+            detectorData->mutex.wait(); // "lock"
+            const auto accumulatedFrames = detectorData->accumulatedFrames;
+            if (accumulatedFrames >= framesPerTrain) {
                 // Already got enough frames for this train -> skip data
+                detectorData->mutex.post(); // "unlock"
                 return;
             }
 
             const unsigned int numberOfFrames = dataSize / frameSize;
 
             for (int i = 0; i < numberOfFrames; ++i) {
-                unsigned int offset = self->getDetectorSize() * self->m_accumulatedFrames;
+                const size_t offset = self->getDetectorSize() * accumulatedFrames;
                 try {
-                    self->unpackRawData(dataPointer, i, self->m_adc + offset,
-                            self->m_gain + offset);
-                    self->m_memoryCell[self->m_accumulatedFrames] = memoryCell;
-                    self->m_frameNumber[self->m_accumulatedFrames] = detectorHeader.frameNumber;
+                    self->unpackRawData(dataPointer, i, detectorData->adc + offset, detectorData->gain + offset);
+                    if (self->get<std::string>("classId") == "JungfrauReceiver") {
+                        // "For firmware ID #181206, the number of the storage cell used to store
+                        // the image is encoded in the bits 11-8 of the debug field."
+                        detectorData->memoryCell[accumulatedFrames] = (detectorHeader.debug >> 8) & 0xF;
+                    }
+                    detectorData->frameNumber[accumulatedFrames] = detectorHeader.frameNumber;
 
-                    self->m_timestamp[self->m_accumulatedFrames] = currentTime;
-                    self->m_accumulatedFrames += 1;
+                    detectorData->timestamp[accumulatedFrames] = currentTime;
+                    detectorData->accumulatedFrames += 1;
                 } catch (std::exception& e) {
                     self->logWarning(e.what());
                 }
             }
+
+            detectorData->mutex.post(); // "unlock"
 
             self->m_frameCount += numberOfFrames;
 
@@ -630,4 +554,77 @@ namespace karabo {
         }
     }
 
+    void SlsReceiver::writeToOutputs(unsigned char idx, const karabo::util::Timestamp& actualTimestamp) {
+        DetectorData* detectorData = &m_detectorData[idx];
+
+        const auto detectorSize = this->getDetectorSize();
+        const auto framesPerTrain = this->get<unsigned short>("framesPerTrain");
+        const size_t size = detectorSize * framesPerTrain;
+
+        // The Pipeline shape is an array of display shapes
+        auto vPPShape = this->getDisplayShape();
+        vPPShape.insert(vPPShape.begin(), framesPerTrain);
+        const Dims ppShape = vPPShape;
+        const Dims daqShape = this->getDaqShape(framesPerTrain);
+        NDArray adcTrainData(detectorData->adc, size, NDArray::NullDeleter(), ppShape); // No-copy constructor
+        NDArray gainTrainData(detectorData->gain, size, NDArray::NullDeleter(), ppShape); // No-copy constructor
+
+        //KARABO_LOG_FRAMEWORK_DEBUG << "Ready to output data. trainId=" << trainId <<
+        //        " lastTrainId=" << lastTrainId << " accumulatedFrames=" << detectorData.accumulatedFrames;
+
+        // Send unpacked data to output channel - for PP
+
+        Hash output;
+        output.set("data.adc", adcTrainData);
+        output.set("data.gain", gainTrainData);
+        output.set("data.memoryCell", detectorData->memoryCell);
+        output.set("data.frameNumber", detectorData->frameNumber);
+        output.set("data.timestamp", detectorData->timestamp);
+        this->writeChannel("output", output, detectorData->lastTimestamp);
+
+        // Reshape ADC/gain arrays and send them to DAQ
+        adcTrainData.setShape(daqShape);
+        gainTrainData.setShape(daqShape);
+        output.set("data.adc", adcTrainData);
+        output.set("data.gain", gainTrainData);
+        this->writeChannel("daqOutput", output, detectorData->lastTimestamp);
+
+        if (this->get<bool>("onlineDisplayEnable")) {
+            // Send unpacked data to output channel - for GUI
+            const unsigned short frameToDisplay = this->get<unsigned short>("frameToDisplay");
+            if (frameToDisplay < framesPerTrain) {
+                const unsigned short* adcOffset = detectorData->adc + frameToDisplay * detectorSize;
+                const unsigned char* gainOffset = detectorData->gain + frameToDisplay * detectorSize;
+                auto displayShape = this->getDisplayShape();
+                Hash display;
+
+                if (displayShape.size() == 1) {
+                    // Use simple vectors for accommodating 1-dimensional arrays
+                    std::vector<unsigned short> adcData;
+                    std::vector<unsigned char> gainData;
+                    adcData.assign(adcOffset, adcOffset + detectorSize);
+                    gainData.assign(gainOffset, gainOffset + detectorSize);
+
+                    display.set("data.adc", adcData);
+                    display.set("data.gain", gainData);
+                } else {
+                    // Use IMAGEDATA and NDArrays otherwise
+                    const Dims shape = displayShape;
+                    NDArray imgArray(adcOffset, detectorSize, NDArray::NullDeleter());
+                    ImageData adcData(imgArray, shape, karabo::xms::Encoding::GRAY, 14);
+
+
+                    NDArray gainArray(gainOffset, detectorSize, NDArray::NullDeleter());
+                    ImageData gainData(gainArray, shape, karabo::xms::Encoding::GRAY, 2);
+
+                    display.set("data.adc", adcData);
+                    display.set("data.gain", gainData);
+                }
+                this->writeChannel("display", display, detectorData->lastTimestamp);
+            }
+        }
+
+        detectorData->reset(); // reset detector data
+        detectorData->mutex.post(); // "unlock"
+    }
 } /* namespace karabo */
