@@ -61,7 +61,6 @@ namespace karabo {
 
         OVERWRITE_ELEMENT(expected).key("state")
                 .setNewOptions(State::UNKNOWN, State::INIT, State::ERROR, State::ON, State::ACQUIRING)
-                .setNewDefaultValue(State::INIT)
                 .commit();
 
         SLOT_ELEMENT(expected).key("start")
@@ -613,10 +612,11 @@ namespace karabo {
     void SlsControl::reset() {
         if (this->areReceiversOnline()) {
             try {
-                this->updateState(State::ON);
+                this->updateState(State::INIT);
                 KARABO_LOG_INFO << "Connected to detector(s)";
                 this->sendBaseConfiguration();
                 this->sendInitialConfiguration();
+                this->updateState(State::ON);
             } catch (karabo::util::Exception& e) {
                 this->updateState(State::ERROR);
                 KARABO_LOG_FRAMEWORK_ERROR << e;
@@ -669,11 +669,12 @@ namespace karabo {
 
         if (detectorOnline) {
             if (receiverOnline) {
-                this->updateState(State::ON);
                 KARABO_LOG_INFO << "Connected to detector(s)";
                 try {
+                    this->updateState(State::INIT);
                     this->sendBaseConfiguration();
                     this->sendInitialConfiguration();
+                    this->updateState(State::ON);
                 } catch (karabo::util::Exception& e) {
                     this->updateState(State::ERROR);
                     KARABO_LOG_FRAMEWORK_ERROR << e;
@@ -914,7 +915,7 @@ namespace karabo {
         KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::sendConfiguration";
 
         // Check that detector and receiver are online
-        if (this->getState() != State::ON) {
+        if (this->getState() != State::INIT) {
             KARABO_LOG_ERROR << "sendConfiguration(): detector or receiver is not online. Aborting!";
             return;
         }
@@ -1132,7 +1133,7 @@ namespace karabo {
         KARABO_LOG_DEBUG << "Entering SlsControl::sendConfiguration";
 
         // Check that detector and receiver are online
-        if (this->getState() != State::ON) {
+        if (this->getState() != State::INIT) {
             KARABO_LOG_FRAMEWORK_ERROR << "sendConfiguration(): detector or receiver is not online. Aborting!";
             return;
         }
