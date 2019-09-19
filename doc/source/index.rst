@@ -12,9 +12,11 @@ Contents:
 
 .. toctree::
    intro
-   installation
+   deployment
    slsControl
    slsReceiver
+   setup
+   troubleshooting
    :maxdepth: 2
 
 
@@ -25,4 +27,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
