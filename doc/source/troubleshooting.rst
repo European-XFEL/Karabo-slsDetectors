@@ -53,7 +53,17 @@ power cycle of the detector.
 The control device is in ERROR state
 ------------------------------------
 
-This usually means that the receiver device(s) is (are) not running.
+The control device will go to ERROR state if the receiver device(s) is (are)
+not running. This can happen because the instantiation sequence was not
+correct, or because the receiver device(s) went down.
+
+The correct starting sequence is
+
+* start receiver device(s) first;
+* then start the control device.
+
+To recover for the ERROR, please make sure that the receiver device(s) are
+online, then `reset` the control device.
 
 
 The control device is in INIT state
@@ -78,7 +88,11 @@ You can test it by setting the trigger mode to internal (`auto`).
 `Frame Rate Out` is not 0, but no images are visible in the GUI
 ---------------------------------------------------------------
 
-It could be that the GUI server is malfunctioning.
+First check that the flag `onlineDisplayEnable` on the receiver device is
+enabled.
+
+If the flag is set to ``True``, then it could be that the GUI server is
+malfunctioning.
 In case there is a second GUI server available for the topic, try to switch
 to that one.
 
