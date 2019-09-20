@@ -8,7 +8,7 @@ supported by PSI's slsDetectorPackage.
 The detector configuration, and the acquisition command, must be
 executed somewhere else, for example by the `command line interface
 <https://www.psi.ch/detectors/UsersSupportEN/slsDetectorClientHowTo.pdf>`_
-provided by PSI, or by a SlsDetector Karabo device.
+provided by PSI, or by a SlsControl Karabo device.
 
 
 How to create a receiver device based on slsReceiver
