@@ -90,6 +90,7 @@ namespace karabo {
         boost::asio::deadline_timer m_acquire_timer;
 
         std::string m_tmpDir;
+        unsigned int m_id; // multi-detector index
     };
 
 } /* namespace karabo */

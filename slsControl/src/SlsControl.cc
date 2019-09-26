@@ -39,12 +39,14 @@ namespace karabo {
         this->stopPoll();
 
         if (m_SLS != NULL) {
+            this->sendConfiguration("free"); // delete shared memory
+            KARABO_LOG_FRAMEWORK_DEBUG << "Delete shared memory segment " << m_id;
             delete m_SLS;
         }
 
         // Remove temporary directory and its content
         fs::remove_all(m_tmpDir);
-        KARABO_LOG_FRAMEWORK_DEBUG << "Removed temporary dir" << m_tmpDir;
+        KARABO_LOG_FRAMEWORK_DEBUG << "Removed temporary dir " << m_tmpDir;
     }
 
     void SlsControl::expectedParameters(Schema& expected) {
@@ -638,7 +640,10 @@ namespace karabo {
         // if ret != 0
         KARABO_LOG_FRAMEWORK_DEBUG << "Creating m_SLS...";
         int ret = 1;
-        m_SLS = new slsDetectorUsers(ret, 0);
+        std::hash<std::string> hash_fn;
+        m_id = (0x7FFFFFFF & hash_fn(m_tmpDir)); // Make unique index from UUID
+        KARABO_LOG_FRAMEWORK_INFO << "Multi-detector index: " << m_id;
+        m_SLS = new slsDetectorUsers(ret, m_id);
         if (ret != 0) {
             KARABO_LOG_FRAMEWORK_DEBUG << "    failed!";
             if (m_SLS != NULL) delete m_SLS;
