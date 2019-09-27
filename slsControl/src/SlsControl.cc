@@ -915,7 +915,8 @@ namespace karabo {
         KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::sendConfiguration";
 
         // Check that detector and receiver are online
-        if (this->getState() != State::INIT) {
+        auto& state = this->getState();
+        if (state != State::INIT && state != State::ON) {
             KARABO_LOG_ERROR << "sendConfiguration(): detector or receiver is not online. Aborting!";
             return;
         }
@@ -1133,7 +1134,8 @@ namespace karabo {
         KARABO_LOG_DEBUG << "Entering SlsControl::sendConfiguration";
 
         // Check that detector and receiver are online
-        if (this->getState() != State::INIT) {
+        auto& state = this->getState();
+        if (state != State::INIT && state != State::ON) {
             KARABO_LOG_FRAMEWORK_ERROR << "sendConfiguration(): detector or receiver is not online. Aborting!";
             return;
         }
