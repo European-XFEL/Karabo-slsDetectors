@@ -441,12 +441,12 @@ namespace karabo {
                 .allowedStates(State::ON)
                 .commit();
 
-        FLOAT_ELEMENT(expected).key("delayAfterTrigger")
+        VECTOR_FLOAT_ELEMENT(expected).key("delayAfterTrigger")
                 .alias("delay")
                 .tags("sls")
                 .displayedName("DelayAfterTrigger")
                 .description("delay after trigger")
-                .assignmentOptional().defaultValue(0.)
+                .assignmentOptional().defaultValue({0.})
                 .unit(Unit::SECOND)
                 .reconfigurable()
                 .allowedStates(State::ON)
