@@ -39,14 +39,33 @@ namespace karabo {
         this->stopPoll();
 
         if (m_SLS != NULL) {
-            this->sendConfiguration("free"); // delete shared memory
-            KARABO_LOG_FRAMEWORK_DEBUG << "Delete shared memory segment " << m_id;
             delete m_SLS;
         }
 
-        // Remove temporary directory and its content
-        fs::remove_all(m_tmpDir);
-        KARABO_LOG_FRAMEWORK_DEBUG << "Removed temporary dir " << m_tmpDir;
+        try {
+            bool success = true;
+            std::string baseName("/dev/shm/slsDetectorPackage_multi_" + karabo::util::toString(m_id));
+            success &= fs::remove(baseName);
+            for (size_t i = 0; i < m_numberOfModules; ++i) {
+                success &= fs::remove(baseName + "_sls_" + karabo::util::toString(i));
+            }
+            if (success) {
+                KARABO_LOG_FRAMEWORK_DEBUG << "Deleted shared memory segment " << m_id;
+            } else {
+                KARABO_LOG_FRAMEWORK_WARN << "Could not remove shared memory segment " << m_id;
+            }
+
+            // Remove temporary directory and its content
+            success = fs::remove_all(m_tmpDir);
+            if (success) {
+                KARABO_LOG_FRAMEWORK_DEBUG << "Removed temporary dir " << m_tmpDir;
+            } else {
+                KARABO_LOG_FRAMEWORK_WARN << "Could not remove temporary dir " << m_tmpDir;
+            }
+        } catch (karabo::util::Exception& e) {
+            KARABO_LOG_ERROR << e;
+        }
+
     }
 
     void SlsControl::expectedParameters(Schema& expected) {
