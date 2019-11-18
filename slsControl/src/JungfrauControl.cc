@@ -89,6 +89,7 @@ namespace karabo {
 
     void JungfrauControl::powerOn() {
         sendConfiguration("powerchip", "1");
+        sendConfiguration("reg", "4d 0x108000"); // set additional read-out timeout (bit 15)
     }
 
     const char* JungfrauControl::getCalibrationString() const {
