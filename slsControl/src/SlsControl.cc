@@ -20,7 +20,7 @@ namespace fs = boost::filesystem;
 namespace karabo {
 
     SlsControl::SlsControl(const Hash& config) : Device<>(config), m_SLS(NULL),
-    m_connect(false), m_connect_timer(EventLoop::getIOService()),
+    m_numberOfModules(0), m_connect(false), m_connect_timer(EventLoop::getIOService()),
     m_firstPoll(true), m_poll(false), m_poll_timer(EventLoop::getIOService()),
     m_acquire_timer(EventLoop::getIOService()) {
         KARABO_INITIAL_FUNCTION(initialize);
