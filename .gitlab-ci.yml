@@ -19,8 +19,8 @@
     - echo package/$REL_ARTIFACT_NAME
     - mv package/*sh $REL_ARTIFACT_NAME
     - echo $REL_ARTIFACT_DEST
-    - sshpass -p "$XDATA_PWD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null xdata@exflserv05 "mkdir -p /var/www/html/karabo/$REL_ARTIFACT_DEST"
-    - sshpass -p "$XDATA_PWD" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $REL_ARTIFACT_NAME xdata@exflserv05:/var/www/html/karabo/$REL_ARTIFACT_DEST
+    - sshpass -p "$XKARABO_PWD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null xkarabo@exflserv05 "mkdir -p /var/www/html/karabo/$REL_ARTIFACT_DEST"
+    - sshpass -p "$XKARABO_PWD" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $REL_ARTIFACT_NAME xkarabo@exflserv05:/var/www/html/karabo/$REL_ARTIFACT_DEST
   only:
     - /^(\d+\.)(\d+\.)(\d+)-(\d+\.)(\d+\.)(\d+)((a|b|rc)\d+)?$/
   except:
