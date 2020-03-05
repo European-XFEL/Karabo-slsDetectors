@@ -287,6 +287,13 @@ namespace karabo {
 
         // TODO: vthreshold, vcalibration, vtrimbit, vpreamp, vshaper1, vshaper2 ?
 
+        UINT32_ELEMENT(expected).key("vHighVoltageMax")
+                .description("Max value allowed for 'vHighVoltage'. Higher values will be rejected by the device.")
+                .assignmentOptional().defaultValue(200)
+                .reconfigurable()
+                .adminAccess()
+                .commit();
+
         VECTOR_UINT32_ELEMENT(expected).key("vHighVoltage")
                 .alias("vhighvoltage")
                 .tags("sls")
@@ -446,6 +453,7 @@ namespace karabo {
                 .displayedName("ExposureTime")
                 .description("exposure time value")
                 .assignmentOptional().defaultValue(0.001)
+                .minExc(0.)
                 .unit(Unit::SECOND)
                 .reconfigurable()
                 .allowedStates(State::ON)
@@ -1198,6 +1206,19 @@ namespace karabo {
         KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::preReconfigure";
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Incoming reconfiguration: \n" << incomingReconfiguration;
+
+        if (incomingReconfiguration.has("vHighVoltage")) {
+            // validate
+            const auto vHighVoltageMax = incomingReconfiguration.has("vHighVoltageMax") ? incomingReconfiguration.get<unsigned int>("vHighVoltageMax") : this->get<unsigned int>("vHighVoltageMax");
+            const auto vHighVoltage = incomingReconfiguration.get<std::vector<unsigned int>>("vHighVoltage");
+            for (auto value : vHighVoltage) {
+                if (value > vHighVoltageMax) {
+                    KARABO_LOG_FRAMEWORK_ERROR << "Discarding 'vHighVoltage', as it contains values higher than vHighVoltageMax (" << vHighVoltageMax << ")";
+                    incomingReconfiguration.erase("vHighVoltage");
+                }
+            }
+        }
+
         Hash h1 = this->filterByTags(incomingReconfiguration, "sls");
         KARABO_LOG_FRAMEWORK_DEBUG << "Filtered reconfiguration: \n" << h1;
 

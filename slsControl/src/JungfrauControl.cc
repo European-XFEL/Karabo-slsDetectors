@@ -37,6 +37,10 @@ namespace karabo {
                 .setNewOptions("dynamicgain dynamichg0 fixgain1 fixgain2 forceswitchg1 forceswitchg2")
                 .commit();
 
+        OVERWRITE_ELEMENT(expected).key("exposureTime") // From base class
+                .setNewMaxInc(0.001)
+                .commit();
+
         INT16_ELEMENT(expected).key("rOnline")
                 .alias("r_online")
                 .tags("sls")
