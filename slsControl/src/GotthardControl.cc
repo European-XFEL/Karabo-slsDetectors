@@ -7,6 +7,10 @@
  * Copyright (c) European XFEL GmbH Hamburg. All rights reserved.
  */
 
+#ifdef SLS_SIMULATION
+#include <slssimulation/sls_simulation_defs.h>
+#endif
+
 #include "GotthardControl.hh"
 
 USING_KARABO_NAMESPACES
@@ -16,6 +20,9 @@ namespace karabo {
     KARABO_REGISTER_FOR_CONFIGURATION(BaseDevice, Device<>, SlsControl, GotthardControl)
 
     GotthardControl::GotthardControl(const Hash& config) : SlsControl(config) {
+#ifdef SLS_SIMULATION
+        m_detectorType = slsDetectorDefs::GOTTHARD;
+#endif
     }
 
     GotthardControl::~GotthardControl() {

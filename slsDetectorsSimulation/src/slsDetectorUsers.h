@@ -102,6 +102,9 @@ public:
     // Not part of original slsDetectorUsers
     int retrieveDetectorSetup(std::string const fname);
 
+    // Different signature than original slsDetectorUsers
+    int setDetectorType(int type);
+
     std::string getDetectorType();
 
     int setReceiverMode(int n = -1);
@@ -241,6 +244,7 @@ public:
 private: // Simulation properties
 
     int m_id;
+    int m_detectorType;
     bool m_online;
     int m_status;
     std::string m_filePath;

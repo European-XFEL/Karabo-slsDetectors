@@ -4,7 +4,9 @@
 #include <cstdint>
 #include <cstdio>
 
+extern "C" {
 #include <pthread.h>
+}
 
 #include "sls_simulation_defs.h"
 
@@ -55,12 +57,15 @@ private: // Simulation properties
     int m_currAcqFrameCounter;
     int m_currFileFirstFrame;
     slsReceiverDefs::sls_receiver_header m_header;
-    char m_data[sizeof(short) * SLS_CHANNELS];
+    int m_detectorType;
+    char* m_data;
     uint32_t m_dataSize;
     int m_fileWriteOption;
     FILE* m_filePointer;
 
 private:
+    boost::asio::io_service m_io_service;
+    boost::asio::ip::tcp::acceptor *m_acceptor;
     boost::asio::ip::tcp::socket* m_sock;
     bool m_keepRunning;
     pthread_t m_tcpThread;
