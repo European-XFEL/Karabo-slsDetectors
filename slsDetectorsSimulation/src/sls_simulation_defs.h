@@ -1,11 +1,13 @@
 #ifndef SLS_SIMULATION_DEFS_H
 #define SLS_SIMULATION_DEFS_H
 
+#include <bitset>
+#include <cstdint>
+
 #define SLS_RX_DEFAULT_PORT 1954
 
-#define SLS_CHANNELS 1280
-
 #define MAX_LEN 256
+
 
 namespace slsReceiverDefs {
     /*
@@ -45,7 +47,14 @@ namespace slsReceiverDefs {
 
 }
 
+
 namespace slsDetectorDefs {
+    enum {
+            UNDEFINED,
+            GOTTHARD,
+            JUNGFRAU
+    };
+
     /*
      * return values
      */
@@ -55,6 +64,7 @@ namespace slsDetectorDefs {
             FINISHED, /**< acquisition finished */
             FORCE_UPDATE
     };
+
 }
 
 #endif

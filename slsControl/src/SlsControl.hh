@@ -72,6 +72,9 @@ namespace karabo {
         virtual const char* getSettingsString() const = 0;
 
     protected:
+#ifdef SLS_SIMULATION
+        int m_detectorType;
+#endif
         void sendConfiguration(const std::string& command, const std::string& parameters = "", int pos = -1);
 
     private: // Members

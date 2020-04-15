@@ -1,4 +1,5 @@
 #include <iostream>
+#include <unordered_map>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
@@ -13,13 +14,24 @@ using namespace boost::asio::ip;
 
 #define MAX_FRAMES_PER_FILE 20000
 
-slsReceiverUsers::slsReceiverUsers(int argc, char *argv[], int &success) : m_sock(0) {
 
+namespace slsDetectorDefs {
+    std::unordered_map<int, const int> channels{
+        {UNDEFINED, 0},
+        {GOTTHARD, 1280},
+        {JUNGFRAU, 1024 * 512}
+    };
+}
+
+
+slsReceiverUsers::slsReceiverUsers(int argc, char *argv[], int &success) : m_acceptor(0), m_sock(0) {
     m_receiverStarted = false;
     m_acquisitionStarted = false;
     m_rx_tcpport = SLS_RX_DEFAULT_PORT;
     m_frameCounter = 0;
-    m_dataSize = sizeof(short) * SLS_CHANNELS;
+    m_detectorType = slsDetectorDefs::UNDEFINED;
+    m_dataSize = 0;
+    m_data = NULL;
     m_filePointer = NULL;
 
     m_startAcquisitionCallBack = NULL;
@@ -30,18 +42,26 @@ slsReceiverUsers::slsReceiverUsers(int argc, char *argv[], int &success) : m_soc
     m_pRawDataReady = NULL;
 
     for (int i = 0; i < argc; ++i) {
-        std::string line = argv[i];
-        std::vector<std::string> v;
-        boost::algorithm::split(v, line, boost::algorithm::is_space());
-        if (v[0] == "--rx_tcpport" && v.size() > 1)
-            m_rx_tcpport = std::stoi(v[1]);
-        // TODO more parameters?
+        if (strcmp(argv[i], "--rx_tcpport") == 0 || strcmp(argv[i], "-t") == 0) {
+            if (++i < argc) { // port number is the next argument
+                m_rx_tcpport = std::stoi(argv[i]);
+            }
+        }
     }
-    
+
     m_keepRunning = true;
     success = 0; // OK
-    success += pthread_create(&m_tcpThread, NULL, tcpWorker, (void*) this);
-    
+
+    try {
+        tcp::endpoint endpoint(tcp::v4(), m_rx_tcpport);
+        m_acceptor = new tcp::acceptor(m_io_service, endpoint);
+
+        success += pthread_create(&m_tcpThread, NULL, tcpWorker, (void*) this);
+    } catch (const std::exception& e) {
+        ++success;
+        std::cout << "slsReceiverUsers::slsReceiverUsers: " << e.what() << std::endl;
+    }
+
     srand(time(NULL));
 }
 
@@ -50,6 +70,8 @@ slsReceiverUsers::~slsReceiverUsers() {
     this->stopTcpServer();
     pthread_join(m_tcpThread, NULL);
     if (m_sock) delete m_sock;
+    if (m_acceptor) delete m_acceptor;
+    if (m_data) delete[] m_data;
 }
 
 void slsReceiverUsers::closeFile(int p) {
@@ -89,10 +111,6 @@ void slsReceiverUsers::registerCallBackRawDataReady(void (*func)(char* metadata,
 void* slsReceiverUsers::tcpWorker(void* self) {
     slsReceiverUsers* receiver = static_cast<slsReceiverUsers*> (self);
 
-    boost::asio::io_service io_service;
-    tcp::endpoint endpoint(tcp::v4(), receiver->m_rx_tcpport);
-    tcp::acceptor acceptor(io_service, endpoint);
-    
     while (receiver->m_keepRunning) {
 
         try {
@@ -100,9 +118,9 @@ void* slsReceiverUsers::tcpWorker(void* self) {
                 delete receiver->m_sock;
                 receiver->m_sock = NULL;
             }
-            receiver->m_sock = new boost::asio::ip::tcp::socket(io_service);
-            acceptor.accept(*receiver->m_sock);
-                        
+            receiver->m_sock = new tcp::socket(receiver->m_io_service);
+            receiver->m_acceptor->accept(*receiver->m_sock);
+
             while (receiver->m_keepRunning) {
                 char data[MAX_LEN];
                 memset(data, 0, MAX_LEN);
@@ -122,7 +140,7 @@ void* slsReceiverUsers::tcpWorker(void* self) {
 
                 for (auto it = r.begin(); it != r.end(); ++it) {
                     if (*it == "") continue; // Skip empty lines
-                    //std::cout << "echo: " << *it << std::endl;
+                    // std::cout << "echo: " << *it << std::endl; // XXX
 
                     // Split command and parameters
                     std::vector<std::string> v;
@@ -136,11 +154,43 @@ void* slsReceiverUsers::tcpWorker(void* self) {
                             continue;
                         }
                         try {
+                            // Allocate memory for two samples
+                            const int channels = slsDetectorDefs::channels[receiver->m_detectorType];
+                            receiver->m_dataSize = 2 * channels * sizeof(short);
+                            receiver->m_data = new char[receiver->m_dataSize];
+
+                            const short gain = receiver->m_settings;
+                            int baseline, noise; // simulated signal baseline and noise
+                            switch(gain) {
+                            case 4: // low gain
+                                baseline = 1962;
+                                noise = 113;
+                                break;
+                            case  5: // medium gain
+                                baseline = 2676;
+                                noise = 79;
+                                break;
+                            case 6: // very high gain
+                                baseline = 5431;
+                                noise = 187;
+                                break;
+                            default: // high gain
+                                baseline = 4781;
+                                noise = 156;
+                            }
+
+                            // Generate random data
+                            short* adc_and_gain = reinterpret_cast<short*>(receiver->m_data);
+                            for (int i = 0; i < 2 * channels; ++i) {
+                                adc_and_gain[i] = baseline + rand()%noise; // Generate random data
+                                adc_and_gain[i] |= (gain << 14); // Pack gain together with ADC value
+                            }
+
                             if (receiver->m_startAcquisitionCallBack != NULL) {
                                 char* filepath = const_cast<char*> (receiver->m_filePath.c_str());
                                 char* filename = const_cast<char*> (receiver->m_fileName.c_str());
                                 uint64_t fileindex = receiver->m_fileIndex;
-                                uint32_t datasize = receiver->m_dataSize;
+                                uint32_t datasize = channels * sizeof(short); // sample data size
                                 int result = receiver->m_startAcquisitionCallBack(filepath, filename, fileindex, datasize, receiver->m_pStartAcquisition);
 
                                 if (receiver->m_enableWriteToFile) {
@@ -150,8 +200,9 @@ void* slsReceiverUsers::tcpWorker(void* self) {
                                     receiver->m_filePointer = fopen(fname.c_str(), "w");
                                 }
                             }
+
                             receiver->m_acquisitionStarted = true;
-                        } catch (std::exception e) {
+                        } catch (const std::exception& e) {
                             std::cout << "slsReceiverUsers::tcpWorker: " << e.what() << std::endl;
                         }
                     } else if (v[0] == "stop") {
@@ -169,7 +220,10 @@ void* slsReceiverUsers::tcpWorker(void* self) {
                                 }
                             }
                             receiver->m_acquisitionStarted = false;
-                        } catch (std::exception e) {
+                            receiver->m_dataSize = 0;
+                            delete[] receiver->m_data;
+                            receiver->m_data = NULL;
+                        } catch (const std::exception& e) {
                             std::cout << "slsReceiverUsers::tcpWorker: " << e.what() << std::endl;
                         }
                     } else if (v[0] == "rawdata") {
@@ -195,34 +249,14 @@ void* slsReceiverUsers::tcpWorker(void* self) {
                                 detectorHeader->reserved = 0;
                                 detectorHeader->debug = 0;
                                 detectorHeader->roundRNumber = 0;
-                                detectorHeader->detType = 4; // Gotthard
+                                detectorHeader->detType = 4; // Gotthard // TODO
                                 detectorHeader->version = 1;
                                 receiver->m_header.packetsMask.reset();
 
-                                char* dataPointer = receiver->m_data;
-                                const uint32_t dataSize = receiver->m_dataSize;
-
-                                const short gain = receiver->m_settings;
-                                short* adc_and_gain = reinterpret_cast<short*>(dataPointer);
-
-                                // default (high gain)
-                                int baseline = 4781;
-                                int noise = 156;
-                                if (gain == 4) { // low gain
-                                    baseline = 1962;
-                                    noise = 113;
-                                } else if (gain == 5) { // medium gain
-                                    baseline = 2676;
-                                    noise = 79;
-                                } else if (gain == 6) { // very high gain
-                                    baseline = 5431;
-                                    noise = 187;
-                                }
-
-                                for (int i=0; i<SLS_CHANNELS; ++i) {
-                                    adc_and_gain[i] = baseline + rand()%noise; // Generate random data
-                                    adc_and_gain[i] |= (gain << 14); // Pack gain together with ADC value
-                                }
+                                const int channels = slsDetectorDefs::channels[receiver->m_detectorType];
+                                const uint32_t dataSize = channels * sizeof(short);
+                                // randomly access m_data, which is twice as large as one sample
+                                char* dataPointer = receiver->m_data + sizeof(short) * rand() % channels;
 
                                 // Pass frame and metadata to callback
                                 char* metadata = reinterpret_cast<char*>(&receiver->m_header);
@@ -243,9 +277,11 @@ void* slsReceiverUsers::tcpWorker(void* self) {
                                 if (receiver->m_enableWriteToFile)
                                     fwrite(dataPointer, sizeof(char), dataSize, receiver->m_filePointer);
                             }
-                        } catch (std::exception e) {
+                        } catch (const std::exception& e) {
                             std::cout << "slsReceiverUsers::tcpWorker: " << e.what() << std::endl;
                         }
+                    } else if (v[0] == "detectortype" && v.size() > 1) {
+                        receiver->m_detectorType = std::stoi(v[1]);
                     } else if (v[0] == "outdir" && v.size() > 1) {
                         receiver->m_filePath = v[1];
                     } else if (v[0] == "fname" && v.size() > 1) {
@@ -259,7 +295,7 @@ void* slsReceiverUsers::tcpWorker(void* self) {
                     }
                 }
             }
-        } catch (std::exception e) {
+        } catch (const std::exception& e) {
             boost::this_thread::sleep(boost::posix_time::milliseconds(100));
             std::cout << "slsReceiverUsers::tcpWorker: " << e.what() << std::endl;
         } catch (...) {
@@ -271,7 +307,7 @@ void* slsReceiverUsers::tcpWorker(void* self) {
 }
 
 void slsReceiverUsers::stopTcpServer() {
-    boost::asio::ip::tcp::iostream s;
+    tcp::iostream s;
 
     try {
         // The entire sequence of I/O operations must complete within 5 seconds.
@@ -286,7 +322,7 @@ void slsReceiverUsers::stopTcpServer() {
         s << "bye";
         s.flush();
 
-    } catch (std::exception e) {
+    } catch (const std::exception& e) {
         std::cout << "slsReceiverUsers::stopTcpServer: " << e.what() << std::endl;
     }
 }

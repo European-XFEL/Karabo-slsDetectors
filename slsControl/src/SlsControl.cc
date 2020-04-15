@@ -123,7 +123,7 @@ namespace karabo {
                 .tags("sls")
                 .displayedName("detectorHostPort")
                 .description("Detector Host Port. Will use 1952 if left empty.")
-                .assignmentOptional().noDefaultValue()
+                .assignmentOptional().defaultValue({})
                 .commit();
 
         VECTOR_UINT16_ELEMENT(expected).key("detectorHostStopPort")
@@ -706,6 +706,9 @@ namespace karabo {
                     this->updateState(State::INIT);
                     this->sendBaseConfiguration();
                     this->sendInitialConfiguration();
+#ifdef SLS_SIMULATION
+                    m_SLS->setDetectorType(m_detectorType);
+#endif
                     this->updateState(State::ON);
                 } catch (karabo::util::Exception& e) {
                     this->updateState(State::ERROR);

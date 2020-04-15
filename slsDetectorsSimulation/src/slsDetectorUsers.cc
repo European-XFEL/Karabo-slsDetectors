@@ -11,6 +11,7 @@
 
 slsDetectorUsers::slsDetectorUsers(int& ret, int id) {
     m_id = id;
+    m_detectorType = slsDetectorDefs::UNDEFINED;
     m_online = true;
     m_status = 0; // idle
     m_filePath = "";
@@ -501,8 +502,22 @@ int slsDetectorUsers::retrieveDetectorSetup(std::string const fname) {
     return 0;
 }
 
+int slsDetectorUsers::setDetectorType(int type) {
+    m_detectorType = type;
+    return type;
+}
+
 std::string slsDetectorUsers::getDetectorType() {
-    return "Gotthard";
+    switch(m_detectorType) {
+    case slsDetectorDefs::GOTTHARD:
+        return "Gotthard";
+        break;
+    case slsDetectorDefs::JUNGFRAU:
+        return "Jungfrau";
+        break;
+    default:
+        return "Undefined";
+    }
 }
 
 int slsDetectorUsers::setReceiverMode(int n) {
@@ -901,11 +916,13 @@ std::string slsDetectorUsers::getCommand(int narg, char *args[], int pos) {
 
 void slsDetectorUsers::configureReceiver() {
     // This is the minimal configuration of the receiver
-    this->toReceiver(std::string("outdir ") + m_filePath);
-    this->toReceiver(std::string("fname ") + m_fileName);
-    this->toReceiver(std::string("index ") + std::to_string(m_fileIndex));
-    this->toReceiver(std::string("enablefwrite") + std::to_string(m_enableWriteToFile));
-    this->toReceiver(std::string("settings ") + std::to_string(m_settings));
+    this->toReceiver("hello");
+    this->toReceiver("detectortype", std::to_string(m_detectorType));
+    this->toReceiver("outdir", m_filePath);
+    this->toReceiver("fname", m_fileName);
+    this->toReceiver("index", std::to_string(m_fileIndex));
+    this->toReceiver("enablefwrite", std::to_string(m_enableWriteToFile));
+    this->toReceiver("settings", std::to_string(m_settings));
 }
 
 void slsDetectorUsers::toReceiver(const std::string& command, const std::string& parameters) {
