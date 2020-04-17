@@ -27,6 +27,9 @@ namespace slsDetectorDefs {
 slsReceiverUsers::slsReceiverUsers(int argc, char *argv[], int &success) : m_acceptor(0), m_sock(0) {
     m_receiverStarted = false;
     m_acquisitionStarted = false;
+    m_delay_us = 0;
+    m_exptime_us = 10;
+    m_period_us = 1000000;
     m_rx_tcpport = SLS_RX_DEFAULT_PORT;
     m_frameCounter = 0;
     m_detectorType = slsDetectorDefs::UNDEFINED;
@@ -154,6 +157,8 @@ void* slsReceiverUsers::tcpWorker(void* self) {
                             continue;
                         }
                         try {
+                            // TODO move memory allocation and random data generation to the "detectortype" section
+
                             // Allocate memory for two samples
                             const int channels = slsDetectorDefs::channels[receiver->m_detectorType];
                             receiver->m_dataSize = 2 * channels * sizeof(short);
@@ -201,6 +206,14 @@ void* slsReceiverUsers::tcpWorker(void* self) {
                                 }
                             }
 
+                            // start providing data in a thread
+                            const int ret = pthread_create(&receiver->m_dataThread, NULL, dataWorker, self);
+                            if (ret != 0) {
+                                std::cout << "slsReceiverUsers::tcpWorker: cannot create data thread. ret="
+                                    << ret << std::endl;
+                                continue;
+                            }
+
                             receiver->m_acquisitionStarted = true;
                         } catch (const std::exception& e) {
                             std::cout << "slsReceiverUsers::tcpWorker: " << e.what() << std::endl;
@@ -220,66 +233,23 @@ void* slsReceiverUsers::tcpWorker(void* self) {
                                 }
                             }
                             receiver->m_acquisitionStarted = false;
+
+                            // Wait for data thread to quit
+                            pthread_join(receiver->m_dataThread, NULL);
+
                             receiver->m_dataSize = 0;
                             delete[] receiver->m_data;
                             receiver->m_data = NULL;
                         } catch (const std::exception& e) {
                             std::cout << "slsReceiverUsers::tcpWorker: " << e.what() << std::endl;
                         }
-                    } else if (v[0] == "rawdata") {
-                        if (!receiver->m_acquisitionStarted) {
-                            // Not started -> ignore
-                            continue;
-                        }
-
-                        receiver->m_frameCounter += 1;
-                        try {
-                            if (receiver->m_rawDataReadyCallBack != NULL) {
-                                // Fill-up header
-                                slsReceiverDefs::sls_detector_header* detectorHeader = &(receiver->m_header.detHeader);
-
-                                detectorHeader->frameNumber = receiver->m_frameCounter;
-                                detectorHeader->expLength = 0;
-                                detectorHeader->packetNumber = 2;
-                                detectorHeader->bunchId = 0;
-                                detectorHeader->timestamp = 0;
-                                detectorHeader->modId = 0 ;
-                                detectorHeader->row = 0;
-                                detectorHeader->column = 0;
-                                detectorHeader->reserved = 0;
-                                detectorHeader->debug = 0;
-                                detectorHeader->roundRNumber = 0;
-                                detectorHeader->detType = 4; // Gotthard // TODO
-                                detectorHeader->version = 1;
-                                receiver->m_header.packetsMask.reset();
-
-                                const int channels = slsDetectorDefs::channels[receiver->m_detectorType];
-                                const uint32_t dataSize = channels * sizeof(short);
-                                // randomly access m_data, which is twice as large as one sample
-                                char* dataPointer = receiver->m_data + sizeof(short) * rand() % channels;
-
-                                // Pass frame and metadata to callback
-                                char* metadata = reinterpret_cast<char*>(&receiver->m_header);
-                                receiver->m_rawDataReadyCallBack(metadata, dataPointer, dataSize, receiver->m_pRawDataReady);
-
-                                // Open new file if needed
-                                if (receiver->m_enableWriteToFile) {
-                                    ++receiver->m_currAcqFrameCounter;
-                                    if (receiver->m_currAcqFrameCounter - receiver->m_currFileFirstFrame >= MAX_FRAMES_PER_FILE) {
-                                        receiver->m_currFileFirstFrame = receiver->m_currAcqFrameCounter;
-                                        std::string fname = receiver->generateFileName();
-                                        fclose(receiver->m_filePointer);
-                                        receiver->m_filePointer = fopen(fname.c_str(), "w");
-                                    }
-                                }
-
-                                // Write frame to file
-                                if (receiver->m_enableWriteToFile)
-                                    fwrite(dataPointer, sizeof(char), dataSize, receiver->m_filePointer);
-                            }
-                        } catch (const std::exception& e) {
-                            std::cout << "slsReceiverUsers::tcpWorker: " << e.what() << std::endl;
-                        }
+                    // TODO print warning if the second parameter is missing
+                    } else if (v[0] == "exptime" && v.size() > 1) {
+                        receiver->m_exptime_us = 1000000 * std::stof(v[1]);
+                    } else if (v[0] == "delay" && v.size() > 1) {
+                        receiver->m_delay_us = 1000000 * std::stof(v[1]);
+                    } else if (v[0] == "period" && v.size() > 1) {
+                        receiver->m_period_us = 1000000 * std::stof(v[1]);
                     } else if (v[0] == "detectortype" && v.size() > 1) {
                         receiver->m_detectorType = std::stoi(v[1]);
                     } else if (v[0] == "outdir" && v.size() > 1) {
@@ -303,6 +273,69 @@ void* slsReceiverUsers::tcpWorker(void* self) {
             std::cout << "slsReceiverUsers::tcpWorker: " << "unknown exception" << std::endl;
         }
         
+    }
+}
+
+void* slsReceiverUsers::dataWorker(void* self) {
+    slsReceiverUsers* receiver = static_cast<slsReceiverUsers*> (self);
+
+    // Fill-up header
+    slsReceiverDefs::sls_detector_header* detectorHeader = &(receiver->m_header.detHeader);
+
+    detectorHeader->expLength = 0;
+    detectorHeader->packetNumber = 2;
+    detectorHeader->bunchId = 0;
+    detectorHeader->timestamp = 0;
+    detectorHeader->modId = 0 ;
+    detectorHeader->row = 0;
+    detectorHeader->column = 0;
+    detectorHeader->reserved = 0;
+    detectorHeader->debug = 0;
+    detectorHeader->roundRNumber = 0;
+    detectorHeader->detType = 4; // Gotthard // TODO
+    detectorHeader->version = 1;
+
+    const int channels = slsDetectorDefs::channels[receiver->m_detectorType];
+    const uint32_t dataSize = channels * sizeof(short);
+    char *dataPointer, *metadata;
+
+    while (receiver->m_acquisitionStarted) {
+        receiver->m_frameCounter += 1;
+        detectorHeader->frameNumber = receiver->m_frameCounter;
+        receiver->m_header.packetsMask.reset();
+
+        // randomly access m_data, which is twice as large as one sample
+        dataPointer = receiver->m_data + sizeof(short) * rand() % channels;
+
+        // Pass frame and metadata to callback
+        metadata = reinterpret_cast<char*>(&receiver->m_header);
+        receiver->m_rawDataReadyCallBack(metadata, dataPointer, dataSize, receiver->m_pRawDataReady);
+
+        if (receiver->m_enableWriteToFile) {
+            ++receiver->m_currAcqFrameCounter;
+
+            if (receiver->m_currAcqFrameCounter - receiver->m_currFileFirstFrame >= MAX_FRAMES_PER_FILE) {
+            // Open new file if needed
+                receiver->m_currFileFirstFrame = receiver->m_currAcqFrameCounter;
+                std::string fname = receiver->generateFileName();
+                fclose(receiver->m_filePointer);
+                receiver->m_filePointer = fopen(fname.c_str(), "w");
+            }
+
+            // Write frame to file
+            fwrite(dataPointer, sizeof(char), dataSize, receiver->m_filePointer);
+        }
+
+        // Note: Subtract 1 us to take somehow into account dead times. A more sophisticated
+        //       way would be to iteratively correct the sleep time in the loop.
+        const long acq_time_us = receiver->m_delay_us + receiver->m_exptime_us - 1;
+        if (acq_time_us > 0)
+            boost::this_thread::sleep(boost::posix_time::microseconds(acq_time_us));
+
+        const long sleep_time_us = receiver->m_period_us - receiver->m_delay_us - receiver->m_exptime_us - 1;
+        if (sleep_time_us > 0)
+            boost::this_thread::sleep(boost::posix_time::microseconds(sleep_time_us));
+
     }
 }
 

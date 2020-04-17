@@ -46,6 +46,10 @@ private: // Simulation properties
     bool m_receiverStarted;
     bool m_acquisitionStarted;
 
+    long m_delay_us;
+    long m_exptime_us;
+    long m_period_us;
+
     std::string m_filePath;
     std::string m_fileName;
     uint64_t m_fileIndex;
@@ -65,11 +69,12 @@ private: // Simulation properties
 
 private:
     boost::asio::io_service m_io_service;
-    boost::asio::ip::tcp::acceptor *m_acceptor;
+    boost::asio::ip::tcp::acceptor* m_acceptor;
     boost::asio::ip::tcp::socket* m_sock;
     bool m_keepRunning;
-    pthread_t m_tcpThread;
+    pthread_t m_tcpThread, m_dataThread;
     static void* tcpWorker(void* self);
+    static void* dataWorker(void* self);
     void stopTcpServer();
     std::string generateFileName();
 
