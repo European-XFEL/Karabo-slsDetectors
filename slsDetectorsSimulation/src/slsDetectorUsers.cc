@@ -918,6 +918,9 @@ void slsDetectorUsers::configureReceiver() {
     // This is the minimal configuration of the receiver
     this->toReceiver("hello");
     this->toReceiver("detectortype", std::to_string(m_detectorType));
+    this->toReceiver("exptime", std::to_string(m_exposureTime));
+    this->toReceiver("delay", std::to_string(m_delayAfterTrigger));
+    this->toReceiver("period", std::to_string(m_exposurePeriod));
     this->toReceiver("outdir", m_filePath);
     this->toReceiver("fname", m_fileName);
     this->toReceiver("index", std::to_string(m_fileIndex));
@@ -1002,8 +1005,6 @@ void* slsDetectorUsers::dataWorker(void* self) {
             continue;
         } else if (detector->m_status == 5) {
             boost::this_thread::sleep(boost::posix_time::microseconds(delay_us + exptime_us));
-            // std::cout << "Sending 'rawdata' command to receiver" << std::endl;
-            detector->toReceiver("rawdata"); // receiver must generate data
             --(detector->m_neededFrames);
             if (period_us > exptime_us)
                 boost::this_thread::sleep(boost::posix_time::microseconds(period_us - exptime_us));
