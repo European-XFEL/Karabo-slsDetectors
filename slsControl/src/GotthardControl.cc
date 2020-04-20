@@ -21,7 +21,7 @@ namespace karabo {
 
     GotthardControl::GotthardControl(const Hash& config) : SlsControl(config) {
 #ifdef SLS_SIMULATION
-        m_detectorType = slsDetectorDefs::GOTTHARD;
+        m_detectorType = static_cast<int>(detectorType::GOTTHARD);
 #endif
     }
 

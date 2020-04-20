@@ -49,16 +49,10 @@ namespace slsReceiverDefs {
 
 
 namespace slsDetectorDefs {
-    enum {
-            UNDEFINED,
-            GOTTHARD,
-            JUNGFRAU
-    };
-
     /*
      * return values
      */
-    enum  {
+    enum {
             OK, /**< function succeeded */
             FAIL, /**< function failed */
             FINISHED, /**< acquisition finished */
@@ -66,5 +60,49 @@ namespace slsDetectorDefs {
     };
 
 }
+
+
+/*
+ *   detector settings indexes
+ */
+enum class detectorSettings {
+    GET_SETTINGS=-1,  /**< return current detector settings */
+    STANDARD,         /**< standard settings */
+    FAST,             /**< fast settings */
+    HIGHGAIN,         /**< highgain  settings */
+    DYNAMICGAIN,      /**< dynamic gain  settings */
+    LOWGAIN,          /**< low gain  settings */
+    MEDIUMGAIN,       /**< medium gain  settings */
+    VERYHIGHGAIN,     /**< very high gain  settings */
+    LOWNOISE,         /**< low noise settings */
+    DYNAMICHG0,       /**< dynamic high gain 0 */
+    FIXGAIN1,         /**< fix gain 1 */
+    FIXGAIN2,         /**< fix gain 2 */
+    FORCESWITCHG1,    /**< force switch gain 1 */
+    FORCESWITCHG2,    /**< force switch gain 2 */
+    VERYLOWGAIN,      /**< very low gain settings */
+    UNDEFINED=200,    /**< undefined or custom  settings */
+    UNINITIALIZED     /**< uninitialiazed (status at startup) */
+};
+
+
+/*
+ * Type of the detector
+ */
+enum class detectorType {
+    GET_DETECTOR_TYPE=-1,   /**< the detector will return its type */
+    GENERIC,  /**< generic sls detector */
+    MYTHEN, /**< mythen */
+    PILATUS, /**< pilatus */
+    EIGER, /**< eiger */
+    GOTTHARD, /**< gotthard */
+    PICASSO, /**< picasso */
+    AGIPD, /**< agipd */
+    MOENCH, /**< moench */
+    JUNGFRAU, /**< jungfrau */
+    JUNGFRAUCTB, /**< jungfrauCTBversion */
+    PROPIX, /**< propix */
+    MYTHEN3 /**< mythen 3 */
+};
 
 #endif

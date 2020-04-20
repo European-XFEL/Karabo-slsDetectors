@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <unordered_map>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -9,9 +10,18 @@
 #include "sls_simulation_defs.h"
 #include "slsDetectorUsers.h"
 
+namespace slsDetectorDefs {
+    std::unordered_map<int, std::string> detector_type_string {
+        {static_cast<int>(detectorType::GENERIC), "Undefined"},
+        {static_cast<int>(detectorType::GOTTHARD), "Gotthard"},
+        {static_cast<int>(detectorType::JUNGFRAU), "Jungfrau"}
+    };
+}
+
+
 slsDetectorUsers::slsDetectorUsers(int& ret, int id) {
     m_id = id;
-    m_detectorType = slsDetectorDefs::UNDEFINED;
+    m_detectorType = static_cast<int>(detectorType::GET_DETECTOR_TYPE);
     m_online = true;
     m_status = 0; // idle
     m_filePath = "";
@@ -508,16 +518,12 @@ int slsDetectorUsers::setDetectorType(int type) {
 }
 
 std::string slsDetectorUsers::getDetectorType() {
-    switch(m_detectorType) {
-    case slsDetectorDefs::GOTTHARD:
-        return "Gotthard";
-        break;
-    case slsDetectorDefs::JUNGFRAU:
-        return "Jungfrau";
-        break;
-    default:
-        return "Undefined";
+    int detType = m_detectorType;
+    if (slsDetectorDefs::detector_type_string.count(detType) == 0) {
+        detType = static_cast<int>(detectorType::GENERIC);
     }
+
+    return slsDetectorDefs::detector_type_string[detType];
 }
 
 int slsDetectorUsers::setReceiverMode(int n) {

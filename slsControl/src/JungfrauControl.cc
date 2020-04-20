@@ -21,7 +21,7 @@ namespace karabo {
 
     JungfrauControl::JungfrauControl(const Hash& config) : SlsControl(config) {
 #ifdef SLS_SIMULATION
-        m_detectorType = slsDetectorDefs::JUNGFRAU;
+        m_detectorType = static_cast<int>(detectorType::JUNGFRAU);
 #endif
     }
 
