@@ -14,12 +14,34 @@ using namespace boost::asio::ip;
 
 #define MAX_FRAMES_PER_FILE 20000
 
+#define WARN_MISSING_PARAMETER(command) std::cout << "WARN " << command << " command need additional parameter!" << std::endl;
 
 namespace slsDetectorDefs {
-    std::unordered_map<int, const int> channels{
-        {UNDEFINED, 0},
-        {GOTTHARD, 1280},
-        {JUNGFRAU, 1024 * 512}
+    std::unordered_map<int, const int> channels {
+        {static_cast<int>(detectorType::GET_DETECTOR_TYPE), 0}, // UNDEFINED
+        {static_cast<int>(detectorType::GOTTHARD), 1280},
+        {static_cast<int>(detectorType::JUNGFRAU), 1024 * 512}
+    };
+
+
+    std::unordered_map<int, const std::vector<int>> generic_baseline_noise {
+        {static_cast<int>(detectorSettings::UNINITIALIZED), {81, 12}}
+    };
+
+
+    std::unordered_map<int, const std::vector<int>> gotthard_baseline_noise {
+        {static_cast<int>(detectorSettings::UNINITIALIZED), {4781, 156}}, // Default: HIGHGAIN
+        {static_cast<int>(detectorSettings::LOWGAIN), {1962, 113}},
+        {static_cast<int>(detectorSettings::MEDIUMGAIN), {2676, 79}},
+        {static_cast<int>(detectorSettings::HIGHGAIN), {4781, 156}},
+        {static_cast<int>(detectorSettings::VERYHIGHGAIN), {5431, 187}}
+    };
+
+
+    std::unordered_map<int, std::unordered_map<int, const std::vector<int>>> baseline_noise {
+        {static_cast<int>(detectorType::GENERIC), generic_baseline_noise},
+        {static_cast<int>(detectorType::GOTTHARD), gotthard_baseline_noise}
+        //{static_cast<int>(detectorType::JUNGFRAU), jungfrau_baseline_noise} // TODO
     };
 }
 
@@ -31,8 +53,9 @@ slsReceiverUsers::slsReceiverUsers(int argc, char *argv[], int &success) : m_acc
     m_exptime_us = 10;
     m_period_us = 1000000;
     m_rx_tcpport = SLS_RX_DEFAULT_PORT;
+    m_settings = static_cast<int>(detectorSettings::UNINITIALIZED);
     m_frameCounter = 0;
-    m_detectorType = slsDetectorDefs::UNDEFINED;
+    m_detectorType = static_cast<int>(detectorType::GET_DETECTOR_TYPE); // UNDEFINED
     m_dataSize = 0;
     m_data = NULL;
     m_filePointer = NULL;
@@ -156,47 +179,16 @@ void* slsReceiverUsers::tcpWorker(void* self) {
                             // Already started -> ignore
                             continue;
                         }
+
                         try {
-                            // TODO move memory allocation and random data generation to the "detectortype" section
-
-                            // Allocate memory for two samples
-                            const int channels = slsDetectorDefs::channels[receiver->m_detectorType];
-                            receiver->m_dataSize = 2 * channels * sizeof(short);
-                            receiver->m_data = new char[receiver->m_dataSize];
-
-                            const short gain = receiver->m_settings;
-                            int baseline, noise; // simulated signal baseline and noise
-                            switch(gain) {
-                            case 4: // low gain
-                                baseline = 1962;
-                                noise = 113;
-                                break;
-                            case  5: // medium gain
-                                baseline = 2676;
-                                noise = 79;
-                                break;
-                            case 6: // very high gain
-                                baseline = 5431;
-                                noise = 187;
-                                break;
-                            default: // high gain
-                                baseline = 4781;
-                                noise = 156;
-                            }
-
-                            // Generate random data
-                            short* adc_and_gain = reinterpret_cast<short*>(receiver->m_data);
-                            for (int i = 0; i < 2 * channels; ++i) {
-                                adc_and_gain[i] = baseline + rand()%noise; // Generate random data
-                                adc_and_gain[i] |= (gain << 14); // Pack gain together with ADC value
-                            }
-
                             if (receiver->m_startAcquisitionCallBack != NULL) {
+                                // call registered start function
                                 char* filepath = const_cast<char*> (receiver->m_filePath.c_str());
                                 char* filename = const_cast<char*> (receiver->m_fileName.c_str());
-                                uint64_t fileindex = receiver->m_fileIndex;
-                                uint32_t datasize = channels * sizeof(short); // sample data size
-                                int result = receiver->m_startAcquisitionCallBack(filepath, filename, fileindex, datasize, receiver->m_pStartAcquisition);
+                                const uint64_t fileindex = receiver->m_fileIndex;
+                                const int channels = slsDetectorDefs::channels[receiver->m_detectorType];
+                                const uint32_t datasize = channels * sizeof(short); // sample data size
+                                receiver->m_startAcquisitionCallBack(filepath, filename, fileindex, datasize, receiver->m_pStartAcquisition);
 
                                 if (receiver->m_enableWriteToFile) {
                                     receiver->m_currAcqFrameCounter = 0;
@@ -226,6 +218,7 @@ void* slsReceiverUsers::tcpWorker(void* self) {
 
                         try {
                             if (receiver->m_acquisitionFinishedCallBack != NULL) {
+                                // call registerd stop function
                                 receiver->m_acquisitionFinishedCallBack(receiver->m_frameCounter, receiver->m_pAcquisitionFinished);
 
                                 if (receiver->m_enableWriteToFile) {
@@ -237,31 +230,118 @@ void* slsReceiverUsers::tcpWorker(void* self) {
                             // Wait for data thread to quit
                             pthread_join(receiver->m_dataThread, NULL);
 
-                            receiver->m_dataSize = 0;
-                            delete[] receiver->m_data;
-                            receiver->m_data = NULL;
                         } catch (const std::exception& e) {
                             std::cout << "slsReceiverUsers::tcpWorker: " << e.what() << std::endl;
                         }
-                    // TODO print warning if the second parameter is missing
-                    } else if (v[0] == "exptime" && v.size() > 1) {
+                    } else if (v[0] == "exptime") {
+                        if (v.size() == 1) {
+                            WARN_MISSING_PARAMETER(v[0])
+                            continue;
+                        }
+
                         receiver->m_exptime_us = 1000000 * std::stof(v[1]);
-                    } else if (v[0] == "delay" && v.size() > 1) {
+                    } else if (v[0] == "delay") {
+                        if (v.size() == 1) {
+                            WARN_MISSING_PARAMETER(v[0])
+                            continue;
+                        }
+
                         receiver->m_delay_us = 1000000 * std::stof(v[1]);
-                    } else if (v[0] == "period" && v.size() > 1) {
+                    } else if (v[0] == "period") {
+                        if (v.size() == 1) {
+                            WARN_MISSING_PARAMETER(v[0])
+                            continue;
+                        }
+
                         receiver->m_period_us = 1000000 * std::stof(v[1]);
-                    } else if (v[0] == "detectortype" && v.size() > 1) {
-                        receiver->m_detectorType = std::stoi(v[1]);
-                    } else if (v[0] == "outdir" && v.size() > 1) {
+                    } else if (v[0] == "detectortype") {
+                        if (v.size() == 1) {
+                            WARN_MISSING_PARAMETER(v[0])
+                            continue;
+                        }
+
+                        const int detectorType = std::stoi(v[1]);
+                        if (detectorType == receiver->m_detectorType)
+                            continue; // nothing to be done
+
+                        if (receiver->m_data) { // free memory
+                            receiver->m_dataSize = 0;
+                            delete[] receiver->m_data;
+                            receiver->m_data = NULL;
+                        }
+
+                        // Allocate memory for two samples
+                        const int channels = slsDetectorDefs::channels[detectorType];
+                        receiver->m_dataSize = 2 * channels * sizeof(short);
+                        receiver->m_data = new char[receiver->m_dataSize];
+
+                        // Update detector type
+                        receiver->m_detectorType = detectorType;
+                    } else if (v[0] == "outdir") {
+                        if (v.size() == 1) {
+                            WARN_MISSING_PARAMETER(v[0])
+                            continue;
+                        }
+
                         receiver->m_filePath = v[1];
-                    } else if (v[0] == "fname" && v.size() > 1) {
+                    } else if (v[0] == "fname") {
+                        if (v.size() == 1) {
+                            WARN_MISSING_PARAMETER(v[0])
+                            continue;
+                        }
+
                         receiver->m_fileName = v[1];
-                    } else if (v[0] == "index" && v.size() > 1) {
+                    } else if (v[0] == "index") {
+                        if (v.size() == 1) {
+                            WARN_MISSING_PARAMETER(v[0])
+                            continue;
+                        }
+
                         receiver->m_fileIndex = std::stoi(v[1]);
-                    } else if (v[0] == "enablefwrite" && v.size() > 1) {
+                    } else if (v[0] == "enablefwrite") {
+                        if (v.size() == 1) {
+                            WARN_MISSING_PARAMETER(v[0])
+                            continue;
+                        }
+
                         receiver->m_enableWriteToFile = std::stoi(v[1]);
-                    } else if (v[0] == "settings" && v.size() > 1) {
-                        receiver->m_settings = std::stoi(v[1]);
+                    } else if (v[0] == "settings") {
+                        if (v.size() == 1) {
+                            WARN_MISSING_PARAMETER(v[0])
+                            continue;
+                        }
+
+                        int gain = std::stoi(v[1]);
+                        if (gain == receiver->m_settings)
+                            continue; // nothing to be done
+
+                        // Get baseline/noise map for detector type
+                        int detType = receiver->m_detectorType;
+                        if (slsDetectorDefs::baseline_noise.count(detType) == 0) {
+                            std::cout << "WARN Cannot find baseline/noise for this detectorType -> using generic"
+                                << std::endl;
+                            detType = static_cast<int>(detectorType::GENERIC);
+                        }
+
+                        // Get baseline/noise values for gain settings
+                        if (slsDetectorDefs::baseline_noise[detType].count(gain) == 0) {
+                            std::cout << "WARN Cannot find baseline/noise for this gain -> using default"
+                                << std::endl;
+                            gain = static_cast<int>(detectorSettings::UNINITIALIZED);
+                        }
+                        const int baseline = slsDetectorDefs::baseline_noise[detType][gain][0];
+                        const int noise = slsDetectorDefs::baseline_noise[detType][gain][1];
+
+                        // Generate random data
+                        const int channels = slsDetectorDefs::channels[receiver->m_detectorType];
+                        short* adc_and_gain = reinterpret_cast<short*>(receiver->m_data);
+                        for (int i = 0; i < 2 * channels; ++i) {
+                            adc_and_gain[i] = baseline + rand()%noise; // Generate random data
+                            adc_and_gain[i] |= (gain << 14); // Pack gain together with ADC value
+                        }
+
+                        // Update settings
+                        receiver->m_settings = gain;
                     }
                 }
             }
@@ -292,7 +372,7 @@ void* slsReceiverUsers::dataWorker(void* self) {
     detectorHeader->reserved = 0;
     detectorHeader->debug = 0;
     detectorHeader->roundRNumber = 0;
-    detectorHeader->detType = 4; // Gotthard // TODO
+    detectorHeader->detType = receiver->m_detectorType;
     detectorHeader->version = 1;
 
     const int channels = slsDetectorDefs::channels[receiver->m_detectorType];
