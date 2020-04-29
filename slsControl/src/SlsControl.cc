@@ -452,7 +452,7 @@ namespace karabo {
                 .tags("sls")
                 .displayedName("ExposureTime")
                 .description("exposure time value")
-                .assignmentOptional().defaultValue(0.001)
+                .assignmentOptional().defaultValue(0.00001)
                 .minExc(0.)
                 .unit(Unit::SECOND)
                 .reconfigurable()
