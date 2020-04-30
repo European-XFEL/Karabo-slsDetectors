@@ -20,7 +20,7 @@ namespace slsDetectorDefs {
 
 
 slsDetectorUsers::slsDetectorUsers(int& ret, int id) {
-    m_id = id;
+    m_id = 0;
     m_detectorType = static_cast<int>(detectorType::GET_DETECTOR_TYPE);
     m_online = true;
     m_status = 0; // idle
@@ -94,7 +94,6 @@ slsDetectorUsers::slsDetectorUsers(int& ret, int id) {
 slsDetectorUsers::~slsDetectorUsers() {
     m_keepRunning = false;
     pthread_join(m_dataThread, NULL);
-    m_iostream.close();
 }
 
 std::string slsDetectorUsers::getDetectorDeveloper() {
@@ -922,7 +921,6 @@ std::string slsDetectorUsers::getCommand(int narg, char *args[], int pos) {
 
 void slsDetectorUsers::configureReceiver() {
     // This is the minimal configuration of the receiver
-    this->toReceiver("hello");
     this->toReceiver("detectortype", std::to_string(m_detectorType));
     this->toReceiver("exptime", std::to_string(m_exposureTime));
     this->toReceiver("delay", std::to_string(m_delayAfterTrigger));
@@ -936,50 +934,28 @@ void slsDetectorUsers::configureReceiver() {
 
 void slsDetectorUsers::toReceiver(const std::string& command, const std::string& parameters) {
     std::string line;
+    boost::asio::ip::tcp::iostream stream;
 
-    if (!m_iostream) {
-        if (this->connectToReceiver() != 0)
-            return;
-    }
+    // The entire sequence of I/O operations must complete within 3 seconds.
+    // If an expiry occurs, the socket is automatically closed and the stream
+    // becomes bad.
+    stream.expires_after(boost::posix_time::seconds(3));
+
+    // Establish a connection to the server.
+    stream.connect(m_rx_hostname, std::to_string(m_rx_tcpport));
 
     if (parameters == "")
         line = command;
     else
         line = command + " " + parameters;
+    line += ";";
 
-    try {
-        // Send the command
-        m_iostream << line << ";";
-    } catch (std::exception e) {
-        std::cout << "slsDetectorUsers::toReceiver: " << e.what() << std::endl;
+    // Send the command
+    stream << line;
+
+    if (!stream) {
+        std::cout << "Could not send " << command << " to receiver: " << stream.error().message() << std::endl;
     }
-
-}
-
-int slsDetectorUsers::connectToReceiver(bool disconnect) {
-    if (m_iostream) {
-        // Already connected
-        if (!disconnect) {
-            // Keep current connection alive
-            return 0;
-        } else {
-            // Disconnect
-            m_iostream.close();
-        }
-    }
-
-    // Clear previous errors
-    m_iostream.clear();
-
-    // Establish a connection to the server.
-    m_iostream.connect(m_rx_hostname, std::to_string(m_rx_tcpport));
-
-    if (!m_iostream) {
-        std::cout << "slsDetectorUsers::slsDetectorUsers: cannot connect to " << m_rx_hostname << ":" << m_rx_tcpport 
-                << ". Error: " << m_iostream.error().message() << std::endl;
-        return 1;
-    }
-    return 0;
 }
 
 void slsDetectorUsers::startMeasurementNoWait() {
@@ -992,9 +968,6 @@ void slsDetectorUsers::startMeasurementNoWait() {
 
 void slsDetectorUsers::setRxHostname(std::string rx_hostname) {
     m_rx_hostname = rx_hostname;
-
-    // Disconnect from previous receiver then reconnect
-    this->connectToReceiver(true);
 }
 
 void* slsDetectorUsers::dataWorker(void* self) {

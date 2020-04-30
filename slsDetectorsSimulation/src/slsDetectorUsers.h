@@ -309,12 +309,9 @@ private: // Simulation properties
 private:
     void configureReceiver();
     void toReceiver(const std::string& command, const std::string& parameters = "");
-    int connectToReceiver(bool disconnect=false);
 
     void startMeasurementNoWait();
     void setRxHostname(std::string rx_hostname);
-
-    boost::asio::ip::tcp::iostream m_iostream;
 
     bool m_keepRunning;
     pthread_t m_dataThread;

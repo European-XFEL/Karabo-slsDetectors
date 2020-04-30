@@ -10,7 +10,44 @@ extern "C" {
 
 #include "sls_simulation_defs.h"
 
+// forward declarations
 class slsReceiver;
+class slsReceiverUsers;
+
+
+class session {
+// Mainly from boost's async_tcp_echo_server.cpp example
+public:
+    session(boost::asio::io_service& io_service, slsReceiverUsers* receiver_user);
+
+    boost::asio::ip::tcp::socket& socket() {
+        return m_socket;
+    }
+
+    void start();
+
+    void handle_read(const boost::system::error_code& ec);
+
+private:
+    boost::asio::ip::tcp::socket m_socket;
+    boost::asio::streambuf m_streambuf;
+    slsReceiverUsers* m_receiver_user;
+};
+
+
+class server {
+// Mainly from boost's async_tcp_echo_server.cpp example
+public:
+    server(boost::asio::io_service& io_service, short port, slsReceiverUsers* receiver_user);
+
+    void handle_accept(session* new_session, const boost::system::error_code& ec);
+
+private:
+  boost::asio::io_service& m_io_service;
+  boost::asio::ip::tcp::acceptor m_acceptor;
+  slsReceiverUsers* m_receiver_user;
+};
+
 
 class slsReceiverUsers {
 public:
@@ -33,6 +70,8 @@ public:
     void registerCallBackRawDataReady(void (*func)(char* metadata, char* datapointer, uint32_t datasize, void*), void *arg);
 
     slsReceiver* receiver;
+
+    void processCommand(const std::string& command);
 
 private:
     int (*m_startAcquisitionCallBack)(char*, char*, uint64_t, uint32_t, void*);
@@ -69,13 +108,10 @@ private: // Simulation properties
 
 private:
     boost::asio::io_service m_io_service;
-    boost::asio::ip::tcp::acceptor* m_acceptor;
-    boost::asio::ip::tcp::socket* m_sock;
-    bool m_keepRunning;
-    pthread_t m_tcpThread, m_dataThread;
-    static void* tcpWorker(void* self);
+    server* m_server;
+    pthread_t m_dataThread, m_ioServThread;
     static void* dataWorker(void* self);
-    void stopTcpServer();
+    static void* ioServWorker(void* self);
     std::string generateFileName();
 
 };

@@ -1014,7 +1014,7 @@ namespace karabo {
         KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::isHostOnline";
 
         bool online;
-        std::string portString = boost::lexical_cast<std::string >(port);
+        std::string portString = std::to_string(port);
 
         try {
             boost::asio::ip::tcp::iostream s;
