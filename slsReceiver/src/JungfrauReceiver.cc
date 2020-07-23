@@ -38,11 +38,15 @@ namespace karabo {
         IMAGEDATA_ELEMENT(displayData).key("data.adc")
                 .displayedName("ADC")
                 .description("The ADC counts.")
+                .setType(karabo::util::Types::UINT16)
+                .setDimensions(dims)
                 .commit();
 
         IMAGEDATA_ELEMENT(displayData).key("data.gain")
                 .displayedName("Gain")
                 .description("The ADC gain.")
+                .setType(karabo::util::Types::UINT8)
+                .setDimensions(dims)
                 .commit();
 
         OUTPUT_CHANNEL(expected).key("display")
