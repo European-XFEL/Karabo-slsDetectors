@@ -168,6 +168,9 @@ namespace karabo {
         unsigned char m_detectorDataIdx;
         DetectorData m_detectorData[2];
 
+        // Strand to guarantee that the writing order of DetectorData elements is preserved
+        karabo::net::Strand::Pointer m_strand;
+
         // For rate calculation
         long long m_frameCount;
 

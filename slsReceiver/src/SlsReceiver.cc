@@ -137,7 +137,10 @@ namespace karabo {
         }
     }
 
-    SlsReceiver::SlsReceiver(const karabo::util::Hash& config) : Device<>(config), m_receiver(0), m_maxWarnPerAcq(10) {
+    SlsReceiver::SlsReceiver(const karabo::util::Hash& config) : Device<>(config),
+								 m_receiver(0),
+								 m_strand(boost::make_shared<karabo::net::Strand>(karabo::net::EventLoop::getIOService())),
+								 m_maxWarnPerAcq(10) {
         KARABO_INITIAL_FUNCTION(initialize);
         KARABO_SLOT(reset);
     }
@@ -382,7 +385,7 @@ namespace karabo {
                 // in case there is no connection to TimeServer 2) will be satisfied when 'detectorData' is full.
 
                 detectorData->mutex.wait(); // "lock", then process detectorData in the event loop
-                EventLoop::getIOService().post(karabo::util::bind_weak(&SlsReceiver::writeToOutputs, self, self->m_detectorDataIdx, actualTimestamp));
+                self->m_strand->post(karabo::util::bind_weak(&SlsReceiver::writeToOutputs, self, self->m_detectorDataIdx, actualTimestamp));
 
                 // Use next DetectorData object for receiving data
                 self->m_detectorDataIdx = (self->m_detectorDataIdx + 1) % 2;
