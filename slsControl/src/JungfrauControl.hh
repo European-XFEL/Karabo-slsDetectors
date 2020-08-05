@@ -32,6 +32,8 @@ namespace karabo {
 
     private:
         void powerOn();
+        void configureDetectorSpecific(const karabo::util::Hash& configHash);
+
         const char* getCalibrationString() const;
         const char* getSettingsString() const;
 

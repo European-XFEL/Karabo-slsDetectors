@@ -360,10 +360,12 @@ namespace karabo {
 
         try {
             const unsigned short framesPerTrain = self->get<unsigned short>("framesPerTrain");
-            // Current time
-            const karabo::util::Timestamp& actualTimestamp = self->getActualTimestamp();
+
+            // Use trainId from meta-data, if available
+            const karabo::util::Timestamp& actualTimestamp = detectorHeader.bunchId > 0 ? Timestamp(Epochstamp(), detectorHeader.bunchId) : self->getActualTimestamp();
             const double currentTime = actualTimestamp.toTimestamp();
             const unsigned long long trainId = actualTimestamp.getTrainId();
+
             // Detector data, trainId, elapsed time
             DetectorData* detectorData = &(self->m_detectorData[self->m_detectorDataIdx]);
             const unsigned long long lastTrainId = detectorData->lastTimestamp.getTrainId();

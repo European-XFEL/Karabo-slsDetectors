@@ -643,8 +643,12 @@ namespace karabo {
             try {
                 this->updateState(State::INIT);
                 KARABO_LOG_INFO << "Connected to detector(s)";
+
                 this->sendBaseConfiguration();
                 this->sendInitialConfiguration();
+                const Hash& config = this->getCurrentConfiguration();
+                this->configureDetectorSpecific(config);
+
                 this->updateState(State::ON);
             } catch (karabo::util::Exception& e) {
                 this->updateState(State::ERROR);
@@ -704,8 +708,11 @@ namespace karabo {
                 KARABO_LOG_INFO << "Connected to detector(s)";
                 try {
                     this->updateState(State::INIT);
+
                     this->sendBaseConfiguration();
                     this->sendInitialConfiguration();
+                    const Hash& config = this->getCurrentConfiguration();
+                    this->configureDetectorSpecific(config);
 #ifdef SLS_SIMULATION
                     m_SLS->setDetectorType(m_detectorType);
 #endif
@@ -1226,6 +1233,9 @@ namespace karabo {
         KARABO_LOG_FRAMEWORK_DEBUG << "Filtered reconfiguration: \n" << h1;
 
         this->sendConfiguration(h1);
+
+        // Send detector specific configuration
+        this->configureDetectorSpecific(incomingReconfiguration);
 
         Hash h2;
         if (incomingReconfiguration.has("acquisitionTime")) {
