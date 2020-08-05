@@ -57,6 +57,8 @@ namespace karabo {
         void sendBaseConfiguration();
         void sendInitialConfiguration();
         void sendConfiguration(const karabo::util::Hash& configHash);
+        virtual void configureDetectorSpecific(const karabo::util::Hash& configHash) {
+        };
 
         virtual void powerOn() {
         };
@@ -75,12 +77,12 @@ namespace karabo {
 #ifdef SLS_SIMULATION
         int m_detectorType;
 #endif
+        slsDetectorUsers* m_SLS;
+        unsigned int m_numberOfModules;
         void sendConfiguration(const std::string& command, const std::string& parameters = "", int pos = -1);
 
     private: // Members
         const unsigned short m_defaultPort = 1952;
-        slsDetectorUsers* m_SLS;
-        unsigned int m_numberOfModules;
 
         bool m_connect;
         const unsigned int m_reconnectTime = 5000;

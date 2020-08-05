@@ -96,11 +96,65 @@ namespace karabo {
                 .expertAccess()
                 .allowedStates(State::ON)
                 .commit();
+
+       UINT32_ELEMENT(expected).key("exposureTimeout")
+                .displayedName("Exposure Timeout")
+                .description("In burst acquisition mode, the time interval between two consecutive "
+                "exposures can be tuned with this timeout. "
+                "Note that the time interval between consecutive exposures is also determined by the "
+                "operation of the ASIC control FSM, as well as by the pre-charger and DS timeouts. "
+                "The exposure timeout t_{ET} increases the range of the timeout betweeen two "
+                "consecutive storage cells.")
+                .assignmentOptional().defaultValue(25)
+                .minInc(25).maxInc(1000000)
+                .unit(Unit::SECOND).metricPrefix(MetricPrefix::NANO)
+                .reconfigurable()
+                .expertAccess()
+                .allowedStates(State::ON)
+                .commit();
+
+       UINT16_ELEMENT(expected).key("exposureTimer")
+                .displayedName("Exposure Timer")
+                .description("This value is obtained from the exposure timeout as: ET = t_ET / 25 ns - 1.")
+                .readOnly()
+                .expertAccess()
+                .commit();
     }
 
     void JungfrauControl::powerOn() {
         sendConfiguration("powerchip", "1");
         sendConfiguration("reg", "4d 0x108000"); // set additional read-out timeout (bit 15)
+    }
+
+    void JungfrauControl::configureDetectorSpecific(const karabo::util::Hash& configHash) {
+        if (configHash.has("exposureTimeout")) {
+            // Must set bits 16-31 of 0x7F (ASIC_CTRL) register
+            const unsigned int exposureTimeout = configHash.get<unsigned int>("exposureTimeout");
+            const unsigned short exposureTimer = std::lround(exposureTimeout/25) - 1;
+            this->set("exposureTimer", exposureTimer); // set read-only device parameter
+
+            char* args[3];
+            args[0] = const_cast<char*>("reg");
+            args[1] = const_cast<char*>("7F");
+
+            for (size_t i = 0; i < m_numberOfModules; ++i) {
+                // Get current value of ASIC_CTRL
+                std::string reply = m_SLS->getCommand(2, args, i);
+                unsigned int asicCtrl = std::stoul(reply, nullptr, 16);
+
+                // Replace bits 16-31
+                asicCtrl = (asicCtrl & 0xFFFF) | (exposureTimer << 16);
+
+                // Convert to string
+                std::stringstream sstream;
+                sstream << std::hex << asicCtrl;
+                std::string asicCtrlStr(sstream.str());
+                args[2] = const_cast<char*>(asicCtrlStr.c_str());
+
+                // Set the value back
+                m_SLS->putCommand(3, args, i);
+            }
+        }
     }
 
     const char* JungfrauControl::getCalibrationString() const {
