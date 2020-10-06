@@ -63,6 +63,7 @@
           <linkerLibItems>
             <linkerLibLibItem>SlsDetector</linkerLibLibItem>
             <linkerLibLibItem>zmq</linkerLibLibItem>
+            <linkerLibLibItem>rt</linkerLibLibItem>
             <linkerLibLibItem>karabo</linkerLibLibItem>
             <linkerOptionItem>`pkg-config --libs karaboDependencies`</linkerOptionItem>
           </linkerLibItems>
@@ -138,6 +139,7 @@
           <linkerLibItems>
             <linkerLibLibItem>SlsDetector</linkerLibLibItem>
             <linkerLibLibItem>zmq</linkerLibLibItem>
+            <linkerLibLibItem>rt</linkerLibLibItem>
             <linkerLibLibItem>karabo</linkerLibLibItem>
             <linkerOptionItem>`pkg-config --libs karaboDependencies`</linkerOptionItem>
           </linkerLibItems>
