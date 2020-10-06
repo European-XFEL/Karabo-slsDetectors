@@ -59,9 +59,19 @@ release:ubuntu16:
 release:ubuntu18:
   image: europeanxfel/karabo-ci:ubuntu-18
   <<: *release_build
+
+release:ubuntu20:
+  image: europeanxfel/karabo-ci:ubuntu-20
+  <<: *release_build
     
 release:centos7:
-  image: europeanxfel/karabo-ci:centos-7
+  image: europeanxfel/karabo-ci:centos-7gcc7
+  before_script:
+    - source /opt/rh/devtoolset-7/enable
+  <<: *release_build
+
+release:centos8:
+  image: europeanxfel/karabo-ci:centos-8
   <<: *release_build
 
 ##### Test build #####
@@ -74,7 +84,17 @@ test:ubuntu18:
   image: europeanxfel/karabo-ci:ubuntu-18
   <<: *test_build
 
+test:ubuntu20:
+  image: europeanxfel/karabo-ci:ubuntu-20
+  <<: *test_build
+
 test:centos7:
-  image: europeanxfel/karabo-ci:centos-7
+  image: europeanxfel/karabo-ci:centos-7gcc7
+  before_script:
+    - source /opt/rh/devtoolset-7/enable
+  <<: *test_build
+
+test:centos8:
+  image: europeanxfel/karabo-ci:centos-8
   <<: *test_build
 
