@@ -22,7 +22,7 @@
 #include <slssimulation/slsReceiverUsers.h>
 #endif
 
-
+#include "version.hh"  // provides PACKAGE_VERSION
 
 /**
  * The main Karabo namespace
@@ -89,7 +89,7 @@ namespace karabo {
     public:
 
         // Add reflection and version information to this class
-        KARABO_CLASSINFO(SlsReceiver, "SlsReceiver", "2.5")
+        KARABO_CLASSINFO(SlsReceiver, "SlsReceiver", PACKAGE_VERSION)
 
         /**
          * Necessary method as part of the factory/configuration system

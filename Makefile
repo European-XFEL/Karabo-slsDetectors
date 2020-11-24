@@ -39,5 +39,3 @@ slsControl: slsDetectorsSimulation
 
 slsReceiver: slsDetectorsSimulation
 	$(MAKE) -C $@
-
-
