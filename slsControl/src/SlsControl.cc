@@ -1029,7 +1029,11 @@ namespace karabo {
             // The entire sequence of I/O operations must complete within 5 seconds.
             // If an expiry occurs, the socket is automatically closed and the stream
             // becomes bad.
+#if BOOST_VERSION >= 106800 // i.e. Karabo >= 2.11
+            s.expires_from_now(std::chrono::duration<int>(5));
+#else
             s.expires_from_now(boost::posix_time::seconds(5));
+#endif
 
             // Establish a connection to the server.
             s.connect(host, portString);
