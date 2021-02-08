@@ -2,11 +2,11 @@ How to control an SLS detector
 ==============================
 
 The SlsControl class allows you to control a Gotthard, or another
-`Detector <https://www.psi.ch/detectors/users-support>`_ supported by
-PSI's slsDetectorPackage. You can set parameters and start/stop an
+`Detector <https://www.psi.ch/en/detectors/projects>`_ supported by
+PSI's slsDetectorPackage. You can set parameters, start and stop an
 acquisition.
 
-The data receiver must be running elsewhere. It can be for example the
+The data receiver must be also running. It can be for example the
 slsReceiver provided with the slsDetectorPackage, or a SlsReceiver
 Karabo device.
 
@@ -14,17 +14,7 @@ Karabo device.
 Mandatory parameters
 --------------------
 
-The SlsControl device has the following mandatory vector parameters:
-
-* `detectorHostName`: corresponds to PSI's `hostname` parameter, and represents
-  the hostname(s) or IP address(es) of the detector module(s) to be controlled;
-* `detectorIp`: corresponds to PSI's `detectorip` parameter;
-* `rxHostname`: corresponds to PSI's `rx_hostname` parameter;
-* `rxTcpPort`: corresponds to PSI's `rx_tcpport` parameter;
-* `rxUdpIp`: corresponds to PSI's `rx_udpip` parameter;
-* `rxUdpPort`: corresponds to PSI's `rx_udpport` parameter;
-
-All these vectors must have the same length.
+The mandatory parameters are described in :ref:`slsControl-setup`.
 
 
 Optional parameters
@@ -37,9 +27,6 @@ The SlsControl device has several optional parameters; please be aware that:
 * vector reconfigurable parameters tagged as `sls` must have zero, one, or as
   many elements as the number of modules. If the vector has only one element, 
   this value will be sent to all modules;
-* parameters tagged as `readOnConnect` will be read from the module(s) as
-  soon as a connection is established;
-* parameters tagged as `poll` will be regularly read from the module(s).
 
 
 How to create a control device based on slsControl
@@ -65,13 +52,10 @@ There are already several common detector parameters defined in the
 base class (SlsControl). Check the SlsControl::expectedParameter()
 function to see what they are.
 
-In case you need more parameters, they must have the "sls" tag. The
-alias have to contain the parameter name, as can be found in the
+In case you need to set more parameters, they must have the "sls" tag.
+The alias have to contain the parameter name, as can be found in the
 description of the `command line interface
-<https://www.psi.ch/detectors/UsersSupportEN/slsDetectorClientHowTo.pdf>`_.
-
-Parameters can also have the "readOnConnect" tag, in which case the
-value will be read from the device upon connection.
+<https://slsdetectorgroup.github.io/devdoc/commandline.html>`_.
 
 Any Karabo type is allowed, also VECTOR types.
 
@@ -92,34 +76,42 @@ This is the minimal MyControl.hh:
     #include <karabo/karabo.hpp>
 
     #include "SlsControl.hh"
+    #include "version.hh"  // provides PACKAGE_VERSION
 
     /**
      * The main Karabo namespace
      */
     namespace karabo {
 
-	class MyControl : public karabo::SlsControl {
-	public:
+        class MyControl : public karabo::SlsControl {
+        public:
 
-	    KARABO_CLASSINFO(MyControl, "MyControl", "2.2")
+            KARABO_CLASSINFO(MyControl, "MyControl", PACKAGE_VERSION)
 
-	    MyControl(const karabo::util::Hash& config);
+            MyControl(const karabo::util::Hash& config);
 
-	    virtual ~MyControl();
+            virtual ~MyControl();
 
-	    static void expectedParameters(karabo::util::Schema& expected);
+            static void expectedParameters(karabo::util::Schema& expected);
 
-       private:
+        private:
 
-            // This function must return the detector calibration
-            // as in the calibration.sn file
-            const char* getCalibrationString() const;
+            // Optional. Send the commands needed to power-up and initialize
+            // the detector
+            void powerOn();
 
-            // This function must return the detector settings
-            // as in the settings.sn file
-            const char* getSettingsString() const;
+            // Optional. Place here the code needed to regularly poll detector
+            // parameters, e.g. temperatures, and set them in the input Hash.
+            void pollDetectorSpecific(karabo::util::Hash& h);
 
-	};
+            // Optional. Place here the code needed to execute detector specific
+            // actions, when a reconfiguration is received.
+            void configureDetectorSpecific(const karabo::util::Hash& configHash);
+
+            // Optional. Place here the code needed to create the calibration
+            // and settings files, if needed by the detector.
+            void createCalibrationAndSettings(const std::string& settings);
+        };
 
     } /* namespace karabo */
 
@@ -134,9 +126,8 @@ You probably don't need anything more than that.
 MyControl.cc file
 ------------------
 
-An example of MyControl.cc is the following. In the best case you
-will just have to change the detector type (here for the Gotthard) and
-add more detector specific expected parameters as described in the
+An example of MyControl.cc is the following. In the best case you will just
+have to add detector specific expected parameters as described in the
 :ref:`slsControl-expected-parameters` Section.
 
 
@@ -148,8 +139,8 @@ add more detector specific expected parameters as described in the
 
     namespace karabo {
 
-	KARABO_REGISTER_FOR_CONFIGURATION(BaseDevice, Device<CameraFsm>,
-            SlsControl, MyControl)
+	KARABO_REGISTER_FOR_CONFIGURATION(BaseDevice, Device<>, SlsControl,
+            MyControl)
 
 	MyControl::MyControl(const Hash& config) : SlsControl(config) {
 	}
@@ -158,22 +149,61 @@ add more detector specific expected parameters as described in the
 	}
 
 	void MyControl::expectedParameters(Schema& expected) {
+            // Add here more detector specific expected parameters, for
+            // example:
 
-	    OVERWRITE_ELEMENT(expected).key("detectorType") // From base class
-		    .setNewDefaultValue("Gotthard+")
-		    .setNewOptions("Gotthard+")
-		    .commit();
-
-            // Add here more detector specific expected parameters
-    
+            VECTOR_INT32_ELEMENT(expected).key("tempAdc")
+                .displayedName("ADC Temperature")
+                .unit(Unit::DEGREE_CELSIUS)
+                .readOnly()
+                .commit();
 	}
 
-        const char* MyControl::getCalibrationString() const {
-    	    return "227 5.6\n"; // This one is for Gotthard
+        void MyControl::powerOn() {
+            // Send the commands needed to power-up and initialize the
+            // detector, for example:
+            sendConfiguration("powerchip", "1");
         }
 
-        const char* GotthardControl::getSettingsString() const {
-            return "Vcasc 1320\nVcascN 650\nVcascP 1480\nVib_test 2001\nVin 1350\nVout 1520\nVref 660\nVref_comp 887\n"; // This one is for Gotthard
+        void MyControl::pollDetectorSpecific(karabo::util::Hash& h) {
+            // Poll detector specifica properties, for example temperatures:
+            const std::vector<int> tempAdc = m_SLS->getTemperature(slsDetectorDefs::dacIndex::TEMPERATURE_ADC, m_positions);
+            h.set("tempAdc", tempAdc);
+        }
+
+        void MyControl::configureDetectorSpecific(const karabo::util::Hash& configHash) {
+            // Execute detector specific actions, when a reconfiguration is
+            // received.
+        }
+
+
+        void MyControl::createCalibrationAndSettings(const std::string& settings) {
+            // Place here the code needed to create the calibration and
+            // settings files, if needed by the detector. For example:
+
+            const std::string calibrationDir = m_tmpDir + "/" + settings;
+
+            if (!fs::exists(calibrationDir)) {
+                // Create calibration and settings directory
+                fs::create_directory(calibrationDir);
+
+            KARABO_LOG_FRAMEWORK_DEBUG << "Created calibration dir" << calibrationDir;
+            }
+
+            const std::string fname = calibrationDir + "/calibration.sn";
+            if (!fs::exists(fname)) {
+                // Create calibration file
+                std::ofstream fstr;
+                fstr.open(fname.c_str());
+
+                if (fstr.is_open()) {
+                   fstr << "227 5.6\n"
+                   fstr.close();
+
+                } else {
+                    throw KARABO_RECONFIGURE_EXCEPTION("Could not open file " + fname + "for writing");
+                }
+            }
         }
 
     } /* namespace karabo */
@@ -189,4 +219,8 @@ To compile slsControl in simulation mode, just run
     make CONF=Simulation
 
 This way the package will be linked against the simulation,
-instead of the libSlsDetector.
+instead of libSlsDetector.
+
+For more details on how the simulation is implemented, see
+:ref:`slsDetectorSimulation` Section.
+

@@ -2,12 +2,12 @@ How to receive data from an SLS detector
 ========================================
 
 The SlsReceiver class allows you to receive data from a Gotthard, or
-another `Detector <https://www.psi.ch/detectors/users-support>`_
+another `Detector <https://www.psi.ch/en/detectors/projects>`_
 supported by PSI's slsDetectorPackage.
 
 The detector configuration, and the acquisition command, must be
 executed somewhere else, for example by the `command line interface
-<https://www.psi.ch/detectors/UsersSupportEN/slsDetectorClientHowTo.pdf>`_
+<https://slsdetectorgroup.github.io/devdoc/commandline.html>`_
 provided by PSI, or by a SlsControl Karabo device.
 
 
@@ -64,6 +64,7 @@ This is the minimal MyReceiver.hh:
     #include <karabo/karabo.hpp>
 
     #include "SlsReceiver.hh"
+    #include "version.hh"  // provides PACKAGE_VERSION
 
     /**
      * The main Karabo namespace
@@ -74,7 +75,7 @@ This is the minimal MyReceiver.hh:
 
 	public:
 
-	    KARABO_CLASSINFO(MyReceiver, "MyReceiver", "2.1")
+	    KARABO_CLASSINFO(MyReceiver, "MyReceiver", "PACKAGE_VERSION")
 	    static void expectedParameters(karabo::util::Schema& expected);
 
 	    MyReceiver(const karabo::util::Hash& config);
@@ -86,7 +87,7 @@ This is the minimal MyReceiver.hh:
             size_t getDetectorSize();
             std::vector<unsigned long long> getDisplayShape();
             std::vector<unsigned long long> getDaqShape(unsigned short framesperTrain);
-            void unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned short* gain);
+            void unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain);
 
 	};
 
@@ -158,8 +159,8 @@ match the raw data format of the detector:
 
     namespace karabo {
 
-	KARABO_REGISTER_FOR_CONFIGURATION(BaseDevice, Device<OkErrorFsm>,
-            SlsReceiver, MyReceiver)
+	KARABO_REGISTER_FOR_CONFIGURATION(BaseDevice, Device<>, SlsReceiver,
+            MyReceiver)
 
 	void MyReceiver::expectedParameters(Schema& expected) {
             Schema displayData;
@@ -176,7 +177,7 @@ match the raw data format of the detector:
                     .readOnly()
                     .commit();
 
-            VECTOR_UINT16_ELEMENT(displayData).key("data.gain")
+            VECTOR_UINT(_ELEMENT(displayData).key("data.gain")
                     .displayedName("Gain")
                     .description("The ADC gain.")
                     .readOnly()
@@ -208,7 +209,7 @@ match the raw data format of the detector:
             return {this->getDetectorSize(), framesPerTrain};
         }
 
-        void MyReceiver::unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned short* gain) {
+        void MyReceiver::unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain) {
             // e.g. For Gotthard:
             const size_t frameSize = this->getDetectorSize();
             size_t offset = sizeof(unsigned short) * idx * frameSize;
@@ -233,5 +234,8 @@ To compile the slsReceiver in simulation mode, just run
     make CONF=Simulation
 
 This way the package will be linked against the simulation,
-instead of the libSlsReceiver.
+instead of libSlsReceiver.
+
+For more details on how the simulation is implemented, see
+:ref:`slsDetectorSimulation` Section.
 

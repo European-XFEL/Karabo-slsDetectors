@@ -13,10 +13,11 @@ Contents:
 .. toctree::
    intro
    deployment
+   setup
    slsControl
    slsReceiver
-   setup
    troubleshooting
+   slsDetectorSimulation
    :maxdepth: 2
 
 
