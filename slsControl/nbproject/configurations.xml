@@ -54,10 +54,12 @@
           <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libslsControl.${CND_DLIB_EXT}</output>
           <linkerAddLib>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
             <pElem>${KARABO}/extern/lib</pElem>
           </linkerAddLib>
           <linkerDynSerch>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
             <pElem>${KARABO}/extern/lib</pElem>
           </linkerDynSerch>
           <linkerLibItems>
@@ -130,10 +132,12 @@
           <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libslsControl.${CND_DLIB_EXT}</output>
           <linkerAddLib>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
             <pElem>${KARABO}/extern/lib</pElem>
           </linkerAddLib>
           <linkerDynSerch>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
             <pElem>${KARABO}/extern/lib</pElem>
           </linkerDynSerch>
           <linkerLibItems>
@@ -199,10 +203,12 @@
           <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libslsControl.${CND_DLIB_EXT}</output>
           <linkerAddLib>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
             <pElem>${KARABO}/extern/lib</pElem>
           </linkerAddLib>
           <linkerDynSerch>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
             <pElem>${KARABO}/extern/lib</pElem>
           </linkerDynSerch>
           <linkerLibItems>

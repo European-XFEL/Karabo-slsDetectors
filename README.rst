@@ -1,51 +1,75 @@
-***************************
-SlsDetectors Device (C++)
-***************************
+*****************
+SlsControl Device
+*****************
 
-Compiling
-=========
+Update to SLS Detector Software v5.0.1
+======================================
 
-1. In the device's top directory simply type:
+In the SLS detector software, some of the parameters changed from v4.0.1 to
+v5.0.1. The Karabo device followed these changes, thus some of the keys have
+been renamed:
 
-    ``make``
+=================  =================
+Old Key Name       New Key Name
+=================  =================
+bitDepth           dynamicRange
+detectorIp         udpSrcIp
+detectorMac        udpSrcMac
+detectorNumber     serialNumber
+detectorVersion    firmwareVersion
+numberOfCycles     numberOfTriggers
+rxUdpIp            udpDstIp
+rxUdpPort          udpDstPort
+softwareVersion    detServerVersion
+thisVersion        clientVersion
+vHighVoltage       highVoltage
+vHighVoltageMax    highVoltageMax
+=================  =================
 
-    Optionally specify ``CONF=Debug`` or ``CONF=Release`` for a debug
-    or release build (default: Debug).
+
+The following parameters have been removed, as not available any more, or not
+available for the detectors we currently have at XFEL:
+
++-------------------------+
+| Removed Key Name        |
++=========================+
+| angConv                 |
++-------------------------+
+| angDir                  |
++-------------------------+
+| binSize                 |
++-------------------------+
+| detectorDeveloper       |
++-------------------------+
+| flatFieldCorrectionFile |
++-------------------------+
+| globalOff               |
++-------------------------+
+| lock                    |
++-------------------------+
+| master                  |
++-------------------------+
+| maximumDetectorSize     |
++-------------------------+
+| moveFlag                |
++-------------------------+
+| numberOfGates           |
++-------------------------+
+| online                  |
++-------------------------+
+| sync                    |
++-------------------------+
+| threaded                |
++-------------------------+
 
 
-2. For coding/compiling using NetBeans, open the device's top directory
-   as a NetBeans project and press the compile button.
+For some other properties the unit and type have changed:
 
-Testing
-=======
+=================  ========  ========  ========  ========
+Key Name           Old Unit  New Unit  Old Type  New Type
+=================  ========  ========  ========  ========
+exposureTime       s         ns        FLOAT     INT64
+exposurePeriod     s         ns        FLOAT     INT64
+delayAfterTrigger  s         ns        FLOAT     INT64
+=================  ========  ========  ========  ========
 
-After a successfull build, a shared library is generated here:
-
-``dist/<configuration>/<system>/libslsDetectors.so``
-
-
-The library must be added to the ``plugins`` folder of your
-Karabo installation for any device-server to be able to see this device.
-
-You may create a soft-link to the ``libslsDetectors.so`` file in the
-``plugins`` folder manually, or simply use the karabo script:
-
-``karabo develop slsDetectors``
-
-Running
-=======
-
-If you want to manually start a server using this device, simply type:
-
-``karabo-cppserver serverId=cppServer/1 deviceClasses=SlsDetectors``
-
-Or just use (a properly configured):
-
-``karabo-start``
-
-Packaging
-=========
-
-A binary installation package can be created by typing:
-
-``make package``

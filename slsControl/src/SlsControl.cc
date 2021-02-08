@@ -12,6 +12,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 
+#include <sls/Result.h>
+
 #include "SlsControl.hh"
 
 USING_KARABO_NAMESPACES
@@ -19,7 +21,7 @@ namespace fs = boost::filesystem;
 
 namespace karabo {
 
-    SlsControl::SlsControl(const Hash& config) : Device<>(config), m_SLS(NULL),
+    SlsControl::SlsControl(const Hash& config) : Device<>(config), m_SLS(nullptr),
     m_numberOfModules(0), m_connect(false), m_connect_timer(EventLoop::getIOService()),
     m_firstPoll(true), m_poll(false), m_poll_timer(EventLoop::getIOService()),
     m_acquire_timer(EventLoop::getIOService()) {
@@ -38,21 +40,17 @@ namespace karabo {
         m_connect_timer.cancel();
         this->stopPoll();
 
-        if (m_SLS != NULL) {
-            delete m_SLS;
-        }
-
         try {
             bool success = true;
-            std::string baseName("/dev/shm/slsDetectorPackage_multi_" + karabo::util::toString(m_id));
+            std::string baseName("/dev/shm/slsDetectorPackage_multi_" + karabo::util::toString(m_shm_id));
             success &= fs::remove(baseName);
             for (size_t i = 0; i < m_numberOfModules; ++i) {
                 success &= fs::remove(baseName + "_sls_" + karabo::util::toString(i));
             }
             if (success) {
-                KARABO_LOG_FRAMEWORK_DEBUG << "Deleted shared memory segment " << m_id;
+                KARABO_LOG_FRAMEWORK_DEBUG << "Deleted shared memory segment " << m_shm_id;
             } else {
-                KARABO_LOG_FRAMEWORK_WARN << "Could not remove shared memory segment " << m_id;
+                KARABO_LOG_FRAMEWORK_WARN << "Could not remove shared memory segment " << m_shm_id;
             }
 
             // Remove temporary directory and its content
@@ -105,17 +103,30 @@ namespace karabo {
         VECTOR_STRING_ELEMENT(expected).key("detectorHostName")
                 .alias("hostname")
                 // No "sls" tag... will be processed differently
-                .displayedName("detectorHostName")
-                .description("Detector Host Name")
+                .displayedName("Detector Hostname")
+                .description("The hostnames (or IP addresses) of all modules.")
                 .assignmentMandatory()
                 .commit();
 
-        VECTOR_STRING_ELEMENT(expected).key("detectorIp")
-                .alias("detectorip")
+        VECTOR_STRING_ELEMENT(expected).key("udpSrcIp")
+                .alias("udp_srcip") // was "detectorip"
                 // No "sls" tag... will be processed differently
-                .displayedName("detectorIp")
-                .description("Detector IP. Must be on the same subnet as the receiver.")
+                .displayedName("Detector UDP/IP")
+                .description("IP address of the detector (source) UDP interface. "
+                "Must be in the same subnet as the destination UDP/IP. "
+                "Used to be named \"detectorIp\".")
                 .assignmentMandatory()
+                .commit();
+
+        // Arbitrary, but must be not in use in the same subnet
+        VECTOR_STRING_ELEMENT(expected).key("udpSrcMac")
+                .alias("udp_srcmac") // was "detectormac"
+                .tags("sls")
+                .displayedName("Detector UDP MAC")
+                .description("MAC address of the detector (source) UDP interface. "
+                "Arbitrary (e.g. 00:aa:bb:cc:dd:ee), but must be not in use in the same subnet. "
+                "Used to be named \"detectorMac\"")
+                .assignmentOptional().defaultValue({})
                 .commit();
 
         VECTOR_UINT16_ELEMENT(expected).key("detectorHostPort")
@@ -137,68 +148,75 @@ namespace karabo {
         VECTOR_STRING_ELEMENT(expected).key("rxHostname")
                 .alias("rx_hostname")
                 // No "sls" tag... will be processed differently
-                .displayedName("rxHostname")
-                .description("Receiver Hostname")
+                .displayedName("RX Hostname")
+                .description("The hostname or IP of the host where the receiver device is running. "
+                "It is used for TCP communication between control and receiver, to configure the receiver. "
+                "It updates the receiver with detector parameters. It also resets any prior receiver "
+                "property (not on detector).")
                 .assignmentMandatory()
                 .commit();
 
         VECTOR_UINT16_ELEMENT(expected).key("rxTcpPort")
                 .alias("rx_tcpport")
                 // No "sls" tag... will be processed differently
-                .displayedName("rxTcpPort")
-                .description("Receiver TCP Port")
+                .displayedName("RX TCP Port")
+                .description("The TCP port for client-receiver communication. Default is 1954. "
+                "Must be different if multiple receivers run on the same host.")
                 .assignmentMandatory()
                 .commit();
 
-        VECTOR_STRING_ELEMENT(expected).key("rxUdpIp")
-                .alias("rx_udpip")
+        VECTOR_STRING_ELEMENT(expected).key("udpDstIp")
+                .alias("udp_dstip") // was rx_udpip
                 // No "sls" tag... will be processed differently
-                .displayedName("rxUdpIp")
-                .description("Receiver UDP IP")
+                .displayedName("RX UDP/IP")
+                .description("The IP address of the network interface on the receiver's host, "
+                "which is receiving data from the detector. "
+                "Used to be named \"rxUdpIp\"")
                 .assignmentMandatory()
                 .commit();
 
-        VECTOR_UINT16_ELEMENT(expected).key("rxUdpPort")
-                .alias("rx_udpport")
+        VECTOR_UINT16_ELEMENT(expected).key("udpDstPort")
+                .alias("udp_dstport") // was "rx_udpport"
                 // No "sls" tag... will be processed differently
-                .displayedName("rxUdpPort")
-                .description("Receiver UDP Port")
+                .displayedName("RX UDP/IP Port")
+                .description("Port number of the receiver (destination) UDP interface. Default is 50001. "
+                "Used to be named \"rxUdpPort\"")
                 .assignmentMandatory()
                 .commit();
 
         STRING_ELEMENT(expected).key("settings")
                 .alias("settings")
                 .tags("sls")
-                .displayedName("settings")
-                .description("Settings")
+                .displayedName("Settings")
+                .description("Detector settings.")
                 .assignmentOptional().defaultValue("dynamicgain") // OVERWRITE in derived class
-                .options("dynamicgain lowgain mediumgain highgain veryhighgain") // OVERWRITE in derived class
+                .options("dynamicgain,lowgain,mediumgain,highgain,veryhighgain") // OVERWRITE in derived class
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
 
-        // [AP] settingsdir, caldir, ffdir are internally set and not visible to the user
+        // [AP] settingspath & fformat are internally set and not visible to the user
 
         NODE_ELEMENT(expected).key("dataStorage")
                 .displayedName("Data Storage")
                 .commit();
 
         UINT8_ELEMENT(expected).key("dataStorage.enable")
-                .alias("enablefwrite")
+                .alias("fwrite") // was "enablefwrite"
                 .tags("sls")
                 .displayedName("Enable")
+                .description("Enable file write on the receiver host.")
                 .assignmentOptional().defaultValue(0)
                 .options("0,1")
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
 
-        PATH_ELEMENT(expected).key("dataStorage.filePath")
-                .alias("outdir")
+        STRING_ELEMENT(expected).key("dataStorage.filePath")
+                .alias("fpath") // was "outdir"
                 .tags("sls")
                 .displayedName("File Path")
-                .description("The path (on receiver) for saving data to file")
-                .isDirectory()
+                .description("The path (on receiver) for saving data to file.")
                 .assignmentOptional().defaultValue("/tmp")
                 .reconfigurable()
                 .allowedStates(State::ON)
@@ -208,14 +226,14 @@ namespace karabo {
                 .alias("fname")
                 .tags("sls")
                 .displayedName("File Name")
-                .description("The name for saving data to file")
+                .description("The name prefix for saving data to file.")
                 .assignmentOptional().defaultValue("run")
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
 
         INT32_ELEMENT(expected).key("dataStorage.fileIndex")
-                .alias("index")
+                .alias("findex") // was "index"
                 .tags("sls")
                 .displayedName("File Start Index")
                 .description("The starting index for saving data to file. It "
@@ -225,223 +243,55 @@ namespace karabo {
                 .allowedStates(State::ON)
                 .commit();
 
-        VECTOR_INT16_ELEMENT(expected).key("online")
-                .alias("online")
-                .tags("sls")
-                .displayedName("online")
-                .description("Sets the detector in online (1) or offline (0) mode.")
-                .assignmentOptional().defaultValue({1})
-                .reconfigurable()
-                .allowedStates(State::ON)
-                .commit();
-
-        VECTOR_INT16_ELEMENT(expected).key("angDir")
-                .alias("angdir")
-                .tags("sls")
-                .displayedName("angDir")
-                .description("Sets the angular direction of the detector (1 means channel number"
-                "in the same direction as the angular encoder, -1 different direction).")
-                .assignmentOptional().defaultValue({1})
-                .reconfigurable()
-                .allowedStates(State::ON)
-                .commit();
-
-        VECTOR_INT16_ELEMENT(expected).key("moveFlag")
-                .alias("moveflag")
-                .tags("sls")
-                .displayedName("moveFlag")
-                .description("Related to a single controller d. 1 if the detector modules move"
-                "with the angular encoder, 0 if they are static (useful for multidetector systems)")
-                .assignmentOptional().defaultValue({0})
-                .reconfigurable()
-                .allowedStates(State::ON)
-                .commit();
-
         VECTOR_INT16_ELEMENT(expected).key("lock")
                 .alias("lock")
                 .tags("sls")
-                .displayedName("lock")
-                .description("lock")
+                .displayedName("Lock")
+                .description("Lock the detector to one IP.")
                 .assignmentOptional().defaultValue({0})
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
 
-        // Only ExtSig:0 is used in gotthard
-        // In principle also ExtSig:1, ExtSig:2 and ExtSig:3 could be present
-        STRING_ELEMENT(expected).key("extSig0")
-                .alias("extsig:0")
-                .tags("sls")
-                .displayedName("extSig0")
-                .description("Ext Sig 0")
-                .assignmentOptional().defaultValue("off")
-                .options("off gate_in_active_high gate_in_active_low trigger_in_rising_edge "
-                "trigger_in_falling_edge ro_trigger_in_rising_edge ro_trigger_in_falling_edge "
-                "gate_out_active_high gate_out_active_low trigger_out_rising_edge "
-                "trigger_out_falling_edge ro_trigger_out_rising_edge ro_trigger_out_falling_edge sync")
-                .reconfigurable()
-                .allowedStates(State::ON)
-                .commit();
-
-        // TODO: darkimage, gainimage?
-
-        // TODO: vthreshold, vcalibration, vtrimbit, vpreamp, vshaper1, vshaper2 ?
-
-        UINT32_ELEMENT(expected).key("vHighVoltageMax")
-                .description("Max value allowed for 'vHighVoltage'. Higher values will be rejected by the device.")
+        UINT32_ELEMENT(expected).key("highVoltageMax")
+                .description("Max value allowed for 'highVoltage'. Higher values will be rejected by the device. "
+                " Used to be named \"vHighVoltageMax\".")
                 .assignmentOptional().defaultValue(200)
+                .unit(Unit::VOLT)
                 .reconfigurable()
                 .adminAccess()
                 .commit();
 
-        VECTOR_UINT32_ELEMENT(expected).key("vHighVoltage")
-                .alias("vhighvoltage")
+        VECTOR_UINT32_ELEMENT(expected).key("highVoltage")
+                .alias("highvoltage") // was "vhighvoltage"
                 .tags("sls")
-                .displayedName("vHighVoltage")
-                .description("Sets the DAC value of the high voltage. Options: 0 90 110 120 150 180 200")
+                .displayedName("High Voltage")
+                .description("High voltage to the sensor. "
+                " Used to be named \"vHighVoltage\".")
                 .assignmentOptional().defaultValue({90})
+                .unit(Unit::VOLT)
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
 
-        // vapower, vddpower, vshpower, viopower, vref_ds, vcascn_pb, vcascp_pb, vout_cm, vcasc_out, vin_cm, vref_comp,
-        // ib_test_c TODO
-        // reg a d?
-        // clkdivider, setlenght, waitstates, totdivider, totdutycycle TODO
-        // setup, trimbits ?
+// XXX badchannels: create bad channel file on the fly in /dev/shm or /tmp?
+// XXX Gotthard2 only
+//        PATH_ELEMENT(expected).key("badChannels")
+//                .alias("badchannels")
+//                .tags("sls")
+//                .displayedName("Bad Channels")
+//                .description("Sets the bad channels (from file of bad channel numbers) to be masked out."
+//                "Use '' to unset.")
+//                .assignmentOptional().noDefaultValue()
+//                .reconfigurable()
+//                .allowedStates(State::ON)
+//                .commit();
 
-        INT16_ELEMENT(expected).key("master")
-                .alias("master")
-                .tags("sls")
-                .displayedName("master")
-                .description("Sets the master of a multi-controller detector to the controller "
-                "with index i. -1 removes master.")
-                .assignmentOptional().defaultValue(-1)
-                .reconfigurable()
-                .allowedStates(State::ON)
-                .commit();
-
-        STRING_ELEMENT(expected).key("sync")
-                .alias("sync")
-                .tags("sls")
-                .displayedName("sync")
-                .description("Sets the synchronization mode of the various controller within "
-                "a detector structure")
-                .assignmentOptional().defaultValue("none")
-                .options("none gating trigger complementary")
-                .reconfigurable()
-                .allowedStates(State::ON)
-                .commit();
-
-        // Set internally: headerbefore="none", headerafter="none", headerbeforepar="none", headerafterpar="none"
-
-        // TODO badchannels: create bad channel file on the fly in /dev/shm or /tmp?
-        PATH_ELEMENT(expected).key("badChannels")
-                .alias("badchannels")
-                .tags("sls")
-                .displayedName("Bad Channels")
-                .description("Sets the bad channel filename. Bad channels will be "
-                "omitted in the .dat file. Use 'none' to unset.")
-                .assignmentOptional().defaultValue("none")
-                .reconfigurable()
-                .allowedStates(State::ON)
-                .commit();
-
-        // TODO angconv: create angconv file on the fly in /dev/shm or /tmp?
-        PATH_ELEMENT(expected).key("angConv")
-                .alias("angconv")
-                .tags("sls")
-                .displayedName("Angular Conversion")
-                .description("Sets the file with the coefficients for angular conversion. Use 'none' "
-                "to disable angular conversion.")
-                .assignmentOptional().defaultValue("none")
-                .reconfigurable()
-                .allowedStates(State::ON)
-                .commit();
-
-        VECTOR_FLOAT_ELEMENT(expected).key("globalOff")
-                .alias("globaloff")
-                .tags("sls")
-                .displayedName("Global Offset")
-                .description("Sets the offset of the beamline i.e. angular position of channel"
-                "0 when angular encoder at 0.")
-                .unit(Unit::DEGREE)
-                .assignmentOptional().defaultValue({0.})
-                .reconfigurable()
-                .allowedStates(State::ON)
-                .commit();
-
-        VECTOR_FLOAT_ELEMENT(expected).key("binSize")
-                .alias("binsize")
-                .tags("sls")
-                .displayedName("Bin Size")
-                .description("Sets the size of the angular bins for angular conversion.")
-                .unit(Unit::DEGREE)
-                .assignmentOptional().defaultValue({0.001})
-                .reconfigurable()
-                .allowedStates(State::ON)
-                .commit();
-
-        INT16_ELEMENT(expected).key("threaded")
-                .alias("threaded")
-                .tags("sls")
-                .displayedName("Threaded")
-                .description("Avoid changing it. Sets if the data are written to disk in parallel "
-                "with the acquisition (1) or after the acquisition (0).")
-                .assignmentOptional().defaultValue(1)
-                .options("0 1")
-                .reconfigurable()
-                .allowedStates(State::ON)
-                .commit();
-
-        STRING_ELEMENT(expected).key("detectorDeveloper")
-                .displayedName("detectorDeveloper")
-                .description("Detector Developer. (useful to define subset of working functions)")
-                .readOnly()
-                .commit();
-
-        PATH_ELEMENT(expected).key("flatFieldCorrectionFile")
-                .alias("flatfield")
-                .tags("sls")
-                .displayedName("Flat-Field Correction File")
-                .description("Flat field corrections file name. Use 'none' to disable corrections.")
-                .assignmentOptional().defaultValue("none")
-                .reconfigurable()
-                .commit();
-
-        VECTOR_STRING_ELEMENT(expected).key("positions")
-                .alias("positions")
-                .tags("sls")
-                .displayedName("Positions")
-                .description("Positions for the acquisition. Usage: n pos1 pos2 ... posn")
-                .assignmentOptional().defaultValue({"0"})
-                .reconfigurable()
-                .allowedStates(State::ON)
-                .commit();
-
-        VECTOR_INT32_ELEMENT(expected).key("maximumDetectorSize")
-                .displayedName("MaximumDetectorSize")
-                .description("Maximum detector size")
-                .readOnly()
-                .commit();
-
-        // Detector returns error - also from command line interface...
-        //        VECTOR_STRING_ELEMENT(expected).key("roi")
-        //                .alias("roi")
-        //                .tags("sls")
-        //                .displayedName("ROI")
-        //                .description("Set the ROI. Usage: i, xmin, xmax, ymin, ymax (where i is the number of ROIs). To disable use: 0.")
-        //                .assignmentOptional().defaultValue({"0"})
-        //                .minSize(1).maxSize(5)
-        //                .reconfigurable()
-        //                .allowedStates(State::ON)
-        //                .commit();
-
-        INT32_ELEMENT(expected).key("bitDepth")
+        INT32_ELEMENT(expected).key("dynamicRange")
                 .alias("dr")
                 .tags("sls")
-                .displayedName("BitDepth")
-                .description("Bit Depth")
+                .displayedName("Dynamic Range")
+                .description("Dymanic range. Used to be named \"bitDepth\".")
                 .assignmentOptional().defaultValue(16)
                 .reconfigurable()
                 .allowedStates(State::ON)
@@ -450,9 +300,9 @@ namespace karabo {
         FLOAT_ELEMENT(expected).key("exposureTime")
                 .alias("exptime")
                 .tags("sls")
-                .displayedName("ExposureTime")
-                .description("exposure time value")
-                .assignmentOptional().defaultValue(0.00001)
+                .displayedName("Exposure Time")
+                .description("The exposure time.")
+                .assignmentOptional().defaultValue(1.e-5) // 10 us
                 .minExc(0.)
                 .unit(Unit::SECOND)
                 .reconfigurable()
@@ -462,9 +312,10 @@ namespace karabo {
         FLOAT_ELEMENT(expected).key("exposurePeriod")
                 .alias("period")
                 .tags("sls")
-                .displayedName("ExposurePeriod")
-                .description("exposure period")
-                .assignmentOptional().defaultValue(1.)
+                .displayedName("Exposure Period")
+                .description("The period between frames.")
+                .assignmentOptional().defaultValue(0.1) // 100 ms
+                .minExc(0.)
                 .unit(Unit::SECOND)
                 .reconfigurable()
                 .allowedStates(State::ON)
@@ -473,20 +324,10 @@ namespace karabo {
         VECTOR_FLOAT_ELEMENT(expected).key("delayAfterTrigger")
                 .alias("delay")
                 .tags("sls")
-                .displayedName("DelayAfterTrigger")
-                .description("delay after trigger")
+                .displayedName("Delay After Trigger")
+                .description("The delay after trigger.")
                 .assignmentOptional().defaultValue({0.})
                 .unit(Unit::SECOND)
-                .reconfigurable()
-                .allowedStates(State::ON)
-                .commit();
-
-        INT64_ELEMENT(expected).key("numberOfGates")
-                .alias("gates")
-                .tags("sls")
-                .displayedName("NumberOfGates")
-                .description("Number Of Gates")
-                .assignmentOptional().defaultValue(0)
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
@@ -494,30 +335,41 @@ namespace karabo {
         INT64_ELEMENT(expected).key("numberOfFrames")
                 .alias("frames")
                 .tags("sls")
-                .displayedName("NumberOfFrames")
-                .description("Number Of Frames")
+                .displayedName("Number of Frames")
+                .description("Number of frames per acquisition. In trigger mode, number of frames per trigger.")
                 .assignmentOptional().defaultValue(1)
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
 
-        INT64_ELEMENT(expected).key("numberOfCycles")
-                .alias("cycles")
+        INT64_ELEMENT(expected).key("numberOfTriggers")
+                .alias("triggers")
                 .tags("sls")
-                .displayedName("NumberOfCycles")
-                .description("Number Of Cycles")
+                .displayedName("Number of Triggers")
+                .description("Number of triggers per acquisition. Used to be named \"numberOfCycles\".")
                 .assignmentOptional().defaultValue(1)
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
+
+// Mythen3 only
+//        INT64_ELEMENT(expected).key("numberOfGates")
+//                .alias("gates")
+//                .tags("sls")
+//                .displayedName("Number of Gates")
+//                .description("Number Of Gates")
+//                .assignmentOptional().defaultValue(0)
+//                .reconfigurable()
+//                .allowedStates(State::ON)
+//                .commit();
 
         STRING_ELEMENT(expected).key("timing")
                 .alias("timing")
                 .tags("sls")
-                .displayedName("TimingMode")
-                .description("The timing mode of the detector")
+                .displayedName("Timing Mode")
+                .description("The timing mode of the detector.")
                 .assignmentOptional().defaultValue("auto")
-                .options("auto gating trigger ro_trigger triggered_gating")
+                .options("auto,gating,trigger,ro_trigger,triggered_gating") // OVERWRITE in derived class 
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
@@ -544,35 +396,40 @@ namespace karabo {
 
         // Read-only properties
 
-        VECTOR_STRING_ELEMENT(expected).key("detectorNumber")
-                .alias("detectornumber")
-                .tags("sls readOnConnect")
-                .displayedName("Detector Number")
-                .description("Returns the serial number of the module (normally the MAC address).")
+        STRING_ELEMENT(expected).key("clientVersion")
+                .displayedName("SLS Library Version")
+                .description("SLS software version, in the format [0xYYMMDD]. "
+                "Used to be named \"thisVersion\".")
                 .readOnly()
                 .commit();
 
-        VECTOR_STRING_ELEMENT(expected).key("detectorVersion")
-                .alias("detectorversion")
-                .tags("sls readOnConnect")
-                .displayedName("Detector Version")
-                .description("Returns the version of the controller firmware.")
+        VECTOR_STRING_ELEMENT(expected).key("firmwareVersion")
+                .displayedName("Firmware Version")
+                .displayedName("Firmware Version")
+                .description("Fimware version of the detectors, in the format [0xYYMMDD]"
+                //" or an increasing 2 digit number for Eiger"
+                ". Used to be named \"detectorVersion\".")
                 .readOnly()
                 .commit();
 
-        VECTOR_STRING_ELEMENT(expected).key("softwareVersion")
-                .alias("softwareversion")
-                .tags("sls readOnConnect")
-                .displayedName("Detector SW Version")
-                .description("Returns the version of the software running on the detector.")
+        VECTOR_STRING_ELEMENT(expected).key("detServerVersion")
+                .displayedName("Detector Server Version")
+                .description("On-board detector server software versions, "
+                "in the format [0xYYMMDD]. "
+                "Used to be named \"softwareVersion\".")
                 .readOnly()
                 .commit();
 
-        VECTOR_STRING_ELEMENT(expected).key("thisVersion")
-                .alias("thisversion")
-                .tags("sls readOnConnect")
-                .displayedName("Control SW Version")
-                .description("Returns the version of the control software which is being used.")
+        VECTOR_STRING_ELEMENT(expected).key("serialNumber")
+                .displayedName("Serial Number")
+                .description("Serial number of the detectors. "
+                "Used to be named \"detectorNumber\".")
+                .readOnly()
+                .commit();
+
+        VECTOR_STRING_ELEMENT(expected).key("receiverVersion")
+                .displayedName("Receiver Version")
+                .description("Receiver versions, in the format [0xYYMMDD].")
                 .readOnly()
                 .commit();
 
@@ -584,22 +441,6 @@ namespace karabo {
                 .minInc(5)
                 .maxInc(600)
                 .reconfigurable()
-                .commit();
-
-        VECTOR_STRING_ELEMENT(expected).key("tempAdc")
-                .alias("temp_adc")
-                .tags("sls poll")
-                .displayedName("ADC Temperature")
-                .description("Returns the ADC temperature.")
-                .readOnly()
-                .commit();
-
-        VECTOR_STRING_ELEMENT(expected).key("tempFpga")
-                .alias("temp_fpga")
-                .tags("sls poll")
-                .displayedName("FPGA Temperature")
-                .description("Returns the FPGA temperature.")
-                .readOnly()
                 .commit();
 
     }
@@ -617,23 +458,8 @@ namespace karabo {
 
     void SlsControl::stop() {
         KARABO_LOG_FRAMEWORK_DEBUG << "In stop";
-        m_SLS->stopMeasurement();
-        
-        // The below mentioned change is not working on SlsDetectorPackage 4.0
-        
-        /*
-        // The following call is supposed to stop acquisition, but sometimes hangs
-        // (observed in SlsDetectorPackage 3.0):
-        // m_SLS->stopMeasurement();
-        // therefore I sent "status stop" with putCommand, which does not show
-        // the same problem.
+        m_SLS->stopDetector();
 
-        char* args[2];
-        args[0] = const_cast<char*>("status");
-        args[1] = const_cast<char*>("stop");
-        const std::string reply = m_SLS->putCommand(2, args);
-        KARABO_LOG_FRAMEWORK_INFO << "Acquisition stopped. Reply: " << reply;
-        */
         KARABO_LOG_FRAMEWORK_DEBUG << "Quitting stop";
         this->updateState(State::ON);
     }
@@ -662,22 +488,25 @@ namespace karabo {
     void SlsControl::initialize() {
         try {
             m_numberOfModules = this->get<std::vector<std::string> >("detectorHostName").size();
+            m_positions.resize(m_numberOfModules);
+            for (size_t i = 0; i < m_numberOfModules; ++i) {
+                m_positions[i] = i;
+            }
         } catch (const karabo::util::Exception &e) {
             KARABO_LOG_FRAMEWORK_ERROR << "SlsControl::initializationStateOnEntry - " << e;
             m_numberOfModules = 0;
         }
 
         // TODO this code should be moved to connect, so that it can be retried
-        // if ret != 0
         KARABO_LOG_FRAMEWORK_DEBUG << "Creating m_SLS...";
-        int ret = 1;
         std::hash<std::string> hash_fn;
-        m_id = (0x7FFFFFFF & hash_fn(m_tmpDir)); // Make unique index from UUID
-        KARABO_LOG_FRAMEWORK_INFO << "Multi-detector index: " << m_id;
-        m_SLS = new slsDetectorUsers(ret, m_id);
-        if (ret != 0) {
+        m_shm_id = (0x7FFFFFFF & hash_fn(m_tmpDir)); // Make unique index from UUID
+        KARABO_LOG_FRAMEWORK_INFO << "Shared memory segment index: " << m_shm_id;
+        try {
+            std::shared_ptr<sls::Detector> detector(new sls::Detector(m_shm_id));
+            m_SLS = std::move(detector);
+        } catch (std::exception& e) {
             KARABO_LOG_FRAMEWORK_DEBUG << "    failed!";
-            if (m_SLS != NULL) delete m_SLS;
             return;
         }
         KARABO_LOG_FRAMEWORK_DEBUG << "    done!";
@@ -744,7 +573,7 @@ namespace karabo {
         KARABO_LOG_FRAMEWORK_DEBUG << "Stop polling, as it would interfere with acquisition";
         this->stopPoll();
 
-        m_SLS->startMeasurement(); // Blocking function - will return when acquisition is over!
+        m_SLS->acquire(); // Blocking function - will return when acquisition is over!
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Restart polling";
         this->startPoll();
@@ -773,6 +602,7 @@ namespace karabo {
             // stops polling and tries to reconnect
             KARABO_LOG_ERROR << "Detector(s) went offline";
             this->updateState(State::UNKNOWN);
+            m_firstPoll = true;
             m_connect = true;
             m_connect_timer.expires_from_now(boost::posix_time::milliseconds(0));
             m_connect_timer.async_wait(karabo::util::bind_weak(&SlsControl::connect, this, boost::asio::placeholders::error));
@@ -784,42 +614,17 @@ namespace karabo {
             this->updateState(State::ERROR);
         }
 
-        // Paths to be polled
-        std::vector<std::string> paths;
-        this->getPathsByTag(paths, "poll");
-
-        if (m_firstPoll) {
-            // Run only once
-            m_firstPoll = false;
-
-            std::vector<std::string> onConnectPaths;
-            this->getPathsByTag(onConnectPaths, "readOnConnect");
-            paths.insert(paths.end(), onConnectPaths.begin(), onConnectPaths.end());
-        }
-
-        char* args[1];
         Hash h;
-        for (auto it = paths.begin(); it != paths.end(); ++it) {
-            try {
-                std::string alias = this->getAliasFromKey<std::string >(*it); // key=*it
-                auto type = this->getValueType(*it);
-                args[0] = const_cast<char*> (alias.c_str());
-                if (Types::isSimple(type)) {
-                    std::string reply = m_SLS->getCommand(1, args, 0);
-                    h.set(*it, reply);
-                    KARABO_LOG_FRAMEWORK_DEBUG << "Command: " << args[0] << ". Reply: " << reply;
-                } else { // isVector
-                    std::vector<std::string> reply;
-                    for (size_t i = 0; i < m_numberOfModules; ++i) {
-                        reply.push_back(m_SLS->getCommand(1, args, i));
-                    }
-                    h.set(*it, reply);
-                    KARABO_LOG_FRAMEWORK_DEBUG << "Command: " << args[0] << ". Reply: " << toString(reply);
-                }
-            } catch (const karabo::util::Exception& e) {
-                KARABO_LOG_ERROR << "Exception caught in SlsControl::pollHardware(): " << e;
-            }
+        if (m_firstPoll) {
+            this->pollOnce(h);
+
+            // Poll only once
+            m_firstPoll = false;
         }
+
+        // Poll detector specific parameters
+        this->pollDetectorSpecific(h);
+
         if (!h.empty()) {
             this->set(h); // bulk set
         }
@@ -831,6 +636,46 @@ namespace karabo {
         }
 
     }
+
+
+    void SlsControl::pollOnce(karabo::util::Hash& h) {
+        std::stringstream ss;
+        ss << std::hex << std::showbase << m_SLS->getClientVersion();
+        h.set("clientVersion", ss.str());
+
+        std::vector<std::string> version;
+        for (const int64_t& v : m_SLS->getFirmwareVersion(m_positions)) {
+            ss.str(""); // clear content
+            ss << std::hex << std::showbase << v;
+            version.push_back(ss.str());
+        }
+        h.set("firmwareVersion", version);
+
+        version.clear(); // clear content
+        for (const int64_t& v : m_SLS->getDetectorServerVersion(m_positions)) {
+            ss.str(""); // clear content
+            ss << std::hex << std::showbase << v;
+            version.push_back(ss.str());
+        }
+        h.set("detServerVersion", version);
+
+        version.clear(); // clear content
+        for (const int64_t& v : m_SLS->getSerialNumber(m_positions)) {
+            ss.str(""); // clear content
+            ss << std::hex << std::showbase << v;
+            version.push_back(ss.str());
+        }
+        h.set("serialNumber", version);
+
+        version.clear(); // clear content
+        for (const int64_t& v : m_SLS->getReceiverVersion(m_positions)) {
+            ss.str(""); // clear content
+            ss << std::hex << std::showbase << v;
+            version.push_back(ss.str());
+        }
+        h.set("receiverVersion", version);
+    }
+
 
     void SlsControl::getPathsByTag(std::vector<std::string >& paths, const std::string& tags) {
         karabo::util::Schema schema = this->getFullSchema();
@@ -844,27 +689,27 @@ namespace karabo {
 
     void SlsControl::sendBaseConfiguration() {
         // Get detector and receiver information
-        auto hostnames = this->get<std::vector<std::string> >("detectorHostName");
-        auto detectorips = this->get<std::vector<std::string> >("detectorIp");
+        const auto hostnames = this->get<std::vector<std::string> >("detectorHostName");
+        const auto udp_src_ips = this->get<std::vector<std::string> >("udpSrcIp");
 
-        auto rx_hostnames = this->get<std::vector<std::string> > ("rxHostname");
-        auto rx_tcpports = this->get<std::vector<unsigned short> >("rxTcpPort");
-        auto rx_udpips = this->get<std::vector<std::string> >("rxUdpIp");
-        auto rx_udpports = this->get<std::vector<unsigned short> >("rxUdpPort");
+        const auto rx_hostnames = this->get<std::vector<std::string> > ("rxHostname");
+        const auto rx_tcpports = this->get<std::vector<unsigned short> >("rxTcpPort");
+        const auto udp_dst_ips = this->get<std::vector<std::string> >("udpDstIp");
+        const auto udp_dst_ports = this->get<std::vector<unsigned short> >("udpDstPort");
 
         // Check that all vectors have the same size
         if (hostnames.size() != m_numberOfModules) {
             throw KARABO_PARAMETER_EXCEPTION(std::string("detectorHostName has wrong size: " + toString(hostnames.size()) + "!= " + toString(m_numberOfModules)));
-        } else if (detectorips.size() != m_numberOfModules) {
-            throw KARABO_PARAMETER_EXCEPTION(std::string("detectorIp has wrong size: " + toString(detectorips.size()) + "!= " + toString(m_numberOfModules)));
+        } else if (udp_src_ips.size() != m_numberOfModules) {
+            throw KARABO_PARAMETER_EXCEPTION(std::string("udpSrcIp has wrong size: " + toString(udp_src_ips.size()) + "!= " + toString(m_numberOfModules)));
         } else if (rx_hostnames.size() != m_numberOfModules) {
             throw KARABO_PARAMETER_EXCEPTION(std::string("rxHostname has wrong size: " + toString(rx_hostnames.size()) + "!= " + toString(m_numberOfModules)));
         } else if (rx_tcpports.size() != m_numberOfModules) {
             throw KARABO_PARAMETER_EXCEPTION(std::string("rxTcpPort has wrong size: " + toString(rx_tcpports.size()) + "!= " + toString(m_numberOfModules)));
-        } else if (rx_udpips.size() != m_numberOfModules) {
-            throw KARABO_PARAMETER_EXCEPTION(std::string("rxUdpIp has wrong size: " + toString(rx_udpips.size()) + "!= " + toString(m_numberOfModules)));
-        } else if (rx_udpports.size() != m_numberOfModules) {
-            throw KARABO_PARAMETER_EXCEPTION(std::string("rxUdpPort has wrong size: " + toString(rx_udpports.size()) + "!= " + toString(m_numberOfModules)));
+        } else if (udp_dst_ips.size() != m_numberOfModules) {
+            throw KARABO_PARAMETER_EXCEPTION(std::string("udpDstIp has wrong size: " + toString(udp_dst_ips.size()) + "!= " + toString(m_numberOfModules)));
+        } else if (udp_dst_ports.size() != m_numberOfModules) {
+            throw KARABO_PARAMETER_EXCEPTION(std::string("udpDstPort has wrong size: " + toString(udp_dst_ports.size()) + "!= " + toString(m_numberOfModules)));
         }
 
         const std::string fname = m_tmpDir + "/base.config";
@@ -878,18 +723,16 @@ namespace karabo {
 
             for (size_t i = 0; i < m_numberOfModules; ++i) {
                 // Please note: order of the parameter matters!
-                configFile << i << ":rx_udpport " << rx_udpports[i] << std::endl;
+                configFile << i << ":udp_dstport " << udp_dst_ports[i] << std::endl;
                 configFile << i << ":rx_tcpport " << rx_tcpports[i] << std::endl;
-                configFile << i << ":detectorip " << detectorips[i] << std::endl;
-                configFile << i << ":rx_udpip " << rx_udpips[i] << std::endl;
+                configFile << i << ":udp_srcip " << udp_src_ips[i] << std::endl;
+                configFile << i << ":udp_dstip " << udp_dst_ips[i] << std::endl;
                 configFile << i << ":rx_hostname " << rx_hostnames[i] << std::endl;
             }
             configFile.close();
 
-            int success = m_SLS->readConfigurationFile(fname); // This will also free SLS shared memory
-            if (success != 0) {
-                throw KARABO_RECONFIGURE_EXCEPTION("m_SLS->readConfigurationFile returned code " + toString(success));
-            }
+            m_SLS->loadConfig(fname); // This will also free SLS shared memory
+
             this->powerOn();
         } else {
             throw KARABO_RECONFIGURE_EXCEPTION("Could not open file " + fname + "for writing");
@@ -899,47 +742,11 @@ namespace karabo {
     void SlsControl::sendInitialConfiguration() {
         try {
             // Get current configuration
-            Hash configHash = this->getCurrentConfiguration("sls");
+            const Hash configHash = this->getCurrentConfiguration("sls");
 
             // Send some more parameters, not from configuration hash
-            this->sendConfiguration("settingsdir", m_tmpDir); // settings directory
-            this->sendConfiguration("caldir", m_tmpDir); // calibrations directory
-
-            std::string ffdir = std::getenv("HOME");
-            this->sendConfiguration("ffdir", ffdir); // flat field corrections directory
-
-            this->sendConfiguration("extsig:1", "off");
-            this->sendConfiguration("extsig:2", "off");
-            this->sendConfiguration("extsig:3", "off");
-
-            this->sendConfiguration("headerbefore", "none");
-            this->sendConfiguration("headerafter", "none");
-            this->sendConfiguration("headerbeforepar", "none");
-            this->sendConfiguration("headerafterpar", "none");
-
-            this->sendConfiguration("fineoff", "0.");
-
-            this->sendConfiguration("startscript", "none");
-            this->sendConfiguration("startscriptpar", "none");
-            this->sendConfiguration("stopscript", "none");
-            this->sendConfiguration("stopscriptpar", "none");
-
-            this->sendConfiguration("scriptbefore", "none");
-            this->sendConfiguration("scriptbeforepar", "none");
-            this->sendConfiguration("scriptafter", "none");
-            this->sendConfiguration("scriptafterpar", "none");
-
-            this->sendConfiguration("scan0script", "0");
-            this->sendConfiguration("scan0par", "0");
-            this->sendConfiguration("scan0prec", "0");
-            this->sendConfiguration("scan0steps", "0");
-
-            this->sendConfiguration("scan1script", "0");
-            this->sendConfiguration("scan1par", "0");
-            this->sendConfiguration("scan1prec", "0");
-            this->sendConfiguration("scan1steps", "0");
-
-            this->sendConfiguration("fileformat", "binary");
+            this->sendConfiguration("settingspath", m_tmpDir); // settings directory
+            this->sendConfiguration("fformat", "binary"); // file format
 
             // Send all other parameters, from configuration hash
             this->sendConfiguration(configHash);
@@ -957,7 +764,7 @@ namespace karabo {
         KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::sendConfiguration";
 
         // Check that detector and receiver are online
-        auto& state = this->getState();
+        const State& state = this->getState();
         if (state != State::INIT && state != State::ON) {
             KARABO_LOG_ERROR << "sendConfiguration(): detector or receiver is not online. Aborting!";
             return;
@@ -977,23 +784,31 @@ namespace karabo {
                     continue;
                 }
                 alias = this->getAliasFromKey<std::string >(key);
-                Types::ReferenceType type = configHash.getType(key);
+                const Types::ReferenceType type = configHash.getType(key);
 
                 KARABO_LOG_FRAMEWORK_DEBUG << "SlsControl::sendConfiguration - Key: " << key << " Type: " << type;
 
                 if (Types::isSimple(type)) {
-                    std::string value = configHash.getAs<std::string>(key);
-                    this->sendConfiguration(alias, value);
+                    if (type == Types::FLOAT || type == Types::DOUBLE) {
+                        // We have to use std::to_string in order to convert
+                        // e.g. 1.0e-5 to 0.00001
+                        const double value = configHash.getAs<double>(key);
+                        this->sendConfiguration(alias, std::to_string(value));
+                    } else {
+                        const std::string value = configHash.getAs<std::string>(key);
+                        this->sendConfiguration(alias, value);
+                    }
+                  
 
                 } else if (Types::isVector(type)) {
-                    auto values = configHash.getAs<std::string, std::vector>(key);
+                    // XXX Here we possibly have to use std::to_string for
+                    // vectors of floate/doubles -> see simple types
+                    const auto values = configHash.getAs<std::string, std::vector>(key);
                     if (values.size() == 0) {
                         continue; // ignore key
                     } else if (values.size() == 1) {
                         // send same value to all
-                        for (size_t i = 0; i < m_numberOfModules; ++i) {
-                            this->sendConfiguration(alias, values[0], i);
-                        }
+                        this->sendConfiguration(alias, values[0]);
                     } else if (values.size() == m_numberOfModules) {
                         for (size_t i = 0; i < values.size(); ++i) {
                             this->sendConfiguration(alias, values[i], i);
@@ -1021,7 +836,7 @@ namespace karabo {
         KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::isHostOnline";
 
         bool online;
-        std::string portString = std::to_string(port);
+        const std::string portString = std::to_string(port);
 
         try {
             boost::asio::ip::tcp::iostream s;
@@ -1055,7 +870,7 @@ namespace karabo {
     bool SlsControl::areDetectorsOnline() {
         KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::areDetectorsOnline";
 
-        auto hosts = this->get<std::vector<std::string> >("detectorHostName");
+        const auto hosts = this->get<std::vector<std::string> >("detectorHostName");
         std::vector<unsigned short> ports;
         try {
             ports = this->get<std::vector<unsigned short> >("detectorHostPort");
@@ -1085,10 +900,17 @@ namespace karabo {
     }
 
     bool SlsControl::areReceiversOnline() {
+        /* Note: When called on 5.0.1 receiver, the latter will print out an error like:
+         *     17:17:49.184 ERROR: TCP socket read 0 bytes instead of 4 bytes
+         *     17:17:49.184 ERROR: TCP socket sent 0 bytes instead of 1000 bytes
+         *     17:17:49.185 ERROR: Accept failed
+         * This is because a connection is established, but no data exchanged.
+         */
+
         KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::areReceiversOnline";
 
-        auto hosts = get<std::vector<std::string> >("rxHostname");
-        auto ports = get<std::vector<unsigned short> >("rxTcpPort");
+        const auto hosts = this->get<std::vector<std::string> >("rxHostname");
+        const auto ports = this->get<std::vector<unsigned short> >("rxTcpPort");
         if (ports.size() < hosts.size()) {
             KARABO_LOG_FRAMEWORK_ERROR << "len(rxTcpPort) < len(rxHostname)";
         }
@@ -1130,9 +952,7 @@ namespace karabo {
     void SlsControl::createCalibrationAndSettings(const std::string& settings) {
         KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::createCalibrationAndSettings";
 
-        std::string calibrationDir = m_tmpDir + "/" + settings;
-        std::string calibrationFileName = calibrationDir + "/calibration.sn";
-        std::string settingsFileName = calibrationDir + "/settings.sn";
+        const std::string calibrationDir = m_tmpDir + "/" + settings;
 
         if (!fs::exists(calibrationDir)) {
             // Create calibration and settings directory
@@ -1141,37 +961,24 @@ namespace karabo {
             KARABO_LOG_FRAMEWORK_DEBUG << "Created calibration dir" << calibrationDir;
         }
 
-        if (!fs::exists(calibrationFileName)) {
-            // Create calibration file
-            std::ofstream calibrationFile;
-            calibrationFile.open(calibrationFileName.c_str());
-
-            if (calibrationFile.is_open()) {
-                std::string calibrationString = this->getCalibrationString();
-                calibrationFile << calibrationString;
-                calibrationFile.close();
-
-                KARABO_LOG_FRAMEWORK_DEBUG << "Created calibration file " << calibrationFileName;
-            } else {
-                throw KARABO_RECONFIGURE_EXCEPTION("Could not open file " + calibrationFileName + "for writing");
-            }
-        }
-
-        if (!fs::exists(settingsFileName)) {
-            // Create settings file
-            std::ofstream settingsFile;
-            settingsFile.open(settingsFileName.c_str());
-
-            if (settingsFile.is_open()) {
-                std::string settingsString = this->getSettingsString();
-                settingsFile << settingsString;
-                settingsFile.close();
-
-                KARABO_LOG_FRAMEWORK_DEBUG << "Created settings file " << settingsFileName;
-            } else {
-                throw KARABO_RECONFIGURE_EXCEPTION("Could not open file " + settingsFileName + "for writing");
-            }
-        }
+        // In case the detector needs calibration and setting files
+        // (not the case for Gotthard, Jungfrau, Gotthard-II),
+        // the derived class should - in addition - do something like:
+        // 
+        // const std::string fname = calibrationDir + "/calibration.sn";
+        // if (!fs::exists(fname)) {
+        //     // Create calibration file
+        //     std::ofstream fstr;
+        //     fstr.open(fname.c_str());
+        // 
+        //     if (fstr.is_open()) {
+        //         fstr << "227 5.6\n"
+        //         fstr.close();
+        // 
+        //     } else {
+        //         throw KARABO_RECONFIGURE_EXCEPTION("Could not open file " + fname + "for writing");
+        //     }
+        // }
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Quitting SlsControl::createCalibrationAndSettings";
     }
@@ -1180,7 +987,7 @@ namespace karabo {
         KARABO_LOG_DEBUG << "Entering SlsControl::sendConfiguration";
 
         // Check that detector and receiver are online
-        auto& state = this->getState();
+        const State& state = this->getState();
         if (state != State::INIT && state != State::ON) {
             KARABO_LOG_FRAMEWORK_ERROR << "sendConfiguration(): detector or receiver is not online. Aborting!";
             return;
@@ -1197,17 +1004,17 @@ namespace karabo {
                 this->createCalibrationAndSettings(parameters);
             }
 
-            std::vector<std::string > tokens;
-            boost::split(tokens, parameters, boost::is_any_of(", "));
+            std::stringstream command_and_parameters;
+            if (pos >= 0) {
+                command_and_parameters << pos << ":"; // position
+            }
+            command_and_parameters << command;
+            if (parameters.size() > 0) {
+                command_and_parameters << " " << parameters;
+            }
+            m_SLS->loadParameters(std::vector<std::string>({command_and_parameters.str()}));
 
-            int narg = tokens.size() + 1;
-            char* args[narg];
-            args[0] = (char*) command.c_str();
-            for (size_t i = 0; i < tokens.size(); ++i)
-                args[i + 1] = const_cast<char*> (tokens.at(i).c_str());
-
-            std::string reply = m_SLS->putCommand(narg, args, pos);
-            KARABO_LOG_FRAMEWORK_DEBUG << "Pos: " << pos << ". Command: " << args[0] << " " << parameters << ". Reply: " << reply;
+            KARABO_LOG_FRAMEWORK_DEBUG << "Sent configuration: " << command_and_parameters.str();
         } catch (...) {
             KARABO_LOG_FRAMEWORK_ERROR << "Could not send configuration";
             throw; // Calling function must take care
@@ -1221,19 +1028,19 @@ namespace karabo {
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Incoming reconfiguration: \n" << incomingReconfiguration;
 
-        if (incomingReconfiguration.has("vHighVoltage")) {
+        if (incomingReconfiguration.has("highVoltage")) {
             // validate
-            const auto vHighVoltageMax = incomingReconfiguration.has("vHighVoltageMax") ? incomingReconfiguration.get<unsigned int>("vHighVoltageMax") : this->get<unsigned int>("vHighVoltageMax");
-            const auto vHighVoltage = incomingReconfiguration.get<std::vector<unsigned int>>("vHighVoltage");
-            for (auto value : vHighVoltage) {
-                if (value > vHighVoltageMax) {
-                    KARABO_LOG_FRAMEWORK_ERROR << "Discarding 'vHighVoltage', as it contains values higher than vHighVoltageMax (" << vHighVoltageMax << ")";
-                    incomingReconfiguration.erase("vHighVoltage");
+            const auto highVoltageMax = incomingReconfiguration.has("highVoltageMax") ? incomingReconfiguration.get<unsigned int>("highVoltageMax") : this->get<unsigned int>("highVoltageMax");
+            const auto highVoltage = incomingReconfiguration.get<std::vector<unsigned int>>("highVoltage");
+            for (auto value : highVoltage) {
+                if (value > highVoltageMax) {
+                    KARABO_LOG_FRAMEWORK_ERROR << "Discarding 'highVoltage', as it contains values higher than highVoltageMax (" << highVoltageMax << ")";
+                    incomingReconfiguration.erase("highVoltage");
                 }
             }
         }
 
-        Hash h1 = this->filterByTags(incomingReconfiguration, "sls");
+        const Hash h1 = this->filterByTags(incomingReconfiguration, "sls");
         KARABO_LOG_FRAMEWORK_DEBUG << "Filtered reconfiguration: \n" << h1;
 
         this->sendConfiguration(h1);
@@ -1243,19 +1050,19 @@ namespace karabo {
 
         Hash h2;
         if (incomingReconfiguration.has("acquisitionTime")) {
-            float acquisitionTime = incomingReconfiguration.get<float>("acquisitionTime");
-            std::string timing = incomingReconfiguration.has("timing") ? incomingReconfiguration.get<std::string>("timing") : this->get<std::string>("timing");
+            const float acquisitionTime = incomingReconfiguration.get<float>("acquisitionTime");
+            const std::string timing = incomingReconfiguration.has("timing") ? incomingReconfiguration.get<std::string>("timing") : this->get<std::string>("timing");
 
             if (timing == "trigger") {
                 // External Trigger mode
-                float triggerPeriod = incomingReconfiguration.has("triggerPeriod") ? incomingReconfiguration.get<float>("triggerPeriod") : this->get<float>("triggerPeriod");
-                long long numberOfCycles;
+                const float triggerPeriod = incomingReconfiguration.has("triggerPeriod") ? incomingReconfiguration.get<float>("triggerPeriod") : this->get<float>("triggerPeriod");
+                long long numberOfTriggers;
 
                 if (acquisitionTime >= triggerPeriod) {
-                    numberOfCycles = std::floor(acquisitionTime / triggerPeriod);
-                    h2.set("numberOfCycles", numberOfCycles);
+                    numberOfTriggers = std::floor(acquisitionTime / triggerPeriod);
+                    h2.set("numberOfTriggers", numberOfTriggers);
                 } else {
-                    h2.set("numberOfCycles", 1ll);
+                    h2.set("numberOfTriggers", 1ll);
 
                     float exposureTime = incomingReconfiguration.has("exposureTime") ? incomingReconfiguration.get<float>("exposureTime") : this->get<float>("exposureTime");
                     float exposurePeriod = incomingReconfiguration.has("exposurePeriod") ? incomingReconfiguration.get<float>("exposurePeriod") : this->get<float>("exposurePeriod");
@@ -1270,7 +1077,7 @@ namespace karabo {
                         h2.set("exposurePeriod", exposurePeriod);
                     }
 
-                    long long numberOfFrames = acquisitionTime / std::max(exposureTime, exposurePeriod);
+                    const long long numberOfFrames = acquisitionTime / std::max(exposureTime, exposurePeriod);
                     h2.set("numberOfFrames", numberOfFrames);
                 }
 
@@ -1280,7 +1087,7 @@ namespace karabo {
 
             } else if (timing == "auto") {
                 // Internal Trigger mode
-                h2.set("numberOfCycles", 1ll);
+                h2.set("numberOfTriggers", 1ll);
 
                 float exposureTime = incomingReconfiguration.has("exposureTime") ? incomingReconfiguration.get<float>("exposureTime") : this->get<float>("exposureTime");
                 float exposurePeriod = incomingReconfiguration.has("exposurePeriod") ? incomingReconfiguration.get<float>("exposurePeriod") : this->get<float>("exposurePeriod");
@@ -1295,7 +1102,7 @@ namespace karabo {
                     h2.set("exposurePeriod", exposurePeriod);
                 }
 
-                long long numberOfFrames = acquisitionTime / std::max(exposureTime, exposurePeriod);
+                const long long numberOfFrames = acquisitionTime / std::max(exposureTime, exposurePeriod);
                 h2.set("numberOfFrames", numberOfFrames);
 
                 // Update device itself, then send parameters to detector

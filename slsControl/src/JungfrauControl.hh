@@ -33,10 +33,11 @@ namespace karabo {
 
     private:
         void powerOn();
+        void pollDetectorSpecific(karabo::util::Hash& h);
         void configureDetectorSpecific(const karabo::util::Hash& configHash);
-
-        const char* getCalibrationString() const;
-        const char* getSettingsString() const;
+        void createCalibrationAndSettings(const std::string& settings) {
+            // nothing to be done
+        }
 
     };
 

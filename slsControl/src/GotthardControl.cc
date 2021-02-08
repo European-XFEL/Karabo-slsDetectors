@@ -19,48 +19,66 @@ namespace karabo {
 
     KARABO_REGISTER_FOR_CONFIGURATION(BaseDevice, Device<>, SlsControl, GotthardControl)
 
+
     GotthardControl::GotthardControl(const Hash& config) : SlsControl(config) {
 #ifdef SLS_SIMULATION
-        m_detectorType = static_cast<int>(detectorType::GOTTHARD);
+        m_detectorType = slsDetectorDefs::detectorType::GOTTHARD;
 #endif
     }
+
 
     GotthardControl::~GotthardControl() {
     }
 
+
     void GotthardControl::expectedParameters(Schema& expected) {
-        // Arbitrary, but must be not in use in the same subnet
-        VECTOR_STRING_ELEMENT(expected).key("detectorMac")
-                .alias("detectormac")
-                .tags("sls")
-                .displayedName("detectorMac")
-                .description("Detector MAC. Arbitrary (e.g. 00:aa:bb:cc:dd:ee), but must be not in use in the same subnet.")
-                .assignmentOptional().defaultValue({})
-                .commit();
-
-        OVERWRITE_ELEMENT(expected).key("settings") // From base class
+        OVERWRITE_ELEMENT(expected).key("settings")
                 .setNewDefaultValue("dynamicgain")
-                .setNewOptions("dynamicgain lowgain mediumgain highgain veryhighgain")
+                .setNewOptions("dynamicgain,lowgain,mediumgain,highgain,veryhighgain")
                 .commit();
 
-        INT16_ELEMENT(expected).key("rOnline")
-                .alias("r_online")
+        OVERWRITE_ELEMENT(expected).key("highVoltage")
+                .setNewDescription("High voltage to the sensor in Voltage. "
+                "Options: 0|90|110|120|150|180|200.")
+                .commit();
+
+        OVERWRITE_ELEMENT(expected).key("timing")
+                .setNewOptions("auto,trigger")
+                .commit();
+
+        // Only "extsig 0" is used in gotthard
+        STRING_ELEMENT(expected).key("extSig0")
+                .alias("extsig 0")
                 .tags("sls")
-                .displayedName("rOnline")
-                .description("rOnline")
-                .assignmentOptional().defaultValue(1)
-                .options("0 1")
+                .displayedName("extSig0")
+                .description("Ext Sig 0")
+                .assignmentOptional().defaultValue("trigger_in_rising_edge")
+                .options("trigger_in_rising_edge,trigger_in_falling_edge")
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
+
+        VECTOR_INT32_ELEMENT(expected).key("tempAdc")
+                .displayedName("ADC Temperature")
+                .unit(Unit::DEGREE_CELSIUS)
+                .readOnly()
+                .commit();
+
+        VECTOR_INT32_ELEMENT(expected).key("tempFpga")
+                .displayedName("FPGA Temperature")
+                .unit(Unit::DEGREE_CELSIUS)
+                .readOnly()
+                .commit();
+
     }
 
-    const char* GotthardControl::getCalibrationString() const {
-        return "227 5.6\n";
-    }
 
-    const char* GotthardControl::getSettingsString() const {
-        return "Vcasc 1320\nVcascN 650\nVcascP 1480\nVib_test 2001\nVin 1350\nVout 1520\nVref 660\nVref_comp 887\n";
+    void GotthardControl::pollDetectorSpecific(karabo::util::Hash& h) {
+        const std::vector<int> tempAdc = m_SLS->getTemperature(slsDetectorDefs::dacIndex::TEMPERATURE_ADC, m_positions);
+        h.set("tempAdc", tempAdc);
+
+        const std::vector<int> tempFpga = m_SLS->getTemperature(slsDetectorDefs::dacIndex::TEMPERATURE_FPGA, m_positions);
+        h.set("tempFpga", tempFpga);
     }
 
 } /* namespace karabo */

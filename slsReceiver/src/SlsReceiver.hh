@@ -16,10 +16,10 @@
 #include <karabo/karabo.hpp>
 
 #ifndef SLS_SIMULATION
-#include <slsdetectors/sls_detector_defs.h>
-#include <slsdetectors/slsReceiverUsers.h>
+#include <sls/sls_detector_defs.h>
+#include <sls/Receiver.h>
 #else
-#include <slssimulation/slsReceiverUsers.h>
+#include <slssimulation/Receiver.h>
 #endif
 
 #include "version.hh"  // provides PACKAGE_VERSION
@@ -120,9 +120,9 @@ namespace karabo {
 
     private: // Functions
 
-        static int startAcquisitionCallBack(char* filePath, char* fileName, size_t fileIndex, unsigned int bufferSize, void* context);
+        static int startAcquisitionCallBack(std::string filePath, std::string fileName, uint64_t fileIndex, uint32_t bufferSize, void* context);
 
-        static void acquisitionFinishedCallBack(size_t totalFramesCaught, void* context);
+        static void acquisitionFinishedCallBack(uint64_t totalFramesCaught, void* context);
 
         static void rawDataReadyCallBack(char* metadata, char* dataPointer, uint32_t dataSize, void* context);
 
@@ -135,7 +135,7 @@ namespace karabo {
          */
         virtual bool isNewTrain(const karabo::util::Hash& meta);
 
-        virtual unsigned char getMemoryCell(const slsReceiverDefs::sls_detector_header& detectorHeader) {
+        virtual unsigned char getMemoryCell(const slsDetectorDefs::sls_detector_header& detectorHeader) {
             return 255;
         }
 
@@ -157,7 +157,7 @@ namespace karabo {
     private: // Members
 
         // SLS receiver class
-        slsReceiverUsers* m_receiver;
+        std::shared_ptr<sls::Receiver> m_receiver;
 
         // For frame rate calculation
         unsigned long long m_lastFrameNum;

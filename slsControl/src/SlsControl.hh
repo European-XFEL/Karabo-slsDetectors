@@ -14,9 +14,9 @@
 #include <karabo/karabo.hpp>
 
 #ifndef SLS_SIMULATION
-#include <slsdetectors/slsDetectorUsers.h>
+#include <sls/Detector.h>
 #else
-#include <slssimulation/slsDetectorUsers.h>
+#include <slssimulation/Detector.h>
 #endif
 
 #include "version.hh"  // provides PACKAGE_VERSION
@@ -54,6 +54,10 @@ namespace karabo {
         void startPoll();
         void stopPoll();
         void pollHardware(const boost::system::error_code& ec);
+        void pollOnce(karabo::util::Hash& h);
+        virtual void pollDetectorSpecific(karabo::util::Hash& h) {
+        };
+
         void getPathsByTag(std::vector<std::string >& paths, const std::string& tags);
 
         void sendBaseConfiguration();
@@ -70,18 +74,17 @@ namespace karabo {
         bool areReceiversOnline();
 
         void createTmpDir();
-        void createCalibrationAndSettings(const std::string& settings);
-
-        virtual const char* getCalibrationString() const = 0;
-        virtual const char* getSettingsString() const = 0;
 
     protected:
 #ifdef SLS_SIMULATION
-        int m_detectorType;
+        slsDetectorDefs::detectorType m_detectorType;
 #endif
-        slsDetectorUsers* m_SLS;
+        std::shared_ptr<sls::Detector> m_SLS;
         unsigned int m_numberOfModules;
+        std::vector<int> m_positions;
+
         void sendConfiguration(const std::string& command, const std::string& parameters = "", int pos = -1);
+        void createCalibrationAndSettings(const std::string& settings);
 
     private: // Members
         const unsigned short m_defaultPort = 1952;
@@ -97,7 +100,7 @@ namespace karabo {
         boost::asio::deadline_timer m_acquire_timer;
 
         std::string m_tmpDir;
-        unsigned int m_id; // multi-detector index
+        unsigned int m_shm_id; // shared memory segment index
     };
 
 } /* namespace karabo */

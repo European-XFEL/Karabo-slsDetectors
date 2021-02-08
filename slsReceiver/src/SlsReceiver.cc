@@ -138,7 +138,7 @@ namespace karabo {
     }
 
     SlsReceiver::SlsReceiver(const karabo::util::Hash& config) : Device<>(config),
-								 m_receiver(0),
+								 m_receiver(nullptr),
 								 m_strand(boost::make_shared<karabo::net::Strand>(karabo::net::EventLoop::getIOService())),
 								 m_maxWarnPerAcq(10) {
         KARABO_INITIAL_FUNCTION(initialize);
@@ -146,58 +146,36 @@ namespace karabo {
     }
 
     SlsReceiver::~SlsReceiver() {
-
-        if (m_receiver != NULL) {
-
-            try {
-                // Stop receiver
-                KARABO_LOG_DEBUG << "~SlsReceiver: stopping receiver";
-                m_receiver->stop();
-            } catch (std::exception& e) {
-                KARABO_LOG_WARN << "~SlsReceiver: " << e.what();
-            }
-
-            try {
-                // Delete receiver object
-                KARABO_LOG_DEBUG << "~SlsReceiver: deleting m_receiver";
-                delete m_receiver;
-            } catch (std::exception& e) {
-                KARABO_LOG_WARN << "~SlsReceiver: " << e.what();
-            } catch (...) {
-                KARABO_LOG_WARN << "~SlsReceiver: other exception";
-            }
-
-        }
-
-        KARABO_LOG_DEBUG << "~SlsReceiver: all done";
     }
 
     void SlsReceiver::reset() {
-        if (m_receiver == NULL) {
+        if (m_receiver == nullptr) {
             // m_receiver needs to be initialized
             this->initialize();
         }
     }
 
     void SlsReceiver::initialize() {
-        int ret = slsDetectorDefs::OK;
         std::string rxTcpPort = "1954"; // Default port
+        std::stringstream status;
 
         // Get slsReceiver parameters from current configuration
         std::vector<std::string> __argv__;
         __argv__.push_back("ignored"); // First parameter will be ignored
-        karabo::util::Hash config = this->getCurrentConfiguration("sls");
+        const karabo::util::Hash config = this->getCurrentConfiguration("sls");
         for (karabo::util::Hash::const_iterator it = config.begin(); it != config.end(); it++) {
             try {
-                std::string key = it->getKey();
-                std::string value = config.getAs<std::string>(key);
-                std::string alias = getAliasFromKey<std::string >(key);
+                const std::string key = it->getKey();
+                const std::string value = config.getAs<std::string>(key);
+                const std::string alias = getAliasFromKey<std::string >(key);
                 if (alias == "--rx_tcpport") rxTcpPort = value;
                 __argv__.push_back(alias);
                 __argv__.push_back(value);
-                KARABO_LOG_DEBUG << "Parameter for receiver: key=" << key << " alias=" << alias << " value=" << value;
+                KARABO_LOG_FRAMEWORK_DEBUG << "Parameter for receiver: key=" << key << " alias=" << alias << " value=" << value;
             } catch (const karabo::util::Exception& e) {
-                KARABO_LOG_WARN << "Caught exception in initialize: " << e.userFriendlyMsg() << ". " << e.detailedMsg();
+                status << "Error in initialize: " << e.what();
+                this->set("status", status.str());
+                KARABO_LOG_WARN << status.str();
             }
         }
 
@@ -207,85 +185,37 @@ namespace karabo {
         for (int i = 0; i < argc; ++i)
             argv[i] = (char*) __argv__.at(i).c_str();
 
-        // Instantiate slsReceiverUsers object
         try {
-            KARABO_LOG_DEBUG << "initialize: creating receiver, listening on port " << rxTcpPort;
-            m_receiver = new slsReceiverUsers(argc, argv, ret);
-        } catch (const Exception& e) {
-            m_receiver == NULL;
-            KARABO_LOG_ERROR << "initialize: caught exception " << e.userFriendlyMsg() << " - " <<
-                    e.detailedMsg();
-            this->updateState(State::ERROR);
-            return;
-        } catch (std::exception& e) {
-            m_receiver == NULL;
-            KARABO_LOG_ERROR << "initialize: caught exception " << e.what();
-            this->updateState(State::ERROR);
-            return;
-        } catch (...) {
-            m_receiver == NULL;
-            KARABO_LOG_ERROR << "initialize: unknown exception";
-            this->updateState(State::ERROR);
-            return;
-        }
+            std::shared_ptr<sls::Receiver> receiver(new sls::Receiver(argc, argv));
 
-        if (ret == slsDetectorDefs::FAIL) {
-            m_receiver = NULL;
-
-            std::string errorMessage = "initialize: failed to create m_receiver object";
-            std::string detailedMessage = "Returned code " + boost::lexical_cast<std::string >(ret);
-
-            KARABO_LOG_ERROR << errorMessage << " - " << detailedMessage;
-            this->updateState(State::ERROR);
-            return;
-        }
-
-        try {
             // Register callback functions
-            m_receiver->registerCallBackStartAcquisition(startAcquisitionCallBack, static_cast<void*>(this));
-            m_receiver->registerCallBackAcquisitionFinished(acquisitionFinishedCallBack, static_cast<void*>(this));
-            m_receiver->registerCallBackRawDataReady(rawDataReadyCallBack, static_cast<void*>(this));
+            receiver->registerCallBackStartAcquisition(startAcquisitionCallBack, static_cast<void*>(this));
+            receiver->registerCallBackAcquisitionFinished(acquisitionFinishedCallBack, static_cast<void*>(this));
+            receiver->registerCallBackRawDataReady(rawDataReadyCallBack, static_cast<void*>(this));
 
-            ret = m_receiver->start();
-            if (ret == slsReceiverDefs::OK) {
-                KARABO_LOG_INFO << "initialize: receiver started on port " << rxTcpPort;
-            } else {
-                m_receiver = NULL;
+            // Update schema
+            this->updateOutputSchema(this->get<unsigned short>("framesPerTrain"));
 
-                std::string errorMessage = "initialize: failed to start receiver on port " + rxTcpPort;
-                std::string detailedMessage = "Returned code " + boost::lexical_cast<std::string >(ret);
+            m_receiver.swap(receiver);
 
-                KARABO_LOG_ERROR << errorMessage << " - " << detailedMessage;
-                this->updateState(State::ERROR);
-                return;
-            }
-        } catch (const Exception& e) {
-            m_receiver == NULL;
-            KARABO_LOG_ERROR << "initialize: caught exception " << e.userFriendlyMsg() << " - " <<
-                    e.detailedMsg();
-            this->updateState(State::ERROR);
-            return;
+            status << "Receiver started on port: " << rxTcpPort;
+            this->set("status", status.str());
+            KARABO_LOG_INFO << status.str();
+
+            // All went fine, update state
+            this->updateState(State::PASSIVE);
+
         } catch (std::exception& e) {
-            m_receiver == NULL;
-            KARABO_LOG_ERROR << "initialize: caught exception " << e.what();
-            this->updateState(State::ERROR);
-            return;
-        } catch (...) {
-            m_receiver == NULL;
-            KARABO_LOG_ERROR << "initialize: unknown exception";
+            // This occurs e.g. when another receiver is listening on the same port
+            status << "Error in initialize: " << e.what();
+            this->set("status", status.str());
+            KARABO_LOG_ERROR << status.str();
             this->updateState(State::ERROR);
             return;
         }
-
-        // Update schema
-        this->updateOutputSchema(this->get<unsigned short>("framesPerTrain"));
-
-        // All went fine, update state
-        this->updateState(State::PASSIVE);
-
     }
 
-    int SlsReceiver::startAcquisitionCallBack(char* filePath, char* fileName, size_t fileIndex, unsigned int bufferSize, void* context) {
+    int SlsReceiver::startAcquisitionCallBack(std::string filePath, std::string fileName, uint64_t fileIndex, uint32_t bufferSize, void* context) {
 
         Self* self = static_cast<Self*> (context);
 
@@ -320,7 +250,7 @@ namespace karabo {
         return 0;
     }
 
-    void SlsReceiver::acquisitionFinishedCallBack(size_t totalFramesCaught, void* context) {
+    void SlsReceiver::acquisitionFinishedCallBack(uint64_t totalFramesCaught, void* context) {
 
         Self* self = static_cast<Self*>(context);
 
@@ -336,7 +266,7 @@ namespace karabo {
             }
 
             // Reset frame rates after acquisition is over
-            Hash h("frameRateIn", 0., "frameRateOut", 0.);
+            const Hash h("frameRateIn", 0., "frameRateOut", 0.);
             self->set(h);
 
             // Signals end of stream
@@ -355,8 +285,8 @@ namespace karabo {
 
     void SlsReceiver::rawDataReadyCallBack(char* metadata, char* dataPointer, uint32_t dataSize, void* context) {
         Self* self = static_cast<Self*>(context);
-        slsReceiverDefs::sls_receiver_header* header = reinterpret_cast<slsReceiverDefs::sls_receiver_header*>(metadata);
-        slsReceiverDefs::sls_detector_header detectorHeader = header->detHeader;
+        slsDetectorDefs::sls_receiver_header* header = reinterpret_cast<slsDetectorDefs::sls_receiver_header*>(metadata);
+        const slsDetectorDefs::sls_detector_header& detectorHeader = header->detHeader;
 
         try {
             const unsigned short framesPerTrain = self->get<unsigned short>("framesPerTrain");
@@ -375,7 +305,7 @@ namespace karabo {
             meta.set("trainId", trainId);
             meta.set("lastTrainId", lastTrainId);
 
-            unsigned char memoryCell = self->getMemoryCell(detectorHeader);
+            const unsigned char memoryCell = self->getMemoryCell(detectorHeader);
             meta.set("memoryCell", memoryCell);
 
             if ((self->isNewTrain(meta) && detectorData->accumulatedFrames > 0) || (trainId == 0 && detectorData->accumulatedFrames >= framesPerTrain)) {
@@ -419,11 +349,7 @@ namespace karabo {
                 const size_t offset = self->getDetectorSize() * accumulatedFrames;
                 try {
                     self->unpackRawData(dataPointer, i, detectorData->adc + offset, detectorData->gain + offset);
-                    if (self->get<std::string>("classId") == "JungfrauReceiver") {
-                        // "For firmware ID #181206, the number of the storage cell used to store
-                        // the image is encoded in the bits 11-8 of the debug field."
-                        detectorData->memoryCell[accumulatedFrames] = (detectorHeader.debug >> 8) & 0xF;
-                    }
+                    detectorData->memoryCell[accumulatedFrames] = memoryCell;
                     detectorData->frameNumber[accumulatedFrames] = detectorHeader.frameNumber;
 
                     detectorData->timestamp[accumulatedFrames] = currentTime;
@@ -446,7 +372,7 @@ namespace karabo {
                 const double frameRateIn = (detectorHeader.frameNumber - self->m_lastFrameNum) / elapsedTime; // Detector rate
                 const double frameRateOut = self->m_frameCount / elapsedTime; // Receiver rate
 
-                Hash h("frameRateIn", frameRateIn, "frameRateOut", frameRateOut);
+                const Hash h("frameRateIn", frameRateIn, "frameRateOut", frameRateOut);
                 self->set(h);
 
                 KARABO_LOG_FRAMEWORK_DEBUG << "Current Frame: " << detectorHeader.frameNumber << " Last Frame: " << self->m_lastFrameNum << " Elapsed time [s]: " << elapsedTime;
