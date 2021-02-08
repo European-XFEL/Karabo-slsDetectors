@@ -3,22 +3,18 @@
 
 #include <bitset>
 #include <cstdint>
+#include <vector>
 
 #define SLS_RX_DEFAULT_PORT 1954
 
 #define MAX_LEN 256
 
 
-namespace slsReceiverDefs {
-    /*
-     * return values
-     */
-    enum  {
-            OK, /**< function succeeded */
-            FAIL, /**< function failed */
-            FINISHED, /**< acquisition finished */
-            FORCE_UPDATE
-    };
+namespace slsDetectorDefs {
+    /**  return values */
+    enum { OK, FAIL };
+
+#define MAX_NUM_PACKETS 512
 
     typedef struct {
             uint64_t frameNumber; /**< is the frame number */
@@ -36,8 +32,6 @@ namespace slsReceiverDefs {
             uint8_t version; /**< is the version number of this structure format */
     } sls_detector_header;
 
-#define MAX_NUM_PACKETS 512
-
     typedef std::bitset<MAX_NUM_PACKETS> sls_bitset;
 
     typedef struct {
@@ -45,64 +39,104 @@ namespace slsReceiverDefs {
             sls_bitset packetsMask; /**< is the packets caught bit mask */
     } sls_receiver_header;
 
-}
+    /**
+       detector settings indexes
+    */
+    enum detectorSettings {
+        STANDARD,
+        FAST,
+        HIGHGAIN,
+        DYNAMICGAIN,
+        LOWGAIN,
+        MEDIUMGAIN,
+        VERYHIGHGAIN,
+        DYNAMICHG0,
+        FIXGAIN1,
+        FIXGAIN2,
+        FORCESWITCHG1,
+        FORCESWITCHG2,
+        VERYLOWGAIN,
+        G1_HIGHGAIN,
+        G1_LOWGAIN,
+        G2_HIGHCAP_HIGHGAIN,
+        G2_HIGHCAP_LOWGAIN,
+        G2_LOWCAP_HIGHGAIN,
+        G2_LOWCAP_LOWGAIN,
+        G4_HIGHGAIN,
+        G4_LOWGAIN,
+        UNDEFINED = 200,
+        UNINITIALIZED
+    };
 
+    /** Type of the detector */
+    enum detectorType {
+        GENERIC,
+        EIGER,
+        GOTTHARD,
+        JUNGFRAU,
+        CHIPTESTBOARD,
+        MOENCH,
+        MYTHEN3,
+        GOTTHARD2,
+    };
 
-namespace slsDetectorDefs {
-    /*
-     * return values
-     */
-    enum {
-            OK, /**< function succeeded */
-            FAIL, /**< function failed */
-            FINISHED, /**< acquisition finished */
-            FORCE_UPDATE
+    /**
+      use of the external signals
+    */
+    enum externalSignalFlag {
+        TRIGGER_IN_RISING_EDGE,
+        TRIGGER_IN_FALLING_EDGE,
+        INVERSION_ON,
+        INVERSION_OFF
+    };
+
+    /**
+      communication mode using external signals
+    */
+    enum timingMode {
+        AUTO_TIMING,
+        TRIGGER_EXPOSURE,
+        GATED,
+        BURST_TRIGGER,
+        TRIGGER_GATED,
+        NUM_TIMING_MODES
+    };
+
+    /**
+       detector dacs indexes
+    */
+    enum dacIndex {
+        TEMPERATURE_ADC,
+        TEMPERATURE_FPGA,
+        TEMPERATURE_FPGAEXT,
+        TEMPERATURE_10GE,
+        TEMPERATURE_DCDC,
+        TEMPERATURE_SODL,
+        TEMPERATURE_SODR,
+        TEMPERATURE_FPGA2,
+        TEMPERATURE_FPGA3,
+    };
+
+    /** staus mask */
+    enum runStatus {
+        IDLE,
+        ERROR,
+        WAITING,
+        RUN_FINISHED,
+        TRANSMITTING,
+        RUNNING,
+        STOPPED
     };
 
 }
 
 
-/*
- *   detector settings indexes
- */
-enum class detectorSettings {
-    GET_SETTINGS=-1,  /**< return current detector settings */
-    STANDARD,         /**< standard settings */
-    FAST,             /**< fast settings */
-    HIGHGAIN,         /**< highgain  settings */
-    DYNAMICGAIN,      /**< dynamic gain  settings */
-    LOWGAIN,          /**< low gain  settings */
-    MEDIUMGAIN,       /**< medium gain  settings */
-    VERYHIGHGAIN,     /**< very high gain  settings */
-    LOWNOISE,         /**< low noise settings */
-    DYNAMICHG0,       /**< dynamic high gain 0 */
-    FIXGAIN1,         /**< fix gain 1 */
-    FIXGAIN2,         /**< fix gain 2 */
-    FORCESWITCHG1,    /**< force switch gain 1 */
-    FORCESWITCHG2,    /**< force switch gain 2 */
-    VERYLOWGAIN,      /**< very low gain settings */
-    UNDEFINED=200,    /**< undefined or custom  settings */
-    UNINITIALIZED     /**< uninitialiazed (status at startup) */
-};
+namespace sls {
+    template<class T>
+    using Result = std::vector<T>;
 
+    using Positions = const std::vector<int> &;
 
-/*
- * Type of the detector
- */
-enum class detectorType {
-    GET_DETECTOR_TYPE=-1,   /**< the detector will return its type */
-    GENERIC,  /**< generic sls detector */
-    MYTHEN, /**< mythen */
-    PILATUS, /**< pilatus */
-    EIGER, /**< eiger */
-    GOTTHARD, /**< gotthard */
-    PICASSO, /**< picasso */
-    AGIPD, /**< agipd */
-    MOENCH, /**< moench */
-    JUNGFRAU, /**< jungfrau */
-    JUNGFRAUCTB, /**< jungfrauCTBversion */
-    PROPIX, /**< propix */
-    MYTHEN3 /**< mythen 3 */
-};
+}
 
 #endif

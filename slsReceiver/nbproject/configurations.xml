@@ -57,10 +57,12 @@
           <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libslsReceiver.${CND_DLIB_EXT}</output>
           <linkerAddLib>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
             <pElem>${KARABO}/extern/lib</pElem>
           </linkerAddLib>
           <linkerDynSerch>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
             <pElem>${KARABO}/extern/lib</pElem>
           </linkerDynSerch>
           <linkerLibItems>
@@ -74,12 +76,14 @@
       <folder path="TestFiles">
         <linkerTool>
           <linkerAddLib>
-            <pElem>${KARABO}/extern/lib</pElem>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
+            <pElem>${KARABO}/extern/lib</pElem>
           </linkerAddLib>
           <linkerDynSerch>
-            <pElem>${KARABO}/extern/lib</pElem>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
+            <pElem>${KARABO}/extern/lib</pElem>
           </linkerDynSerch>
           <linkerLibItems>
             <linkerLibLibItem>karabo</linkerLibLibItem>
@@ -103,10 +107,12 @@
           <output>${TESTDIR}/TestFiles/f1</output>
           <linkerAddLib>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
             <pElem>${KARABO}/extern/lib</pElem>
           </linkerAddLib>
           <linkerDynSerch>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
             <pElem>${KARABO}/extern/lib</pElem>
           </linkerDynSerch>
           <linkerLibItems>
@@ -163,10 +169,12 @@
         <linkerTool>
           <linkerAddLib>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
             <pElem>${KARABO}/extern/lib</pElem>
           </linkerAddLib>
           <linkerDynSerch>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
             <pElem>${KARABO}/extern/lib</pElem>
           </linkerDynSerch>
           <linkerLibItems>
@@ -194,10 +202,12 @@
           <output>${TESTDIR}/TestFiles/f1</output>
           <linkerAddLib>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
             <pElem>${KARABO}/extern/lib</pElem>
           </linkerAddLib>
           <linkerDynSerch>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
             <pElem>${KARABO}/extern/lib</pElem>
           </linkerDynSerch>
           <linkerLibItems>
@@ -245,10 +255,12 @@
         <linkerTool>
           <linkerAddLib>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
             <pElem>${KARABO}/extern/lib</pElem>
           </linkerAddLib>
           <linkerDynSerch>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
             <pElem>${KARABO}/extern/lib</pElem>
           </linkerDynSerch>
           <linkerLibItems>
@@ -261,12 +273,14 @@
       <folder path="TestFiles">
         <linkerTool>
           <linkerAddLib>
-            <pElem>${KARABO}/extern/lib</pElem>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
+            <pElem>${KARABO}/extern/lib</pElem>
           </linkerAddLib>
           <linkerDynSerch>
-            <pElem>${KARABO}/extern/lib</pElem>
             <pElem>${KARABO}/lib</pElem>
+            <pElem>${KARABO}/extern/lib64</pElem>
+            <pElem>${KARABO}/extern/lib</pElem>
           </linkerDynSerch>
           <linkerLibItems>
             <linkerLibLibItem>karabo</linkerLibLibItem>

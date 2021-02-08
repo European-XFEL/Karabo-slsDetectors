@@ -31,8 +31,10 @@ namespace karabo {
         static void expectedParameters(karabo::util::Schema& expected);
 
     private: // functions
-        const char* getCalibrationString() const;
-        const char* getSettingsString() const;
+        void pollDetectorSpecific(karabo::util::Hash& h);
+        void createCalibrationAndSettings(const std::string& settings) {
+            // nothing to be done
+        }
 
     };
 

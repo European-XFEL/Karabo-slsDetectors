@@ -102,6 +102,25 @@ to that one.
 Check that in the `DAQ Output` node the `hostname` is set to the
 IP address of the 10 GbE interface dedicated to the DAQ.
 
+The receiver device prints out TCP socket errors
+------------------------------------------------
+
+If the receiver device logs messages like
+
+.. code-block::
+
+  - 17:32:48.020 ERROR: TCP socket read 0 bytes instead of 4 bytes
+  - 17:32:48.020 ERROR: TCP socket sent 0 bytes instead of 1000 bytes
+  - 17:32:48.020 ERROR: Accept failed
+
+they can be safely ignored.
+
+This is because the control device, in order to check that the receiver is
+online, opens a TCP connection to it. The receiver complains as no data is
+exchanged before the connection is closed.
+
+This is a periodic check repeated every 20 s.
+
 If nothing else helps...
 ------------------------
 

@@ -102,7 +102,7 @@ namespace karabo {
         }
     }
 
-    unsigned char JungfrauReceiver::getMemoryCell(const slsReceiverDefs::sls_detector_header& detectorHeader) {
+    unsigned char JungfrauReceiver::getMemoryCell(const slsDetectorDefs::sls_detector_header& detectorHeader) {
         // "For firmware ID #181206, the number of the storage cell used to store
         // the image is encoded in the bits 11-8 of the debug field."
         unsigned char memoryCell = (detectorHeader.debug >> 8) & 0xF;

@@ -16,11 +16,11 @@ CPPUNIT_TEST_SUITE_REGISTRATION(SlsControlTest);
 SlsControlTest::SlsControlTest() {
     m_configOk.set("deviceId", "testdevice");
     m_configOk.set("detectorHostName", std::vector<std::string>({"blah1", "blah2"}));
-    m_configOk.set("detectorIp", std::vector<std::string>({"1.2.3.4", "2.3.4.5"}));
+    m_configOk.set("udpSrcIp", std::vector<std::string>({"1.2.3.4", "2.3.4.5"}));
     m_configOk.set("rxHostname", std::vector<std::string>({"1halb", "2halb"}));
     m_configOk.set("rxTcpPort", std::vector<unsigned short>({1956, 1957}));
-    m_configOk.set("rxUdpIp", std::vector<std::string>({"4.3.2.1", "5.4.3.2"}));
-    m_configOk.set("rxUdpPort", std::vector<unsigned short>({50002, 50003}));
+    m_configOk.set("udpDstIp", std::vector<std::string>({"4.3.2.1", "5.4.3.2"}));
+    m_configOk.set("udpDstPort", std::vector<unsigned short>({50002, 50003}));
 
     m_configNotOk.set("deviceId", "testdevice");
 }

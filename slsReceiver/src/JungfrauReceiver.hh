@@ -50,7 +50,7 @@ namespace karabo {
 
     private: // Functions
         virtual bool isNewTrain(const karabo::util::Hash& meta);
-        virtual unsigned char getMemoryCell(const slsReceiverDefs::sls_detector_header& detectorHeader);
+        virtual unsigned char getMemoryCell(const slsDetectorDefs::sls_detector_header& detectorHeader);
 
     private: // Raw data unpacking
 
