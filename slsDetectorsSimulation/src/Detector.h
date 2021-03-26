@@ -6,10 +6,13 @@
 #include <unordered_map>
 #include <vector>
 
+extern "C" {
 #include <pthread.h>
+}
 
 #include <boost/asio.hpp>
 
+#include "sls_simulation_defs.h"
 
 namespace sls {
     using ns = std::chrono::nanoseconds;

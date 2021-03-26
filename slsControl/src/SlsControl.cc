@@ -12,8 +12,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 
-#include <sls/Result.h>
-
 #include "SlsControl.hh"
 
 USING_KARABO_NAMESPACES
