@@ -60,7 +60,7 @@ FFLAGS=
 ASFLAGS=
 
 # Link Libraries and Options
-LDLIBSOPTIONS=-L${KARABO}/lib -L${KARABO}/extern/lib -Wl,-rpath,${KARABO}/lib -Wl,-rpath,${KARABO}/extern/lib -lSlsSimulation -lkarabo `pkg-config --libs karaboDependencies`  
+LDLIBSOPTIONS=-L${KARABO}/lib -L${KARABO}/extern/lib64 -L${KARABO}/extern/lib -Wl,-rpath,${KARABO}/lib -Wl,-rpath,${KARABO}/extern/lib64 -Wl,-rpath,${KARABO}/extern/lib -lSlsSimulation -lkarabo `pkg-config --libs karaboDependencies`  
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
@@ -92,7 +92,7 @@ ${OBJECTDIR}/src/SlsReceiver.o: src/SlsReceiver.cc
 .build-tests-conf: .build-conf ${TESTFILES}
 ${TESTDIR}/TestFiles/f1: ${TESTDIR}/src/tests/SlsReceiverTest.o ${TESTDIR}/src/tests/test_runner.o ${OBJECTFILES:%.o=%_nomain.o}
 	${MKDIR} -p ${TESTDIR}/TestFiles
-	${LINK.cc}   -o ${TESTDIR}/TestFiles/f1 $^ ${LDLIBSOPTIONS} -L${KARABO}/extern/lib -L${KARABO}/lib -Wl,-rpath,${KARABO}/extern/lib -Wl,-rpath,${KARABO}/lib -lkarabo `pkg-config cppunit --libs`   
+	${LINK.cc}   -o ${TESTDIR}/TestFiles/f1 $^ ${LDLIBSOPTIONS} -L${KARABO}/lib -L${KARABO}/extern/lib64 -L${KARABO}/extern/lib -Wl,-rpath,${KARABO}/lib -Wl,-rpath,${KARABO}/extern/lib64 -Wl,-rpath,${KARABO}/extern/lib -lkarabo `pkg-config cppunit --libs`   
 
 
 ${TESTDIR}/src/tests/SlsReceiverTest.o: src/tests/SlsReceiverTest.cc 

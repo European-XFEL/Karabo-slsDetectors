@@ -13,9 +13,6 @@
 
 #include "SlsReceiver.hh"
 
-// Undefine GRAY from slsdetectos/ansi.h, which would clash with karabo::xms::Encoding::GRAY
-#undef GRAY
-
 USING_KARABO_NAMESPACES
 
 namespace karabo {

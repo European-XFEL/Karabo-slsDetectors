@@ -60,7 +60,7 @@ FFLAGS=
 ASFLAGS=
 
 # Link Libraries and Options
-LDLIBSOPTIONS=-L${KARABO}/lib -L${KARABO}/extern/lib -L${KARABO}/extern/lib64 -Wl,-rpath,${KARABO}/lib -Wl,-rpath,${KARABO}/extern/lib -Wl,-rpath,${KARABO}/extern/lib64 -lSlsSimulation -lkarabo `pkg-config --libs karaboDependencies`  
+LDLIBSOPTIONS=-L${KARABO}/lib -L${KARABO}/extern/lib64 -L${KARABO}/extern/lib -Wl,-rpath,${KARABO}/lib -Wl,-rpath,${KARABO}/extern/lib64 -Wl,-rpath,${KARABO}/extern/lib -lSlsSimulation -lkarabo `pkg-config --libs karaboDependencies`  
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
