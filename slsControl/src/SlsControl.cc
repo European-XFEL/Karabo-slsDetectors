@@ -1,7 +1,7 @@
 /*
  *
  * Author: <Iryna.Kozlova@xfel.eu>
- * 
+ *
  * Created on July 12, 2013, 11:30 AM
  *
  * Copyright (c) European XFEL GmbH Hamburg. All rights reserved.
@@ -367,7 +367,7 @@ namespace karabo {
                 .displayedName("Timing Mode")
                 .description("The timing mode of the detector.")
                 .assignmentOptional().defaultValue("auto")
-                .options("auto,gating,trigger,ro_trigger,triggered_gating") // OVERWRITE in derived class 
+                .options("auto,gating,trigger,ro_trigger,triggered_gating") // OVERWRITE in derived class
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
@@ -393,6 +393,12 @@ namespace karabo {
                 .commit();
 
         // Read-only properties
+
+        const std::vector<std::string> interfaces = {"Trigger"};
+        VECTOR_STRING_ELEMENT(expected).key("interfaces")
+                .expertAccess()
+                .readOnly().initialValue(interfaces)
+                .commit();
 
         STRING_ELEMENT(expected).key("clientVersion")
                 .displayedName("SLS Library Version")
@@ -680,7 +686,7 @@ namespace karabo {
         karabo::util::Hash parameters = schema.getParameterHash();
         karabo::util::Hash filteredParameters = this->filterByTags(parameters, tags);
 
-        // N.B. this->getCurrentConfiguration(tags)) dose not return parameters with no value set                                          
+        // N.B. this->getCurrentConfiguration(tags)) dose not return parameters with no value set
 
         filteredParameters.getPaths(paths);
     }
@@ -796,7 +802,7 @@ namespace karabo {
                         const std::string value = configHash.getAs<std::string>(key);
                         this->sendConfiguration(alias, value);
                     }
-                  
+
 
                 } else if (Types::isVector(type)) {
                     // XXX Here we possibly have to use std::to_string for
@@ -962,17 +968,17 @@ namespace karabo {
         // In case the detector needs calibration and setting files
         // (not the case for Gotthard, Jungfrau, Gotthard-II),
         // the derived class should - in addition - do something like:
-        // 
+        //
         // const std::string fname = calibrationDir + "/calibration.sn";
         // if (!fs::exists(fname)) {
         //     // Create calibration file
         //     std::ofstream fstr;
         //     fstr.open(fname.c_str());
-        // 
+        //
         //     if (fstr.is_open()) {
         //         fstr << "227 5.6\n"
         //         fstr.close();
-        // 
+        //
         //     } else {
         //         throw KARABO_RECONFIGURE_EXCEPTION("Could not open file " + fname + "for writing");
         //     }
