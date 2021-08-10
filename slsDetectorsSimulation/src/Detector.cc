@@ -963,7 +963,11 @@ namespace sls {
         // The entire sequence of I/O operations must complete within 3 seconds.
         // If an expiry occurs, the socket is automatically closed and the stream
         // becomes bad.
+#if BOOST_VERSION >= 106800 // i.e. Karabo >= 2.11
+        stream.expires_after(std::chrono::duration<int>(3));
+#else
         stream.expires_after(boost::posix_time::seconds(3));
+#endif
 
         // Establish a connection to the server.
         stream.connect(m_rx_hostname, std::to_string(m_rx_tcpport));
