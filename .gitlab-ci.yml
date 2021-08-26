@@ -1,4 +1,9 @@
+stages:
+  - lint
+  - build
+
 .release_build_template: &release_build
+  stage: build
   script:
     - export REL_OS_NAME=$(lsb_release -is)
     - export REL_OS_VERS=$(lsb_release -rs | sed -r "s/^([0-9]+).*/\1/")
@@ -27,6 +32,7 @@
     - branches 
 
 .test_build_template: &test_build
+  stage: build
   script:
     - export REL_OS_NAME=$(lsb_release -is)
     - export REL_OS_VERS_LONG=$(lsb_release -rs | sed -r "s/^([0-9]+).*/\1/")
@@ -49,6 +55,12 @@
   except:
     - master
 
+##### Static source code analysis #####
+lint:
+  stage: lint
+  image: europeanxfel/karabo-ci:miniconda-3lint
+  script:
+    - source ci/lint-cppcheck
 
 ##### Release build #####
     
