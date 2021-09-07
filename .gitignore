@@ -5,6 +5,7 @@
 */build/
 */package/
 */.dep.inc
+ci/
 dist/
 build/
 package/
