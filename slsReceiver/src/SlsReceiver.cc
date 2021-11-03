@@ -340,9 +340,8 @@ namespace karabo {
             self->set(h);
 
             // Signals end of stream
-            self->signalEndOfStream("output");
-            self->signalEndOfStream("daqOutput");
-            self->signalEndOfStream("display");
+            // This is done in the same strand as writeToOutputs, to preserve order
+            self->m_strand->post(karabo::util::bind_weak(&SlsReceiver::signalEndOfStreams, self));
 
         } catch (std::exception& e) {
             self->log() << KARABO_LOG_PRIORITY_WARN << "acquisitionFinishedCallBack: " << e.what();
@@ -557,6 +556,12 @@ namespace karabo {
             // Restore daqOutput.hostname
             this->set("daqOutput.hostname", outputHostname);
         }
+    }
+
+    void SlsReceiver::signalEndOfStreams() {
+        this->signalEndOfStream("output");
+        this->signalEndOfStream("daqOutput");
+        this->signalEndOfStream("display");
     }
 
     void SlsReceiver::writeToOutputs(unsigned char idx, const karabo::util::Timestamp& actualTimestamp) {

@@ -141,8 +141,11 @@ namespace karabo {
 
         void logWarning(const std::string& message);
 	
-	// Make output schema fit for DAQ
+        // Make output schema fit for DAQ
         void updateOutputSchema(unsigned short framesPerTrain);
+
+        // Send End-of-Stream signal
+        void signalEndOfStreams();
 
         // Write to OUTPUT channels
         void writeToOutputs(unsigned char idx, const karabo::util::Timestamp& actualTimestamp);
