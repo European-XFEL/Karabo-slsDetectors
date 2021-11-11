@@ -48,13 +48,14 @@ namespace karabo {
                 .commit();
 
         // Only "extsig 0" is used in gotthard
+        std::vector<std::string> extSig0Options = {"trigger_in_rising_edge", "trigger_in_falling_edge"};
         STRING_ELEMENT(expected).key("extSig0")
                 .alias("extsig 0")
                 .tags("sls")
                 .displayedName("extSig0")
                 .description("Ext Sig 0")
                 .assignmentOptional().defaultValue("trigger_in_rising_edge")
-                .options("trigger_in_rising_edge,trigger_in_falling_edge")
+                .options(extSig0Options)
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
