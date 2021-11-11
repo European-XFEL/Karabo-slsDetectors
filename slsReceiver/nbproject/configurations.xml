@@ -4,6 +4,8 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <itemPath>src/Gotthard2Receiver.cc</itemPath>
+      <itemPath>src/Gotthard2Receiver.hh</itemPath>
       <itemPath>src/GotthardReceiver.cc</itemPath>
       <itemPath>src/GotthardReceiver.hh</itemPath>
       <itemPath>src/JungfrauReceiver.cc</itemPath>
@@ -120,6 +122,10 @@
           </linkerLibItems>
         </linkerTool>
       </folder>
+      <item path="src/Gotthard2Receiver.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/Gotthard2Receiver.hh" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/GotthardReceiver.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/GotthardReceiver.hh" ex="false" tool="3" flavor2="0">
@@ -215,6 +221,10 @@
           </linkerLibItems>
         </linkerTool>
       </folder>
+      <item path="src/Gotthard2Receiver.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/Gotthard2Receiver.hh" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/GotthardReceiver.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/GotthardReceiver.hh" ex="false" tool="3" flavor2="0">
@@ -307,6 +317,10 @@
           </linkerLibItems>
         </linkerTool>
       </folder>
+      <item path="src/Gotthard2Receiver.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/Gotthard2Receiver.hh" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/GotthardReceiver.cc" ex="false" tool="1" flavor2="8">
       </item>
       <item path="src/GotthardReceiver.hh" ex="false" tool="3" flavor2="0">

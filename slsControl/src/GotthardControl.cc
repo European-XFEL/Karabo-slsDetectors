@@ -34,16 +34,17 @@ namespace karabo {
     void GotthardControl::expectedParameters(Schema& expected) {
         OVERWRITE_ELEMENT(expected).key("settings")
                 .setNewDefaultValue("dynamicgain")
-                .setNewOptions("dynamicgain,lowgain,mediumgain,highgain,veryhighgain")
+                .setNewOptions({"dynamicgain", "lowgain", "mediumgain", "highgain", "veryhighgain"})
                 .commit();
 
         OVERWRITE_ELEMENT(expected).key("highVoltage")
-                .setNewDescription("High voltage to the sensor in Voltage. "
-                "Options: 0|90|110|120|150|180|200.")
+                .setNewDescription("High voltage to the sensor. "
+                "Options: 0|90|110|120|150|180|200 V.")
                 .commit();
 
+        const std::vector<std::string> timingOptions = {"auto", "trigger"};
         OVERWRITE_ELEMENT(expected).key("timing")
-                .setNewOptions("auto,trigger")
+                .setNewOptions(timingOptions)
                 .commit();
 
         // Only "extsig 0" is used in gotthard

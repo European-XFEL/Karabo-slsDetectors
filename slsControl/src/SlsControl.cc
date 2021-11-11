@@ -19,7 +19,7 @@ namespace fs = boost::filesystem;
 
 namespace karabo {
 
-    SlsControl::SlsControl(const Hash& config) : Device<>(config), m_SLS(nullptr),
+    SlsControl::SlsControl(const Hash& config) : Device<>(config),
     m_numberOfModules(0), m_connect(false), m_connect_timer(EventLoop::getIOService()),
     m_firstPoll(true), m_poll(false), m_poll_timer(EventLoop::getIOService()),
     m_acquire_timer(EventLoop::getIOService()) {
@@ -28,7 +28,6 @@ namespace karabo {
         KARABO_SLOT(start);
         KARABO_SLOT(stop);
         KARABO_SLOT(reset);
-        KARABO_SLOT(reboot);
 
         this->createTmpDir(); // Create temporary directory
     }
@@ -97,12 +96,6 @@ namespace karabo {
                 .displayedName("Reset")
                 .description("Resets the device in case of an error")
                 .allowedStates(State::ERROR)
-                .commit();
-
-        SLOT_ELEMENT(expected).key("reboot")
-                .displayedName("Reboot")
-                .description("Sends a reboot command to the detector")
-                .allowedStates(State::ERROR, State::ON)
                 .commit();
 
         VECTOR_STRING_ELEMENT(expected).key("detectorHostName")
@@ -278,19 +271,6 @@ namespace karabo {
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
-
-// XXX badchannels: create bad channel file on the fly in /dev/shm or /tmp?
-// XXX Gotthard2 only
-//        PATH_ELEMENT(expected).key("badChannels")
-//                .alias("badchannels")
-//                .tags("sls")
-//                .displayedName("Bad Channels")
-//                .description("Sets the bad channels (from file of bad channel numbers) to be masked out."
-//                "Use '' to unset.")
-//                .assignmentOptional().noDefaultValue()
-//                .reconfigurable()
-//                .allowedStates(State::ON)
-//                .commit();
 
         INT32_ELEMENT(expected).key("dynamicRange")
                 .alias("dr")
@@ -494,21 +474,6 @@ namespace karabo {
         } else {
             KARABO_LOG_ERROR << "Receiver(s) are offline";
         }
-    }
-
-    void SlsControl::reboot() {
-        KARABO_LOG_INFO << "Rebooting the detector";
-        this->updateState(State::UNKNOWN);
-
-        this->stopPoll();
-
-        m_SLS->rebootController(m_positions);
-
-        // Try to reconnect after 30 seconds
-        m_firstPoll = true;
-        m_connect = true;
-        m_connect_timer.expires_from_now(boost::posix_time::seconds(30));
-        m_connect_timer.async_wait(karabo::util::bind_weak(&SlsControl::connect, this, boost::asio::placeholders::error));
     }
 
     void SlsControl::initialize() {
@@ -824,7 +789,6 @@ namespace karabo {
                         const std::string value = configHash.getAs<std::string>(key);
                         this->sendConfiguration(alias, value);
                     }
-
 
                 } else if (Types::isVector(type)) {
                     // XXX Here we possibly have to use std::to_string for

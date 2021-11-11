@@ -46,6 +46,18 @@ void SlsControlTest::shouldNotCreateGotthardControl() {
             karabo::util::ParameterException);
 }
 
+void SlsControlTest::shouldCreateGotthard2Control() {
+    BaseDevice::Pointer device = BaseDevice::create("Gotthard2Control", m_configOk);
+
+    CPPUNIT_ASSERT_EQUAL(string("Gotthard2Control"), (device->getClassInfo()).getClassName());
+}
+
+void SlsControlTest::shouldNotCreateGotthard2Control() {
+    // Must fail, as mandatory parameters are not provided
+    CPPUNIT_ASSERT_THROW(BaseDevice::Pointer device = BaseDevice::create("Gotthard2Control", m_configNotOk),
+            karabo::util::ParameterException);
+}
+
 void SlsControlTest::shouldCreateJungfrauControl() {
     BaseDevice::Pointer device = BaseDevice::create("JungfrauControl", m_configOk);
 

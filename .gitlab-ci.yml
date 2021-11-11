@@ -19,8 +19,7 @@ stages:
     - source /root/karabo/activate
     - pushd $CI_PROJECT_DIR
     - karabo -g https://$XFEL_TOKEN@git.xfel.eu/gitlab install $REL_PROJECT_NAME $REL_TAG
-    - export NUM_JOBS=$(grep "processor" /proc/cpuinfo | wc -l)
-    - make -j$NUM_JOBS build CONF=Release package
+    - make -j build CONF=Release package
     - echo package/$REL_ARTIFACT_NAME
     - mv package/*sh $REL_ARTIFACT_NAME
     - echo $REL_ARTIFACT_DEST
@@ -47,9 +46,8 @@ stages:
     - source /root/karabo/activate
     - pushd $CI_PROJECT_DIR
     - karabo -g https://$XFEL_TOKEN@git.xfel.eu/gitlab install $REL_PROJECT_NAME $REL_TAG
-    - export NUM_JOBS=$(grep "processor" /proc/cpuinfo | wc -l)
-    - make -j$NUM_JOBS build CONF=Release
-    - make test CONF=Release
+    - make -j build CONF=Release
+    - make -j test CONF=Release
   only:
     - branches
   except:
