@@ -43,6 +43,7 @@ namespace karabo {
         void start();
         void stop();
         void reset();
+        void reboot();
 
     private: // Functions
         void initialize();
