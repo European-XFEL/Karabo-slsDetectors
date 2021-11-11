@@ -28,7 +28,7 @@ namespace karabo {
 
 
     JungfrauControl::~JungfrauControl() {
-        if (m_SLS != nullptr) {
+        if (m_SLS) {
             m_SLS->setPowerChip(false, m_positions); // power off
         }
     }
@@ -37,20 +37,21 @@ namespace karabo {
     void JungfrauControl::expectedParameters(Schema& expected) {
         OVERWRITE_ELEMENT(expected).key("settings") // From base class
                 .setNewDefaultValue("dynamicgain")
-                .setNewOptions("dynamicgain,dynamichg0,fixgain1,fixgain2,forceswitchg1,forceswitchg2")
+                .setNewOptions({"dynamicgain", "dynamichg0", "fixgain1", "fixgain2", "forceswitchg1", "forceswitchg2"})
                 .commit();
 
         OVERWRITE_ELEMENT(expected).key("highVoltage")
-                .setNewDescription("High voltage to the sensor in Voltage. "
-                "Options: 0|60-200.")
+                .setNewDescription("High voltage to the sensor. "
+                "Options: 0|60-200 V.")
                 .commit();
 
         OVERWRITE_ELEMENT(expected).key("exposureTime")
                 .setNewMaxInc(0.001) // 1 ms
                 .commit();
 
+        std::vector<std::string> timingOptions = {"auto", "trigger"};
         OVERWRITE_ELEMENT(expected).key("timing")
-                .setNewOptions("auto,trigger")
+                .setNewOptions(timingOptions)
                 .commit();
 
         INT16_ELEMENT(expected).key("storageCells")

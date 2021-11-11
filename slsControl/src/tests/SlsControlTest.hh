@@ -16,6 +16,8 @@ class SlsControlTest : public CPPUNIT_NS::TestFixture {
 
     CPPUNIT_TEST(shouldCreateGotthardControl);
     CPPUNIT_TEST(shouldNotCreateGotthardControl);
+    CPPUNIT_TEST(shouldCreateGotthard2Control);
+    CPPUNIT_TEST(shouldNotCreateGotthard2Control);
     CPPUNIT_TEST(shouldCreateJungfrauControl);
     CPPUNIT_TEST(shouldNotCreateJungfrauControl);
 
@@ -30,6 +32,8 @@ public:
 private:
     void shouldCreateGotthardControl();
     void shouldNotCreateGotthardControl();
+    void shouldCreateGotthard2Control();
+    void shouldNotCreateGotthard2Control();
     void shouldCreateJungfrauControl();
     void shouldNotCreateJungfrauControl();
 

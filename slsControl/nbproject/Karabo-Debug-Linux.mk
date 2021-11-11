@@ -35,6 +35,7 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
+	${OBJECTDIR}/src/Gotthard2Control.o \
 	${OBJECTDIR}/src/GotthardControl.o \
 	${OBJECTDIR}/src/JungfrauControl.o \
 	${OBJECTDIR}/src/SlsControl.o
@@ -69,6 +70,11 @@ LDLIBSOPTIONS=-L${KARABO}/lib -L${KARABO}/extern/lib64 -L${KARABO}/extern/lib -W
 ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libslsControl.${CND_DLIB_EXT}: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
 	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libslsControl.${CND_DLIB_EXT} ${OBJECTFILES} ${LDLIBSOPTIONS} -shared -fPIC
+
+${OBJECTDIR}/src/Gotthard2Control.o: src/Gotthard2Control.cc 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/Gotthard2Control.o src/Gotthard2Control.cc
 
 ${OBJECTDIR}/src/GotthardControl.o: src/GotthardControl.cc 
 	${MKDIR} -p ${OBJECTDIR}/src
@@ -106,6 +112,19 @@ ${TESTDIR}/src/tests/test_runner.o: src/tests/test_runner.cc
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11 `pkg-config cppunit --cflags` -MMD -MP -MF "$@.d" -o ${TESTDIR}/src/tests/test_runner.o src/tests/test_runner.cc
 
+
+${OBJECTDIR}/src/Gotthard2Control_nomain.o: ${OBJECTDIR}/src/Gotthard2Control.o src/Gotthard2Control.cc 
+	${MKDIR} -p ${OBJECTDIR}/src
+	@NMOUTPUT=`${NM} ${OBJECTDIR}/src/Gotthard2Control.o`; \
+	if (echo "$$NMOUTPUT" | ${GREP} '|main$$') || \
+	   (echo "$$NMOUTPUT" | ${GREP} 'T main$$') || \
+	   (echo "$$NMOUTPUT" | ${GREP} 'T _main$$'); \
+	then  \
+	    ${RM} "$@.d";\
+	    $(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/Gotthard2Control_nomain.o src/Gotthard2Control.cc;\
+	else  \
+	    ${CP} ${OBJECTDIR}/src/Gotthard2Control.o ${OBJECTDIR}/src/Gotthard2Control_nomain.o;\
+	fi
 
 ${OBJECTDIR}/src/GotthardControl_nomain.o: ${OBJECTDIR}/src/GotthardControl.o src/GotthardControl.cc 
 	${MKDIR} -p ${OBJECTDIR}/src

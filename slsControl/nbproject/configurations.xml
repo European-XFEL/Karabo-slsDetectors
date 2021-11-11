@@ -4,6 +4,8 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <itemPath>src/Gotthard2Control.cc</itemPath>
+      <itemPath>src/Gotthard2Control.hh</itemPath>
       <itemPath>src/GotthardControl.cc</itemPath>
       <itemPath>src/GotthardControl.hh</itemPath>
       <itemPath>src/JungfrauControl.cc</itemPath>
@@ -85,6 +87,10 @@
           </linkerLibItems>
         </linkerTool>
       </folder>
+      <item path="src/Gotthard2Control.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/Gotthard2Control.hh" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/GotthardControl.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/GotthardControl.hh" ex="false" tool="3" flavor2="0">
@@ -163,6 +169,10 @@
           </linkerLibItems>
         </linkerTool>
       </folder>
+      <item path="src/Gotthard2Control.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/Gotthard2Control.hh" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/GotthardControl.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/GotthardControl.hh" ex="false" tool="3" flavor2="0">
@@ -232,6 +242,10 @@
           </linkerLibItems>
         </linkerTool>
       </folder>
+      <item path="src/Gotthard2Control.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/Gotthard2Control.hh" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/GotthardControl.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/GotthardControl.hh" ex="false" tool="3" flavor2="0">
