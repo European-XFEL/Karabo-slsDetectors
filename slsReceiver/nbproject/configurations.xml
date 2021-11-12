@@ -46,11 +46,11 @@
       </toolsSet>
       <compileType>
         <ccTool>
-          <standard>8</standard>
           <incDir>
             <pElem>${KARABO}/extern/include</pElem>
             <pElem>${KARABO}/include</pElem>
           </incDir>
+          <commandLine>-std=c++14</commandLine>
           <preprocessorList>
             <Elem>SLS_RECEIVER_FUNCTION_LIST</Elem>
           </preprocessorList>
@@ -157,11 +157,11 @@
         </cTool>
         <ccTool>
           <developmentMode>5</developmentMode>
-          <standard>8</standard>
           <incDir>
             <pElem>${KARABO}/extern/include</pElem>
             <pElem>${KARABO}/include</pElem>
           </incDir>
+          <commandLine>-std=c++14</commandLine>
           <preprocessorList>
             <Elem>SLS_RECEIVER_FUNCTION_LIST</Elem>
           </preprocessorList>
@@ -252,11 +252,11 @@
       </toolsSet>
       <compileType>
         <ccTool>
-          <standard>8</standard>
           <incDir>
             <pElem>${KARABO}/extern/include</pElem>
             <pElem>${KARABO}/include</pElem>
           </incDir>
+          <commandLine>-std=c++14</commandLine>
           <preprocessorList>
             <Elem>SLS_RECEIVER_FUNCTION_LIST</Elem>
             <Elem>SLS_SIMULATION</Elem>
