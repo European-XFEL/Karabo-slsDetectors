@@ -188,7 +188,7 @@ namespace karabo {
                 .displayedName("Settings")
                 .description("Detector settings.")
                 .assignmentOptional().defaultValue("dynamicgain") // OVERWRITE in derived class
-                .options("dynamicgain,lowgain,mediumgain,highgain,veryhighgain") // OVERWRITE in derived class
+                .options({"dynamicgain", "lowgain", "mediumgain", "highgain", "veryhighgain"}) // OVERWRITE in derived class
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
@@ -199,13 +199,14 @@ namespace karabo {
                 .displayedName("Data Storage")
                 .commit();
 
+        std::vector<unsigned char> dataStorageEnableOptions = {0u, 1u};
         UINT8_ELEMENT(expected).key("dataStorage.enable")
                 .alias("fwrite") // was "enablefwrite"
                 .tags("sls")
                 .displayedName("Enable")
                 .description("Enable file write on the receiver host.")
                 .assignmentOptional().defaultValue(0)
-                .options("0,1")
+                .options(dataStorageEnableOptions)
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
@@ -354,7 +355,7 @@ namespace karabo {
                 .displayedName("Timing Mode")
                 .description("The timing mode of the detector.")
                 .assignmentOptional().defaultValue("auto")
-                .options("auto,gating,trigger,ro_trigger,triggered_gating") // OVERWRITE in derived class
+                .options({"auto", "gating", "trigger", "ro_trigger", "triggered_gating"}) // OVERWRITE in derived class
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
