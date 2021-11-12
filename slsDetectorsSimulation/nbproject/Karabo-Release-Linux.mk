@@ -43,8 +43,8 @@ OBJECTFILES= \
 CFLAGS=
 
 # CC Compiler Flags
-CCFLAGS=
-CXXFLAGS=
+CCFLAGS=-std=c++14
+CXXFLAGS=-std=c++14
 
 # Fortran Compiler Flags
 FFLAGS=
@@ -66,12 +66,12 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libSlsSimulation.${CND_DLIB_EXT}: ${O
 ${OBJECTDIR}/src/Detector.o: src/Detector.cc 
 	${MKDIR} -p ${OBJECTDIR}/src
 	${RM} "$@.d"
-	$(COMPILE.cc) -O2 -I${KARABO}/include -I${KARABO}/extern/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/Detector.o src/Detector.cc
+	$(COMPILE.cc) -O2 -I${KARABO}/include -I${KARABO}/extern/include `pkg-config --cflags karaboDependencies`  -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/Detector.o src/Detector.cc
 
 ${OBJECTDIR}/src/Receiver.o: src/Receiver.cc 
 	${MKDIR} -p ${OBJECTDIR}/src
 	${RM} "$@.d"
-	$(COMPILE.cc) -O2 -I${KARABO}/include -I${KARABO}/extern/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/Receiver.o src/Receiver.cc
+	$(COMPILE.cc) -O2 -I${KARABO}/include -I${KARABO}/extern/include `pkg-config --cflags karaboDependencies`  -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/Receiver.o src/Receiver.cc
 
 # Subprojects
 .build-subprojects:

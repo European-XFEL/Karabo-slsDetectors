@@ -51,8 +51,8 @@ TESTFILES= \
 CFLAGS=
 
 # CC Compiler Flags
-CCFLAGS=
-CXXFLAGS=
+CCFLAGS=-std=c++14
+CXXFLAGS=-std=c++14
 
 # Fortran Compiler Flags
 FFLAGS=
@@ -74,22 +74,22 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libslsReceiver.${CND_DLIB_EXT}: ${OBJ
 ${OBJECTDIR}/src/Gotthard2Receiver.o: src/Gotthard2Receiver.cc 
 	${MKDIR} -p ${OBJECTDIR}/src
 	${RM} "$@.d"
-	$(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/Gotthard2Receiver.o src/Gotthard2Receiver.cc
+	$(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`  -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/Gotthard2Receiver.o src/Gotthard2Receiver.cc
 
 ${OBJECTDIR}/src/GotthardReceiver.o: src/GotthardReceiver.cc 
 	${MKDIR} -p ${OBJECTDIR}/src
 	${RM} "$@.d"
-	$(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/GotthardReceiver.o src/GotthardReceiver.cc
+	$(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`   -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/GotthardReceiver.o src/GotthardReceiver.cc
 
 ${OBJECTDIR}/src/JungfrauReceiver.o: src/JungfrauReceiver.cc 
 	${MKDIR} -p ${OBJECTDIR}/src
 	${RM} "$@.d"
-	$(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/JungfrauReceiver.o src/JungfrauReceiver.cc
+	$(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`   -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/JungfrauReceiver.o src/JungfrauReceiver.cc
 
 ${OBJECTDIR}/src/SlsReceiver.o: src/SlsReceiver.cc 
 	${MKDIR} -p ${OBJECTDIR}/src
 	${RM} "$@.d"
-	$(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/SlsReceiver.o src/SlsReceiver.cc
+	$(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`   -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/SlsReceiver.o src/SlsReceiver.cc
 
 # Subprojects
 .build-subprojects:
@@ -104,13 +104,13 @@ ${TESTDIR}/TestFiles/f1: ${TESTDIR}/src/tests/SlsReceiverTest.o ${TESTDIR}/src/t
 ${TESTDIR}/src/tests/SlsReceiverTest.o: src/tests/SlsReceiverTest.cc 
 	${MKDIR} -p ${TESTDIR}/src/tests
 	${RM} "$@.d"
-	$(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include -I. `pkg-config --cflags karaboDependencies` -std=c++11 `pkg-config cppunit --cflags` -MMD -MP -MF "$@.d" -o ${TESTDIR}/src/tests/SlsReceiverTest.o src/tests/SlsReceiverTest.cc
+	$(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include -I. `pkg-config --cflags karaboDependencies`  `pkg-config cppunit --cflags` -MMD -MP -MF "$@.d" -o ${TESTDIR}/src/tests/SlsReceiverTest.o src/tests/SlsReceiverTest.cc
 
 
 ${TESTDIR}/src/tests/test_runner.o: src/tests/test_runner.cc 
 	${MKDIR} -p ${TESTDIR}/src/tests
 	${RM} "$@.d"
-	$(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include -I. `pkg-config --cflags karaboDependencies` -std=c++11 `pkg-config cppunit --cflags` -MMD -MP -MF "$@.d" -o ${TESTDIR}/src/tests/test_runner.o src/tests/test_runner.cc
+	$(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include -I. `pkg-config --cflags karaboDependencies`  `pkg-config cppunit --cflags` -MMD -MP -MF "$@.d" -o ${TESTDIR}/src/tests/test_runner.o src/tests/test_runner.cc
 
 
 ${OBJECTDIR}/src/Gotthard2Receiver_nomain.o: ${OBJECTDIR}/src/Gotthard2Receiver.o src/Gotthard2Receiver.cc 
@@ -121,7 +121,7 @@ ${OBJECTDIR}/src/Gotthard2Receiver_nomain.o: ${OBJECTDIR}/src/Gotthard2Receiver.
 	   (echo "$$NMOUTPUT" | ${GREP} 'T _main$$'); \
 	then  \
 	    ${RM} "$@.d";\
-	    $(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/Gotthard2Receiver_nomain.o src/Gotthard2Receiver.cc;\
+	    $(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`  -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/Gotthard2Receiver_nomain.o src/Gotthard2Receiver.cc;\
 	else  \
 	    ${CP} ${OBJECTDIR}/src/Gotthard2Receiver.o ${OBJECTDIR}/src/Gotthard2Receiver_nomain.o;\
 	fi
@@ -134,7 +134,7 @@ ${OBJECTDIR}/src/GotthardReceiver_nomain.o: ${OBJECTDIR}/src/GotthardReceiver.o 
 	   (echo "$$NMOUTPUT" | ${GREP} 'T _main$$'); \
 	then  \
 	    ${RM} "$@.d";\
-	    $(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/GotthardReceiver_nomain.o src/GotthardReceiver.cc;\
+	    $(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`   -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/GotthardReceiver_nomain.o src/GotthardReceiver.cc;\
 	else  \
 	    ${CP} ${OBJECTDIR}/src/GotthardReceiver.o ${OBJECTDIR}/src/GotthardReceiver_nomain.o;\
 	fi
@@ -147,7 +147,7 @@ ${OBJECTDIR}/src/JungfrauReceiver_nomain.o: ${OBJECTDIR}/src/JungfrauReceiver.o 
 	   (echo "$$NMOUTPUT" | ${GREP} 'T _main$$'); \
 	then  \
 	    ${RM} "$@.d";\
-	    $(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/JungfrauReceiver_nomain.o src/JungfrauReceiver.cc;\
+	    $(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`   -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/JungfrauReceiver_nomain.o src/JungfrauReceiver.cc;\
 	else  \
 	    ${CP} ${OBJECTDIR}/src/JungfrauReceiver.o ${OBJECTDIR}/src/JungfrauReceiver_nomain.o;\
 	fi
@@ -160,7 +160,7 @@ ${OBJECTDIR}/src/SlsReceiver_nomain.o: ${OBJECTDIR}/src/SlsReceiver.o src/SlsRec
 	   (echo "$$NMOUTPUT" | ${GREP} 'T _main$$'); \
 	then  \
 	    ${RM} "$@.d";\
-	    $(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/SlsReceiver_nomain.o src/SlsReceiver.cc;\
+	    $(COMPILE.cc) -O2 -DSLS_RECEIVER_FUNCTION_LIST -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`   -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/SlsReceiver_nomain.o src/SlsReceiver.cc;\
 	else  \
 	    ${CP} ${OBJECTDIR}/src/SlsReceiver.o ${OBJECTDIR}/src/SlsReceiver_nomain.o;\
 	fi

@@ -51,8 +51,8 @@ TESTFILES= \
 CFLAGS=
 
 # CC Compiler Flags
-CCFLAGS=
-CXXFLAGS=
+CCFLAGS=-std=c++14
+CXXFLAGS=-std=c++14
 
 # Fortran Compiler Flags
 FFLAGS=
@@ -74,22 +74,22 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libslsControl.${CND_DLIB_EXT}: ${OBJE
 ${OBJECTDIR}/src/Gotthard2Control.o: src/Gotthard2Control.cc 
 	${MKDIR} -p ${OBJECTDIR}/src
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/Gotthard2Control.o src/Gotthard2Control.cc
+	$(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`  -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/Gotthard2Control.o src/Gotthard2Control.cc
 
 ${OBJECTDIR}/src/GotthardControl.o: src/GotthardControl.cc 
 	${MKDIR} -p ${OBJECTDIR}/src
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/GotthardControl.o src/GotthardControl.cc
+	$(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`   -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/GotthardControl.o src/GotthardControl.cc
 
 ${OBJECTDIR}/src/JungfrauControl.o: src/JungfrauControl.cc 
 	${MKDIR} -p ${OBJECTDIR}/src
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/JungfrauControl.o src/JungfrauControl.cc
+	$(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`   -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/JungfrauControl.o src/JungfrauControl.cc
 
 ${OBJECTDIR}/src/SlsControl.o: src/SlsControl.cc 
 	${MKDIR} -p ${OBJECTDIR}/src
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/SlsControl.o src/SlsControl.cc
+	$(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`   -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/SlsControl.o src/SlsControl.cc
 
 # Subprojects
 .build-subprojects:
@@ -104,13 +104,13 @@ ${TESTDIR}/TestFiles/f1: ${TESTDIR}/src/tests/SlsControlTest.o ${TESTDIR}/src/te
 ${TESTDIR}/src/tests/SlsControlTest.o: src/tests/SlsControlTest.cc 
 	${MKDIR} -p ${TESTDIR}/src/tests
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11 `pkg-config cppunit --cflags` -MMD -MP -MF "$@.d" -o ${TESTDIR}/src/tests/SlsControlTest.o src/tests/SlsControlTest.cc
+	$(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`  `pkg-config cppunit --cflags` -MMD -MP -MF "$@.d" -o ${TESTDIR}/src/tests/SlsControlTest.o src/tests/SlsControlTest.cc
 
 
 ${TESTDIR}/src/tests/test_runner.o: src/tests/test_runner.cc 
 	${MKDIR} -p ${TESTDIR}/src/tests
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11 `pkg-config cppunit --cflags` -MMD -MP -MF "$@.d" -o ${TESTDIR}/src/tests/test_runner.o src/tests/test_runner.cc
+	$(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`  `pkg-config cppunit --cflags` -MMD -MP -MF "$@.d" -o ${TESTDIR}/src/tests/test_runner.o src/tests/test_runner.cc
 
 
 ${OBJECTDIR}/src/Gotthard2Control_nomain.o: ${OBJECTDIR}/src/Gotthard2Control.o src/Gotthard2Control.cc 
@@ -121,7 +121,7 @@ ${OBJECTDIR}/src/Gotthard2Control_nomain.o: ${OBJECTDIR}/src/Gotthard2Control.o 
 	   (echo "$$NMOUTPUT" | ${GREP} 'T _main$$'); \
 	then  \
 	    ${RM} "$@.d";\
-	    $(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/Gotthard2Control_nomain.o src/Gotthard2Control.cc;\
+	    $(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`  -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/Gotthard2Control_nomain.o src/Gotthard2Control.cc;\
 	else  \
 	    ${CP} ${OBJECTDIR}/src/Gotthard2Control.o ${OBJECTDIR}/src/Gotthard2Control_nomain.o;\
 	fi
@@ -134,7 +134,7 @@ ${OBJECTDIR}/src/GotthardControl_nomain.o: ${OBJECTDIR}/src/GotthardControl.o sr
 	   (echo "$$NMOUTPUT" | ${GREP} 'T _main$$'); \
 	then  \
 	    ${RM} "$@.d";\
-	    $(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/GotthardControl_nomain.o src/GotthardControl.cc;\
+	    $(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`   -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/GotthardControl_nomain.o src/GotthardControl.cc;\
 	else  \
 	    ${CP} ${OBJECTDIR}/src/GotthardControl.o ${OBJECTDIR}/src/GotthardControl_nomain.o;\
 	fi
@@ -147,7 +147,7 @@ ${OBJECTDIR}/src/JungfrauControl_nomain.o: ${OBJECTDIR}/src/JungfrauControl.o sr
 	   (echo "$$NMOUTPUT" | ${GREP} 'T _main$$'); \
 	then  \
 	    ${RM} "$@.d";\
-	    $(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/JungfrauControl_nomain.o src/JungfrauControl.cc;\
+	    $(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`   -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/JungfrauControl_nomain.o src/JungfrauControl.cc;\
 	else  \
 	    ${CP} ${OBJECTDIR}/src/JungfrauControl.o ${OBJECTDIR}/src/JungfrauControl_nomain.o;\
 	fi
@@ -160,7 +160,7 @@ ${OBJECTDIR}/src/SlsControl_nomain.o: ${OBJECTDIR}/src/SlsControl.o src/SlsContr
 	   (echo "$$NMOUTPUT" | ${GREP} 'T _main$$'); \
 	then  \
 	    ${RM} "$@.d";\
-	    $(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies` -std=c++11  -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/SlsControl_nomain.o src/SlsControl.cc;\
+	    $(COMPILE.cc) -g -I${KARABO}/extern/include -I${KARABO}/include `pkg-config --cflags karaboDependencies`   -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/SlsControl_nomain.o src/SlsControl.cc;\
 	else  \
 	    ${CP} ${OBJECTDIR}/src/SlsControl.o ${OBJECTDIR}/src/SlsControl_nomain.o;\
 	fi

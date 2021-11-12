@@ -46,11 +46,11 @@
       </toolsSet>
       <compileType>
         <ccTool>
-          <standard>8</standard>
           <incDir>
             <pElem>${KARABO}/extern/include</pElem>
             <pElem>${KARABO}/include</pElem>
           </incDir>
+          <commandLine>-std=c++14</commandLine>
         </ccTool>
         <linkerTool>
           <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libslsControl.${CND_DLIB_EXT}</output>
@@ -122,11 +122,11 @@
         </cTool>
         <ccTool>
           <developmentMode>5</developmentMode>
-          <standard>8</standard>
           <incDir>
             <pElem>${KARABO}/extern/include</pElem>
             <pElem>${KARABO}/include</pElem>
           </incDir>
+          <commandLine>-std=c++14</commandLine>
         </ccTool>
         <fortranCompilerTool>
           <developmentMode>5</developmentMode>
@@ -200,11 +200,11 @@
       </toolsSet>
       <compileType>
         <ccTool>
-          <standard>8</standard>
           <incDir>
             <pElem>${KARABO}/extern/include</pElem>
             <pElem>${KARABO}/include</pElem>
           </incDir>
+          <commandLine>-std=c++14</commandLine>
           <preprocessorList>
             <Elem>SLS_SIMULATION</Elem>
           </preprocessorList>
