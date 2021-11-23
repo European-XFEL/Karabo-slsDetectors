@@ -28,12 +28,6 @@ SlsControlTest::SlsControlTest() {
 SlsControlTest::~SlsControlTest() {
 }
 
-void SlsControlTest::setUp() {
-}
-
-void SlsControlTest::tearDown() {
-}
-
 void SlsControlTest::shouldCreateGotthardControl() {
     BaseDevice::Pointer device = BaseDevice::create("GotthardControl", m_configOk);
 

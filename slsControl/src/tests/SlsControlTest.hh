@@ -26,8 +26,6 @@ class SlsControlTest : public CPPUNIT_NS::TestFixture {
 public:
     SlsControlTest();
     virtual ~SlsControlTest();
-    void setUp();
-    void tearDown();
 
 private:
     void shouldCreateGotthardControl();

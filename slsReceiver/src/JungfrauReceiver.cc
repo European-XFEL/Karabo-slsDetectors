@@ -32,8 +32,8 @@ namespace karabo {
                 .displayedName("Data")
                 .commit();
 
-	std::vector<unsigned long long> shape = {JUNGFRAU_PIXEL_Y, JUNGFRAU_PIXEL_X};
-	std::string dims = karabo::util::toString(shape);
+        std::vector<unsigned long long> shape = {JUNGFRAU_PIXEL_Y, JUNGFRAU_PIXEL_X};
+        std::string dims = karabo::util::toString(shape);
 
         IMAGEDATA_ELEMENT(displayData).key("data.adc")
                 .displayedName("ADC")
@@ -124,7 +124,7 @@ namespace karabo {
     }
 
     void JungfrauReceiver::unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain) {
-	const size_t frameSize = this->getDetectorSize();
+        const size_t frameSize = this->getDetectorSize();
         size_t offset = sizeof(unsigned short) * idx * frameSize;
         const char* ptr = data + offset; // Base address of the <idx> frame
 

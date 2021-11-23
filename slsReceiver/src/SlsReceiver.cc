@@ -61,7 +61,7 @@ namespace karabo {
                 .readOnly()
                 .commit();
 
-	Schema outputData;
+        Schema outputData;
 
         NODE_ELEMENT(outputData).key("data")
                 .displayedName("Data")
@@ -134,10 +134,10 @@ namespace karabo {
         }
     }
 
-    SlsReceiver::SlsReceiver(const karabo::util::Hash& config) : Device<>(config),
-								 m_receiver(nullptr),
-								 m_strand(boost::make_shared<karabo::net::Strand>(karabo::net::EventLoop::getIOService())),
-								 m_maxWarnPerAcq(10) {
+    SlsReceiver::SlsReceiver(const karabo::util::Hash& config) : Device<>(config), m_receiver(nullptr),
+            m_lastFrameNum(0), m_lastRateTime(0.), m_detectorDataIdx(0),
+            m_strand(boost::make_shared<karabo::net::Strand>(karabo::net::EventLoop::getIOService())),
+            m_frameCount(0), m_maxWarnPerAcq(10), m_warnCounter(0) {
         KARABO_INITIAL_FUNCTION(initialize);
         KARABO_SLOT(reset);
     }
@@ -160,7 +160,7 @@ namespace karabo {
         std::vector<std::string> __argv__;
         __argv__.push_back("ignored"); // First parameter will be ignored
         const karabo::util::Hash config = this->getCurrentConfiguration("sls");
-        for (karabo::util::Hash::const_iterator it = config.begin(); it != config.end(); it++) {
+        for (karabo::util::Hash::const_iterator it = config.begin(); it != config.end(); ++it) {
             try {
                 const std::string key = it->getKey();
                 const std::string value = config.getAs<std::string>(key);
@@ -320,7 +320,7 @@ namespace karabo {
                 detectorData = &(self->m_detectorData[self->m_detectorDataIdx]);
                 detectorData->resetTimestamp(actualTimestamp);
             }
-		
+
             const size_t frameSize = sizeof(unsigned short) * self->getDetectorSize();
             if (dataSize == 0) {
                 self->logWarning("rawDataReadyCallBack: received empty buffer. Skip!");
@@ -411,7 +411,7 @@ namespace karabo {
 
     void SlsReceiver::updateOutputSchema(unsigned short framesPerTrain) {
         Schema daqData;
-	const auto daqShape = this->getDaqShape(framesPerTrain);
+        const auto daqShape = this->getDaqShape(framesPerTrain);
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Updating output schema";
 

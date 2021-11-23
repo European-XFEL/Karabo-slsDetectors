@@ -93,7 +93,7 @@ void sls::server::handle_accept(session* new_session, const boost::system::error
     }
 }
 
-sls::Receiver::Receiver(int argc, char *argv[]) {
+sls::Receiver::Receiver(int argc, char *argv[]) : m_filePath("/tmp"), m_fileName("run") {
     m_acquisitionStarted = false;
     m_delay_us = 0;
     m_exptime_us = 10;
@@ -102,8 +102,6 @@ sls::Receiver::Receiver(int argc, char *argv[]) {
     m_settings = static_cast<int>(slsDetectorDefs::detectorSettings::UNINITIALIZED);
     m_frameCounter = 0;
     m_detectorType = static_cast<int>(slsDetectorDefs::detectorType::GENERIC); // UNDEFINED
-    m_filePath = "/tmp";
-    m_fileName = "run";
     m_fileIndex = 0;
     m_dataSize = 0;
     m_data = NULL;
@@ -236,11 +234,14 @@ void* sls::Receiver::dataWorker(void* self) {
         }
 
     }
+
+    return nullptr;
 }
 
 void* sls::Receiver::ioServWorker(void* self) {
     Receiver* receiver = static_cast<Receiver*> (self);
     receiver->m_io_service.run();
+    return nullptr;
 }
 
 std::string sls::Receiver::generateFileName() {
@@ -276,7 +277,6 @@ void sls::Receiver::processCommand(const std::string& command) {
         try {
             if (m_startAcquisitionCallBack != NULL) {
                 // call registered start function
-                const int channels = slsDetectorDefs::channels[m_detectorType];
                 const uint32_t datasize = channels * sizeof(short); // sample data size
                 m_startAcquisitionCallBack(m_filePath, m_fileName, m_fileIndex, datasize, m_pStartAcquisition);
 

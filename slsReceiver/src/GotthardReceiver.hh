@@ -39,7 +39,7 @@ namespace karabo {
          * already be validated using the information of the expectedParameters function.
          * The configuration is provided in a key/value fashion. 
          */
-        GotthardReceiver(const karabo::util::Hash& config);
+        explicit GotthardReceiver(const karabo::util::Hash& config);
 
         /**
          * The destructor will be called in case the device gets killed (i.e. the event-loop returns)
@@ -52,11 +52,11 @@ namespace karabo {
 
     private: // Raw data unpacking
 
-        size_t getDetectorSize();
-        std::vector<unsigned long long> getDisplayShape();
-        std::vector<unsigned long long> getDaqShape(unsigned short framesperTrain);
+        size_t getDetectorSize() override;
+        std::vector<unsigned long long> getDisplayShape() override;
+        std::vector<unsigned long long> getDaqShape(unsigned short framesPerTrain) override;
 
-        void unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain);
+        void unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain) override;
 
     private: // Members
 
