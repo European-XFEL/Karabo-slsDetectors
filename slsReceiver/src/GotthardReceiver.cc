@@ -69,7 +69,7 @@ namespace karabo {
     }
 
     void GotthardReceiver::unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain) {
-	const size_t frameSize = this->getDetectorSize();
+        const size_t frameSize = this->getDetectorSize();
         size_t offset = sizeof(unsigned short) * idx * frameSize;
         const char* ptr = data + offset; // Base address of the <idx> frame
 

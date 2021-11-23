@@ -22,8 +22,6 @@ class SlsReceiverTest : public CPPUNIT_NS::TestFixture {
 public:
     SlsReceiverTest();
     virtual ~SlsReceiverTest();
-    void setUp();
-    void tearDown();
 
 private:
     void shouldCreateGotthardReceiver();

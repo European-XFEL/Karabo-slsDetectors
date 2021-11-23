@@ -131,7 +131,7 @@ namespace sls {
 
         void acquire();
 
-        int stopDetector();
+        void stopDetector();
 
         Result<slsDetectorDefs::runStatus> getDetectorStatus(Positions pos = {}) const;
 

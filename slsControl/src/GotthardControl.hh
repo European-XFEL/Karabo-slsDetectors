@@ -24,14 +24,14 @@ namespace karabo {
     public:
         KARABO_CLASSINFO(GotthardControl, "GotthardControl", PACKAGE_VERSION)
 
-        GotthardControl(const karabo::util::Hash& config);
+        explicit GotthardControl(const karabo::util::Hash& config);
 
         virtual ~GotthardControl();
 
         static void expectedParameters(karabo::util::Schema& expected);
 
     private: // functions
-        void pollDetectorSpecific(karabo::util::Hash& h);
+        void pollDetectorSpecific(karabo::util::Hash& h) override;
         void createCalibrationAndSettings(const std::string& settings) {
             // nothing to be done
         }

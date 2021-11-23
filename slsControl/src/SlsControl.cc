@@ -20,9 +20,9 @@ namespace fs = boost::filesystem;
 namespace karabo {
 
     SlsControl::SlsControl(const Hash& config) : Device<>(config),
-    m_numberOfModules(0), m_connect(false), m_connect_timer(EventLoop::getIOService()),
-    m_firstPoll(true), m_poll(false), m_poll_timer(EventLoop::getIOService()),
-    m_acquire_timer(EventLoop::getIOService()) {
+            m_numberOfModules(0), m_connect(false), m_connect_timer(EventLoop::getIOService()),
+            m_firstPoll(true), m_poll(false), m_poll_timer(EventLoop::getIOService()),
+            m_acquire_timer(EventLoop::getIOService()) {
         KARABO_INITIAL_FUNCTION(initialize);
 
         KARABO_SLOT(start);
@@ -668,17 +668,6 @@ namespace karabo {
         h.set("receiverVersion", version);
     }
 
-
-    void SlsControl::getPathsByTag(std::vector<std::string >& paths, const std::string& tags) {
-        karabo::util::Schema schema = this->getFullSchema();
-        karabo::util::Hash parameters = schema.getParameterHash();
-        karabo::util::Hash filteredParameters = this->filterByTags(parameters, tags);
-
-        // N.B. this->getCurrentConfiguration(tags)) dose not return parameters with no value set
-
-        filteredParameters.getPaths(paths);
-    }
-
     void SlsControl::sendBaseConfiguration() {
         // Get detector and receiver information
         const auto hostnames = this->get<std::vector<std::string> >("detectorHostName");
@@ -1047,10 +1036,9 @@ namespace karabo {
             if (timing == "trigger") {
                 // External Trigger mode
                 const float triggerPeriod = incomingReconfiguration.has("triggerPeriod") ? incomingReconfiguration.get<float>("triggerPeriod") : this->get<float>("triggerPeriod");
-                long long numberOfTriggers;
 
                 if (acquisitionTime >= triggerPeriod) {
-                    numberOfTriggers = std::floor(acquisitionTime / triggerPeriod);
+                    long long numberOfTriggers = std::floor(acquisitionTime / triggerPeriod);
                     h2.set("numberOfTriggers", numberOfTriggers);
                 } else {
                     h2.set("numberOfTriggers", 1ll);

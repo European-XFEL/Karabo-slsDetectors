@@ -21,12 +21,6 @@ SlsReceiverTest::SlsReceiverTest() {
 SlsReceiverTest::~SlsReceiverTest() {
 }
 
-void SlsReceiverTest::setUp() {
-}
-
-void SlsReceiverTest::tearDown() {
-}
-
 void SlsReceiverTest::shouldCreateGotthardReceiver() {
     BaseDevice::Pointer device = BaseDevice::create("GotthardReceiver", m_config);
 

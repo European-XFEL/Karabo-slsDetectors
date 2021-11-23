@@ -356,8 +356,8 @@ namespace sls {
         }
     }
 
-    void Detector::setDelayAfterTrigger(ns t, Positions pos) {
-        m_delayAfterTrigger = t;
+    void Detector::setDelayAfterTrigger(ns value, Positions pos) {
+        m_delayAfterTrigger = value;
     }
 
     Result<int> Detector::getHighVoltage(Positions pos) const {
@@ -406,13 +406,13 @@ namespace sls {
         }
     }
 
-    void Detector::setPowerChip(bool value, Positions pos) {
+    void Detector::setPowerChip(bool on, Positions pos) {
        if (pos.size() == 0) {
-            m_powerchip.assign(this->size(), value);
+            m_powerchip.assign(this->size(), on);
         } else {
             for (const int p : pos) {
                 if (p < m_powerchip.size()) {
-                    m_powerchip[p] = value;
+                    m_powerchip[p] = on;
                 } else {
                     throw std::runtime_error("Detector::setPowerChip : position not found!");
                 }
@@ -445,7 +445,7 @@ namespace sls {
         }
     }
 
-    int Detector::stopDetector() {
+    void Detector::stopDetector() {
         m_status = slsDetectorDefs::runStatus::IDLE;
         for (int i = 0; i < this->size() ; ++i) {
             m_fileIndex[i] += 1; // increase file index
@@ -755,7 +755,7 @@ namespace sls {
         } else if (parameter == "extsig") {
             if (narg >= 3) {
                 const int n_signal = std::stoi(args[1]);
-                if (0 <= n_signal <= 3) {
+                if (0 <= n_signal && n_signal <= 3) {
                     m_extsig[n_signal] = args[2];
                 }
             }
@@ -810,7 +810,6 @@ namespace sls {
             }
 
             int pos = 0;
-            parameter = args[0];
             found = parameter.find_first_of(":");
             if (found != std::string::npos) {
                 // parameter has controller index, eg "0:"
@@ -898,7 +897,7 @@ namespace sls {
             } else if (parameter == "extsig") {
                 if (narg >= 2) {
                     const int n_signal = std::stoi(args[1]);
-                    if (0 <= n_signal <= 3) {
+                    if (0 <= n_signal && n_signal <= 3) {
                         return m_extsig[n_signal];
                     }
                 }
@@ -1020,6 +1019,8 @@ namespace sls {
                 boost::this_thread::sleep(boost::posix_time::milliseconds(100));
             }
         }
+
+        return nullptr;
     }
 
 } // namespace sls

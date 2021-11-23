@@ -31,13 +31,13 @@ namespace karabo {
 
         KARABO_CLASSINFO(SlsControl, "SlsControl", PACKAGE_VERSION)
 
-        SlsControl(const karabo::util::Hash& config);
+        explicit SlsControl(const karabo::util::Hash& config);
 
         virtual ~SlsControl();
 
         static void expectedParameters(karabo::util::Schema& expected);
 
-        virtual void preReconfigure(karabo::util::Hash& incomingReconfiguration);
+        virtual void preReconfigure(karabo::util::Hash& incomingReconfiguration) override;
 
     private: // Slots
         void start();
@@ -57,8 +57,6 @@ namespace karabo {
         void pollOnce(karabo::util::Hash& h);
         virtual void pollDetectorSpecific(karabo::util::Hash& h) {
         };
-
-        void getPathsByTag(std::vector<std::string >& paths, const std::string& tags);
 
         void sendBaseConfiguration();
         void sendInitialConfiguration();

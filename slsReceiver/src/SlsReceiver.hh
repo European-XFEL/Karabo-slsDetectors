@@ -31,7 +31,7 @@ namespace karabo {
 
     // Detector data (accumulated per train)
     struct DetectorData {
-        DetectorData() : mutex(1), adc(0), gain(0) {};
+        DetectorData() : mutex(1), accumulatedFrames(0), size(0), adc(0), gain(0) {};
 
         ~DetectorData() {
             this->free();
@@ -97,7 +97,7 @@ namespace karabo {
          */
         static void expectedParameters(karabo::util::Schema& expected);
 
-        virtual void preReconfigure(karabo::util::Hash& incomingReconfiguration);
+        virtual void preReconfigure(karabo::util::Hash& incomingReconfiguration) override;
 
         /**
          * Constructor providing the initial configuration in form of a Hash object.
@@ -105,7 +105,7 @@ namespace karabo {
          * already be validated using the information of the expectedParameters function.
          * The configuration is provided in a key/value fashion. 
          */
-        SlsReceiver(const karabo::util::Hash& config);
+        explicit SlsReceiver(const karabo::util::Hash& config);
 
         /**
          * The destructor will be called in case the device gets killed (i.e. the event-loop returns)
@@ -140,7 +140,7 @@ namespace karabo {
         }
 
         void logWarning(const std::string& message);
-	
+
         // Make output schema fit for DAQ
         void updateOutputSchema(unsigned short framesPerTrain);
 
