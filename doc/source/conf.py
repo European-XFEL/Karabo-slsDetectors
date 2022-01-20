@@ -354,9 +354,9 @@ import slumber
 
 # the RTDHOST should be set to localhost if you only compile on RTD
 # otherwise it needs to be set to the server hosting the internal RTD
-RTDHOST = 'https://in.xfel.eu/readthedocs'
-api = slumber.API(base_url='{}/api/v1/'.format(RTDHOST))
-projects = api.project.get()['objects']
+RTDHOST = 'https://rtd.xfel.eu'
+api = slumber.API(base_url='{}/api/v2/'.format(RTDHOST))
+projects = api.project.get()['results']
 isphinx = {'python': ('http://python.readthedocs.io/en/latest/', None),
            'numpy': ('http://numpy.readthedocs.io/en/latest/', None),
            'scipy': ('http://scipy.readthedocs.io/en/latest/', None)}
