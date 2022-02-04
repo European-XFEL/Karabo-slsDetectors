@@ -53,6 +53,30 @@ namespace karabo {
                 .reconfigurable()
                 .allowedStates(State::ON)
                 .commit();
+
+        STRING_ELEMENT(expected).key("extSig0")
+                .alias("extsig:0")
+                .tags("sls")
+                .displayedName("extSig0")
+                .description("Ext Sig 0")
+                .assignmentOptional().defaultValue("off")
+                .options("off gate_in_active_high gate_in_active_low trigger_in_rising_edge "
+                "trigger_in_falling_edge ro_trigger_in_rising_edge ro_trigger_in_falling_edge "
+                "gate_out_active_high gate_out_active_low trigger_out_rising_edge "
+                "trigger_out_falling_edge ro_trigger_out_rising_edge ro_trigger_out_falling_edge sync")
+                .reconfigurable()
+                .allowedStates(State::ON)
+                .commit();
+
+        INT64_ELEMENT(expected).key("numberOfGates")
+                .alias("gates")
+                .tags("sls")
+                .displayedName("NumberOfGates")
+                .description("Number Of Gates")
+                .assignmentOptional().defaultValue(0)
+                .reconfigurable()
+                .allowedStates(State::ON)
+                .commit();
     }
 
     const char* GotthardControl::getCalibrationString() const {
