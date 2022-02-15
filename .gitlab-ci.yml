@@ -1,3 +1,17 @@
+before_script:
+    - echo '*** Install packages needed by slsDetectorsPackage ***'
+    - export REL_OS_NAME=$(lsb_release -is)
+    - >
+      if [ "$REL_OS_NAME" = "CentOS" ]; then
+        if [ -x "/opt/rh/devtoolset-7/enable" ]; then
+            source /opt/rh/devtoolset-7/enable
+        fi
+        yum install -y zeromq-devel
+      elif [ "$REL_OS_NAME" = "Ubuntu" ]; then
+        apt-get update
+        apt-get install -y libzmq3-dev
+      fi
+
 stages:
   - lint
   - build
@@ -85,8 +99,6 @@ release:ubuntu20:
     
 release:centos7:
   image: europeanxfel/karabo-ci:centos-7gcc7
-  before_script:
-    - source /opt/rh/devtoolset-7/enable
   <<: *release_build
 
 ##### Test build #####
@@ -101,6 +113,4 @@ test:ubuntu20:
 
 test:centos7:
   image: europeanxfel/karabo-ci:centos-7gcc7
-  before_script:
-    - source /opt/rh/devtoolset-7/enable
   <<: *test_build
