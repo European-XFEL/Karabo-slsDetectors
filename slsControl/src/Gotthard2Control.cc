@@ -104,8 +104,8 @@ namespace karabo {
                 .tags("sls")
                 .displayedName("Bad Channels")
                 .description("Sets the bad channel filename. Bad channels will be "
-                "omitted in the .dat file. Use '' to unset.")
-                .assignmentOptional().defaultValue("")
+                "omitted in the data file. Load an empty file to unset all bad channels.")
+                .assignmentOptional().defaultValue("badchannels.txt")
                 .reconfigurable()
                 .allowedStates(State::ON)
                .commit();

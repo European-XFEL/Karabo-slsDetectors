@@ -73,6 +73,7 @@ build: .build-post
 # Add your post 'build' code here...
 
 	cp bin/gotthard_restart.py $(KARABO)/extern/bin/.
+	touch $(KARABO)/var/data/badchannels.txt
 
 # clean
 clean: .clean-post
