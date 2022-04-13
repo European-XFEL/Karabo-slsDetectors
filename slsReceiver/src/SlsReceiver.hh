@@ -47,6 +47,7 @@ namespace karabo {
         unsigned char* gain;
         std::vector<unsigned char> memoryCell;
         std::vector<unsigned long long> frameNumber;
+        std::vector<unsigned long long> bunchId;
         std::vector<double> timestamp;
 
         void free() {
@@ -68,6 +69,7 @@ namespace karabo {
 
             memoryCell.resize(framesPerTrain);
             frameNumber.resize(framesPerTrain);
+            bunchId.resize(framesPerTrain);
             timestamp.resize(framesPerTrain);
         }
 
@@ -77,6 +79,7 @@ namespace karabo {
             std::memset(gain, 0, size * sizeof(unsigned char));
             std::memset(memoryCell.data(), 255, memoryCell.size() * sizeof(unsigned char));
             std::memset(frameNumber.data(), 0, frameNumber.size() * sizeof(unsigned long long));
+            std::memset(bunchId.data(), 0, frameNumber.size() * sizeof(unsigned long long));
             std::memset(timestamp.data(), 0, timestamp.size() * sizeof(double));
         }
 
