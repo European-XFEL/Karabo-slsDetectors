@@ -94,6 +94,12 @@ namespace karabo {
                 .readOnly()
                 .commit();
 
+        VECTOR_UINT64_ELEMENT(outputData).key("data.bunchId")
+                .displayedName("Bunch ID")
+                .description("The bunch ID from the beamline, if available.")
+                .readOnly()
+                .commit();
+
         VECTOR_DOUBLE_ELEMENT(outputData).key("data.timestamp")
                 .displayedName("Timestamp")
                 .description("The data timestamp.")
@@ -347,6 +353,7 @@ namespace karabo {
                     self->unpackRawData(dataPointer, i, detectorData->adc + offset, detectorData->gain + offset);
                     detectorData->memoryCell[accumulatedFrames] = memoryCell;
                     detectorData->frameNumber[accumulatedFrames] = detectorHeader.frameNumber;
+                    detectorData->bunchId[accumulatedFrames] = detectorHeader.bunchId;
 
                     detectorData->timestamp[accumulatedFrames] = currentTime;
                     detectorData->accumulatedFrames += 1;
@@ -450,6 +457,13 @@ namespace karabo {
                 .readOnly()
                 .commit();
 
+        VECTOR_UINT64_ELEMENT(daqData).key("data.bunchId")
+                .displayedName("Bunch ID")
+                .description("The bunch ID from the beamline, if available.")
+                .maxSize(framesPerTrain)
+                .readOnly()
+                .commit();
+
         VECTOR_DOUBLE_ELEMENT(daqData).key("data.timestamp")
                 .displayedName("Timestamp")
                 .description("The data timestamp.")
@@ -512,6 +526,7 @@ namespace karabo {
         output.set("data.gain", gainTrainData);
         output.set("data.memoryCell", detectorData->memoryCell);
         output.set("data.frameNumber", detectorData->frameNumber);
+        output.set("data.bunchId", detectorData->bunchId);
         output.set("data.timestamp", detectorData->timestamp);
         this->writeChannel("output", output, detectorData->lastTimestamp);
 
