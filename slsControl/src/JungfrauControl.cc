@@ -21,6 +21,8 @@ namespace karabo {
 
 
     JungfrauControl::JungfrauControl(const Hash& config) : SlsControl(config) {
+        KARABO_SLOT(resetTempEvent);
+
 #ifdef SLS_SIMULATION
         m_detectorType = slsDetectorDefs::detectorType::JUNGFRAU;
 #endif
@@ -35,9 +37,21 @@ namespace karabo {
 
 
     void JungfrauControl::expectedParameters(Schema& expected) {
+        std::vector<std::string> settingsOptions = {"gain0", "highgain0"};
         OVERWRITE_ELEMENT(expected).key("settings") // From base class
-                .setNewDefaultValue("dynamicgain")
-                .setNewOptions({"dynamicgain", "dynamichg0", "fixgain1", "fixgain2", "forceswitchg1", "forceswitchg2"})
+                .setNewDefaultValue("gain0")
+                .setNewOptions(settingsOptions)
+                .commit();
+
+        std::vector<std::string> gainModeOptions = {"dynamic", "forceswitchg1", "forceswitchg2", "fixg0", "fixg1", "fixg2"};
+        STRING_ELEMENT(expected).key("gainMode")
+                .alias("gainmode")
+                .tags("sls")
+                .displayedName("Gain Mode")
+                .description("The Jungfrau gain mode.")
+                .assignmentOptional().defaultValue("dynamic")
+                .options(gainModeOptions)
+                .reconfigurable()
                 .commit();
 
         OVERWRITE_ELEMENT(expected).key("highVoltage")
@@ -127,6 +141,61 @@ namespace karabo {
                 .readOnly()
                 .commit();
 
+        VECTOR_INT32_ELEMENT(expected).key("tempThreshold")
+                .alias("temp_threshold")
+                .tags("sls")
+                .displayedName("Temperature Threshold")
+                .description("The threshold temperature in degrees. If the temperature crosses "
+                "the threshold temperature and temperature control is enabled (default is "
+                "disabled), the power to chip will be switched off and the temperature event "
+                "will be set. "
+                "To power on the chip again, the temperature has to be less than the threshold "
+                "temperature and the temperature event has to be reset.")
+                .assignmentOptional().defaultValue({65})
+                .unit(Unit::DEGREE_CELSIUS)
+                .reconfigurable()
+                .expertAccess()
+                .allowedStates(State::ON)
+                .commit();
+
+        VECTOR_INT32_ELEMENT(expected).key("tempControl")
+                .alias("temp_control")
+                .tags("sls")
+                .displayedName("Temperature Control")
+                .description("Set to 1 to enable the temperature control.")
+                .assignmentOptional().defaultValue({0})
+                .reconfigurable()
+                .expertAccess()
+                .allowedStates(State::ON)
+                .commit();
+
+        VECTOR_INT32_ELEMENT(expected).key("tempEventVector")
+                .displayedName("Temperature Event (Modules)")
+                .description("The temperature event will be 1 if temperature crosses the "
+                "threshold and the control is enabled. This vector has one entry per module. "
+                "Fix the issue before resetting.")
+                .readOnly()
+                .expertAccess()
+                .commit();
+
+        // Aggregates 'tempEventVector' in a single boolean
+        BOOL_ELEMENT(expected).key("tempEvent")
+                .displayedName("Temperature Event (Summary)")
+                .description("The temperature event will be set to 'true' if temperature crosses "
+                "the threshold and the control is enabled. Fix the issue before resetting.")
+                .readOnly()
+                .alarmHigh(false).info("One of the JF modules exceeded the threshold temperature").needsAcknowledging(false)
+                .commit();
+
+        SLOT_ELEMENT(expected).key("resetTempEvent")
+                .displayedName("Reset Temperature Event")
+                .allowedStates(State::ON)
+                .commit();
+    }
+
+
+    void JungfrauControl::resetTempEvent() {
+        m_SLS->resetTemperatureEvent(m_positions);
     }
 
 
@@ -142,6 +211,17 @@ namespace karabo {
 
         const std::vector<int> tempFpga = m_SLS->getTemperature(slsDetectorDefs::dacIndex::TEMPERATURE_FPGA, m_positions);
         h.set("tempFpga", tempFpga);
+
+        const std::vector<int> tempEventVector = m_SLS->getTemperatureEvent(m_positions);
+        h.set("tempEventVector", tempEventVector);
+        bool tempEvent = false;
+        for (const int evt : tempEventVector) {
+            if (evt != 0) {
+                tempEvent = true;
+                break;
+            }
+        }
+        h.set("tempEvent", tempEvent);
     }
 
 

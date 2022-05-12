@@ -571,6 +571,13 @@ namespace sls {
         m_timingMode = value;
     }
 
+    Result<int> Detector::getTemperatureEvent(Positions pos) const {
+        return std::vector<int>(pos.size(), 0);
+    }
+
+    void Detector::resetTemperatureEvent(Positions pos) {
+    }
+
     Result<uint32_t> Detector::readRegister(uint32_t addr, Positions pos) const {
         if (m_register.find(addr) == m_register.end()) {
             return std::vector<uint32_t>(pos.size(), 0);
