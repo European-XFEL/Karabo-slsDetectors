@@ -32,6 +32,7 @@ namespace karabo {
         static void expectedParameters(karabo::util::Schema& expected);
 
     private:
+        void resetTempEvent();
         void powerOn() override;
         void pollDetectorSpecific(karabo::util::Hash& h) override;
         void configureDetectorSpecific(const karabo::util::Hash& configHash) override;

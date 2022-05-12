@@ -153,6 +153,16 @@ namespace sls {
 
         void setTimingMode(slsDetectorDefs::timingMode value, Positions pos = {});
 
+       /**************************************************
+        *                                                *
+        *    Jungfrau Specific                           *
+        *                                                *
+        * ************************************************/
+
+        Result<int> getTemperatureEvent(Positions pos = {}) const;
+
+        void resetTemperatureEvent(Positions pos = {});
+
         /**************************************************
          *                                                *
          *    Advanced                                    *
