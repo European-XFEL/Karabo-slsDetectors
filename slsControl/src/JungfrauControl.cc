@@ -43,7 +43,8 @@ namespace karabo {
                 .setNewOptions(settingsOptions)
                 .commit();
 
-        std::vector<std::string> gainModeOptions = {"dynamic", "forceswitchg1", "forceswitchg2", "fixg0", "fixg1", "fixg2"};
+        std::vector<std::string> gainModeOptions = {"dynamic", "forceswitchg1", "forceswitchg2", "fixg1", "fixg2"};
+        // fixg0 shall not be used, it can damage the detector!
         STRING_ELEMENT(expected).key("gainMode")
                 .alias("gainmode")
                 .tags("sls")
