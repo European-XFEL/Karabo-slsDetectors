@@ -59,7 +59,7 @@ namespace karabo {
                 KARABO_LOG_FRAMEWORK_WARN << "Could not remove temporary dir " << m_tmpDir;
             }
         } catch (karabo::util::Exception& e) {
-            KARABO_LOG_ERROR << e;
+            KARABO_LOG_FRAMEWORK_ERROR << e;
         }
 
     }
@@ -444,13 +444,16 @@ namespace karabo {
             m_acquire_timer.async_wait(karabo::util::bind_weak(&SlsControl::acquireBlocking, this, boost::asio::placeholders::error));
         } catch (karabo::util::Exception& e) {
             this->updateState(State::ERROR);
-            KARABO_LOG_ERROR << e;
+            KARABO_LOG_FRAMEWORK_ERROR << e;
         }
     }
 
     void SlsControl::stop() {
         KARABO_LOG_FRAMEWORK_DEBUG << "In stop";
+
         m_SLS->stopDetector();
+        KARABO_LOG_INFO << "Acquisition stopped";
+        this->set("status", "Acquisition stopped");
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Quitting stop";
         this->updateState(State::ON);
@@ -461,6 +464,7 @@ namespace karabo {
             try {
                 this->updateState(State::INIT);
                 KARABO_LOG_INFO << "Connected to detector(s)";
+                this->set("status", "Connected to detector(s)");
 
                 this->sendBaseConfiguration();
                 this->sendInitialConfiguration();
@@ -471,9 +475,11 @@ namespace karabo {
             } catch (karabo::util::Exception& e) {
                 this->updateState(State::ERROR);
                 KARABO_LOG_FRAMEWORK_ERROR << e;
+                this->set("status", "'reset' threw an exception");
             }
         } else {
             KARABO_LOG_ERROR << "Receiver(s) are offline";
+            this->set("status", "Receiver(s) are offline");
         }
     }
 
@@ -499,6 +505,7 @@ namespace karabo {
             m_SLS = std::move(detector);
         } catch (std::exception& e) {
             KARABO_LOG_FRAMEWORK_DEBUG << "    failed!";
+            this->set("status", "Failed to create sls::Detector");
             return;
         }
         KARABO_LOG_FRAMEWORK_DEBUG << "    done!";
@@ -527,6 +534,7 @@ namespace karabo {
         if (detectorOnline) {
             if (receiverOnline) {
                 KARABO_LOG_INFO << "Connected to detector(s)";
+                this->set("status", "Connected to detector(s)");
                 try {
                     this->updateState(State::INIT);
 
@@ -541,6 +549,7 @@ namespace karabo {
                 } catch (karabo::util::Exception& e) {
                     this->updateState(State::ERROR);
                     KARABO_LOG_FRAMEWORK_ERROR << e;
+                    this->set("status", "'connect' threw an exception");
                 }
             } else { // !receiverOnline
                 this->updateState(State::ERROR);
@@ -565,7 +574,9 @@ namespace karabo {
         KARABO_LOG_FRAMEWORK_DEBUG << "Stop polling, as it would interfere with acquisition";
         this->stopPoll();
 
+        this->set("status", "Acquisition started");
         m_SLS->acquire(); // Blocking function - will return when acquisition is over!
+        this->set("status", "Acquisition finished (or stopped)");
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Restart polling";
         this->startPoll();
@@ -593,6 +604,7 @@ namespace karabo {
         if (!this->areDetectorsOnline()) {
             // stops polling and tries to reconnect
             KARABO_LOG_ERROR << "Detector(s) went offline";
+            this->set("status", "Detector(s) went offline");
             this->updateState(State::UNKNOWN);
             m_firstPoll = true;
             m_connect = true;
@@ -603,6 +615,7 @@ namespace karabo {
 
         if (!this->areReceiversOnline() && this->getState() != State::ERROR) {
             KARABO_LOG_ERROR << "Receiver(s) went offline";
+            this->set("status", "Receiver(s) went offline");
             this->updateState(State::ERROR);
         }
 
@@ -733,8 +746,10 @@ namespace karabo {
             this->sendConfiguration(configHash);
 
             KARABO_LOG_FRAMEWORK_DEBUG << "Configuration done";
+            this->set("status", "Configuration done");
         } catch (...) {
             KARABO_LOG_FRAMEWORK_ERROR << "Failed to send initial configuration";
+            this->set("status", "Failed to send initial configuration");
             throw; // Re-throw (calling function must take care)
         }
 
@@ -864,7 +879,9 @@ namespace karabo {
         for (size_t i = 0; i < hosts.size(); ++i) {
             if (!this->isHostOnline(hosts[i], ports[i])) {
                 if (this->getState() != State::UNKNOWN) { // only once
-                    KARABO_LOG_ERROR << hosts[i] << ":" << ports[i] << " is offline.";
+                    const std::string msg = "Detector " + hosts[i] + ":" + std::to_string(ports[i]) + " is offline.";
+                    KARABO_LOG_ERROR << msg;
+                    this->set("status", msg);
                 }
                 online = false;
                 break;
@@ -900,7 +917,9 @@ namespace karabo {
         for (size_t i = 0; i < hosts.size(); ++i) {
             if (!this->isHostOnline(hosts[i], ports[i])) {
                 if (this->getState() != State::ERROR) { // only once
-                    KARABO_LOG_ERROR << hosts[i] << ":" << ports[i] << " is offline.";
+                    const std::string msg = "Receiver " + hosts[i] + ":" + std::to_string(ports[i]) + " is offline.";
+                    KARABO_LOG_ERROR << msg;
+                    this->set("status", msg);
                 }
                 online = false;
                 break;
@@ -997,6 +1016,7 @@ namespace karabo {
             KARABO_LOG_FRAMEWORK_DEBUG << "Sent configuration: " << command_and_parameters.str();
         } catch (...) {
             KARABO_LOG_FRAMEWORK_ERROR << "Could not send configuration";
+            this->set("status", "Could not send configuration");
             throw; // Calling function must take care
         }
 
