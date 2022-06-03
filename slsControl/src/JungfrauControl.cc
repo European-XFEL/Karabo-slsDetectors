@@ -61,7 +61,12 @@ namespace karabo {
                 .commit();
 
         OVERWRITE_ELEMENT(expected).key("exposureTime")
+                .setNewMinExc(0.)
                 .setNewMaxInc(0.001) // 1 ms
+                .commit();
+
+        OVERWRITE_ELEMENT(expected).key("exposurePeriod")
+                .setNewMinExc(0.)
                 .commit();
 
         std::vector<std::string> timingOptions = {"auto", "trigger"};

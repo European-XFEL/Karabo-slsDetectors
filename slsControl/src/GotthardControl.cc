@@ -47,6 +47,14 @@ namespace karabo {
                 .setNewOptions(timingOptions)
                 .commit();
 
+        OVERWRITE_ELEMENT(expected).key("exposureTime")
+                .setNewMinExc(0.)
+                .commit();
+
+        OVERWRITE_ELEMENT(expected).key("exposurePeriod")
+                .setNewMinExc(0.)
+                .commit();
+
         // Only "extsig 0" is used in gotthard
         std::vector<std::string> extSig0Options = {"trigger_in_rising_edge", "trigger_in_falling_edge"};
         STRING_ELEMENT(expected).key("extSig0")
