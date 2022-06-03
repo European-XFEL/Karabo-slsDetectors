@@ -289,7 +289,7 @@ namespace karabo {
                 .displayedName("Exposure Time")
                 .description("The exposure time.")
                 .assignmentOptional().defaultValue(1.e-5) // 10 us
-                .minExc(0.)
+                // .minExc(0.) // Set in the derived classes
                 .unit(Unit::SECOND)
                 .reconfigurable()
                 .allowedStates(State::ON)
@@ -301,7 +301,7 @@ namespace karabo {
                 .displayedName("Exposure Period")
                 .description("The period between frames.")
                 .assignmentOptional().defaultValue(0.1) // 100 ms
-                .minExc(0.)
+                // .minExc(0.) // Set in the derived classes
                 .unit(Unit::SECOND)
                 .reconfigurable()
                 .allowedStates(State::ON)

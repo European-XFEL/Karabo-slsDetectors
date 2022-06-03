@@ -42,6 +42,22 @@ namespace karabo {
                 "Options: 0|90|110|120|150|180|200 V.")
                 .commit();
 
+        OVERWRITE_ELEMENT(expected).key("exposureTime")
+                .setNewDisplayedName("Additional Exposure Time")
+                .setNewDescription("The additional exposure time. Setting it to 0, will result in "
+                "an effective exposure time of ~110 ns.")
+                .setNewMinInc(0.)
+                .setNewDefaultValue(0.)
+                .commit();
+
+        OVERWRITE_ELEMENT(expected).key("exposurePeriod")
+                .setNewDisplayedName("Additional Exposure Period")
+                .setNewDescription("The additional period between frames. Setting it to 0, will "
+                "result in an effective frame period of 222 ns.")
+                .setNewMinInc(0.)
+                .setNewDefaultValue(0.)
+                .commit();
+
         const std::vector<std::string> timingOptions = {"auto", "trigger"};
         OVERWRITE_ELEMENT(expected).key("timing")
                 .setNewOptions(timingOptions)
