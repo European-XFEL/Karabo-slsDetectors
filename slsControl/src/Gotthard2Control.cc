@@ -126,10 +126,70 @@ namespace karabo {
                 .allowedStates(State::ON)
                .commit();
 
+        BOOL_ELEMENT(expected).key("singlePhoton")
+                .displayedName("Optimize for Single-Photon")
+                .description("Optimize the detector for single-photon operation; this will "
+                "increase the amplification of the CDS stage, and change the Vref of the analog "
+                "storage cells to make better use of the range of the ADC where it is most "
+                "linear.")
+                .assignmentOptional().defaultValue(false)
+                .reconfigurable()
+                .allowedStates(State::ON)
+                .commit();
+
+        STRING_ELEMENT(expected).key("operationMode")
+                .displayedName("Operation Mode")
+                .description("Switch between the 4.5 MHz operation mode (default), and a slower "
+                "sampling and readout rate that allows operation at 1.1 MHz.")
+                .assignmentOptional().defaultValue("4.5")
+                .options("1.1,4.5")
+                .unit(Unit::HERTZ).metricPrefix(MetricPrefix::MEGA)
+                .reconfigurable()
+                .allowedStates(State::ON)
+                .commit();
+
     }
 
     void Gotthard2Control::powerOn() {
         m_SLS->setPowerChip(true, m_positions); // power on
+    }
+
+    void Gotthard2Control::configureDetectorSpecific(const karabo::util::Hash& configHash) {
+        if (configHash.has("singlePhoton")) {
+            const bool& singlePhoton = configHash.get<bool>("singlePhoton");
+            if (singlePhoton) {
+                // Change to 'single photon' settings
+                this->sendConfiguration("dac", "vref_rstore 0"); // shift the Vref of the storage cells
+                this->sendConfiguration("cdsgain", "1"); // increase the CDS gain
+            } else { // Restore default conditions
+                this->sendConfiguration("dac", "vref_rstore 150"); // shift back the Vref
+                this->sendConfiguration("cdsgain", "0"); // lower the CDS gain
+            }
+        }
+
+        if (configHash.has("operationMode")) {
+            const std::string& operationMode = configHash.get<std::string>("operationMode");
+            if (operationMode == "1.1") { // Change the frame rate to 1.1 MHz
+                // Reduce by a factor 4 the running clock
+                this->sendConfiguration("clkdiv", "2 20");
+                this->sendConfiguration("clkdiv", "3 40");
+                this->sendConfiguration("clkdiv", "2 20");
+                // Reduce the data output sampling
+                this->sendConfiguration("reg", "0x120 0x00000000");
+                this->sendConfiguration("clkdiv", "0 16");
+                this->sendConfiguration("clkdiv", "1 16");
+                this->sendConfiguration("clkphase", "1 270 deg");
+
+            } else { // Restore the 4.5 MHz default
+                // Increase the running clock settings
+                this->sendConfiguration("clkdiv", "2 5");
+                this->sendConfiguration("clkdiv", "3 10");
+                this->sendConfiguration("clkdiv", "2 5");
+                // Restore the readout clock speed
+                this->sendConfiguration("readoutspeed", "108");
+            }
+        }
+
     }
 
 } /* namespace karabo */

@@ -35,6 +35,7 @@ namespace karabo {
         void pollDetectorSpecific(karabo::util::Hash& h) override {
             // nothing to be done
         }
+        void configureDetectorSpecific(const karabo::util::Hash& configHash) override;
         void createCalibrationAndSettings(const std::string& settings) {
             // nothing to be done
         }
