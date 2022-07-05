@@ -137,8 +137,8 @@ namespace karabo {
                 .allowedStates(State::ON)
                 .commit();
 
-        STRING_ELEMENT(expected).key("operationMode")
-                .displayedName("Operation Mode")
+        STRING_ELEMENT(expected).key("acquisitionRate")
+                .displayedName("Acquisition Rate")
                 .description("Switch between the 4.5 MHz operation mode (default), and a slower "
                 "sampling and readout rate that allows operation at 1.1 MHz.")
                 .assignmentOptional().defaultValue("4.5")
@@ -167,9 +167,9 @@ namespace karabo {
             }
         }
 
-        if (configHash.has("operationMode")) {
-            const std::string& operationMode = configHash.get<std::string>("operationMode");
-            if (operationMode == "1.1") { // Change the frame rate to 1.1 MHz
+        if (configHash.has("acquisitionRate")) {
+            const std::string& acquisitionRate = configHash.get<std::string>("acquisitionRate");
+            if (acquisitionRate == "1.1") { // Change the frame rate to 1.1 MHz
                 // Reduce by a factor 4 the running clock
                 this->sendConfiguration("clkdiv", "2 20");
                 this->sendConfiguration("clkdiv", "3 40");
