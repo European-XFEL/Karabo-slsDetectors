@@ -161,7 +161,7 @@ namespace karabo {
                 .unit(Unit::DEGREE_CELSIUS)
                 .reconfigurable()
                 .expertAccess()
-                .allowedStates(State::ON)
+                .allowedStates(State::DISABLED, State::ON)
                 .commit();
 
         VECTOR_INT32_ELEMENT(expected).key("tempControl")
@@ -172,7 +172,7 @@ namespace karabo {
                 .assignmentOptional().defaultValue({0})
                 .reconfigurable()
                 .expertAccess()
-                .allowedStates(State::ON)
+                .allowedStates(State::DISABLED, State::ON)
                 .commit();
 
         VECTOR_INT32_ELEMENT(expected).key("tempEventVector")
@@ -195,13 +195,15 @@ namespace karabo {
 
         SLOT_ELEMENT(expected).key("resetTempEvent")
                 .displayedName("Reset Temperature Event")
-                .allowedStates(State::ON)
+                .allowedStates(State::DISABLED)
                 .commit();
     }
 
 
     void JungfrauControl::resetTempEvent() {
         m_SLS->resetTemperatureEvent(m_positions);
+        this->updateState(State::ON);
+        this->set("status", "Temperature event reset");
     }
 
 
@@ -228,6 +230,12 @@ namespace karabo {
             }
         }
         h.set("tempEvent", tempEvent);
+
+        if (tempEvent && this->getState() != State::DISABLED) {
+            this->updateState(State::DISABLED);
+            h.set("status", "An over-temperature event occurred");
+            KARABO_LOG_ERROR << "An over-temperature event occurred";
+        }
     }
 
 

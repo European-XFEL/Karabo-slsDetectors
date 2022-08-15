@@ -77,7 +77,7 @@ namespace karabo {
 #endif
 
         OVERWRITE_ELEMENT(expected).key("state")
-                .setNewOptions(State::UNKNOWN, State::INIT, State::ERROR, State::ON, State::ACQUIRING)
+                .setNewOptions(State::UNKNOWN, State::INIT, State::ERROR, State::ON, State::DISABLED, State::ACQUIRING)
                 .commit();
 
         SLOT_ELEMENT(expected).key("start")
@@ -761,7 +761,7 @@ namespace karabo {
 
         // Check that detector and receiver are online
         const State& state = this->getState();
-        if (state != State::INIT && state != State::ON) {
+        if (state == State::UNKNOWN || state == State::ERROR) {
             KARABO_LOG_ERROR << "sendConfiguration(): detector or receiver is not online. Aborting!";
             return;
         }
@@ -987,7 +987,7 @@ namespace karabo {
 
         // Check that detector and receiver are online
         const State& state = this->getState();
-        if (state != State::INIT && state != State::ON) {
+        if (state == State::UNKNOWN || state == State::ERROR) {
             KARABO_LOG_FRAMEWORK_ERROR << "sendConfiguration(): detector or receiver is not online. Aborting!";
             return;
         }
