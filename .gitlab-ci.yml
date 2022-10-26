@@ -32,7 +32,7 @@ stages:
     - bash karabo.sh --prefix=/root
     - source /root/karabo/activate
     - pushd $CI_PROJECT_DIR
-    - karabo -g https://$XFEL_TOKEN@git.xfel.eu/gitlab install $REL_PROJECT_NAME $REL_TAG
+    - karabo -g https://$XFEL_TOKEN@git.xfel.eu install $REL_PROJECT_NAME $REL_TAG
     - make -j build CONF=Release package
     - echo package/$REL_ARTIFACT_NAME
     - mv package/*sh $REL_ARTIFACT_NAME
@@ -59,7 +59,7 @@ stages:
     - bash karabo.sh --prefix=/root
     - source /root/karabo/activate
     - pushd $CI_PROJECT_DIR
-    - karabo -g https://$XFEL_TOKEN@git.xfel.eu/gitlab install $REL_PROJECT_NAME $REL_TAG
+    - karabo -g https://$XFEL_TOKEN@git.xfel.eu install $REL_PROJECT_NAME $REL_TAG
     - make -j build CONF=Release
     - make -j test CONF=Release
   only:
@@ -72,7 +72,7 @@ lint:
   stage: lint
   image: europeanxfel/karabo-ci:miniconda-3lint
   script:
-    - git clone https://$XFEL_TOKEN@git.xfel.eu/gitlab/Karabo/linter-tools.git ci
+    - git clone https://$XFEL_TOKEN@git.xfel.eu/Karabo/linter-tools.git ci
     - source ci/lint-cppcheck.sh "CI" "slsControl"
     - source ci/lint-cppcheck.sh "CI" "slsDetectorsSimulation"
     - source ci/lint-cppcheck.sh "CI" "slsReceiver"
@@ -82,7 +82,7 @@ lint-clang-tidy:
   stage: lint
   image: europeanxfel/karabo-ci:miniconda-3lint
   script:
-    - git clone https://$XFEL_TOKEN@git.xfel.eu/gitlab/Karabo/linter-tools.git ci
+    - git clone https://$XFEL_TOKEN@git.xfel.eu/Karabo/linter-tools.git ci
     - source ci/lint-clang-tidy.sh "CI" "slsControl"
     - source ci/lint-clang-tidy.sh "CI" "slsDetectorsSimulation"
     - source ci/lint-clang-tidy.sh "CI" "slsReceiver"
