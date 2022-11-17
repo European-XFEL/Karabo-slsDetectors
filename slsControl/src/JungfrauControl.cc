@@ -30,7 +30,7 @@ namespace karabo {
 
 
     JungfrauControl::~JungfrauControl() {
-        if (m_SLS) {
+        if (m_SLS && !m_SLS->empty()) {
             m_SLS->setPowerChip(false, m_positions); // power off
         }
     }

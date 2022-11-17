@@ -1,12 +1,61 @@
-*/nbproject/Makefile-*.mk
-*/nbproject/Package-*.bash
-*/nbproject/private
-*/dist/
-*/build/
-*/package/
-*/.dep.inc
-ci/
-dist/
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# CMake
+CMakeCache.txt
+CMakeLists.txt.user
+CMakeFiles
+CMakeScripts
+Testing
+#Makefile # using the Makefile to interface with `karabo install`
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
 build/
-package/
+build_debug/
+build_release/
+
+# VSCode settings
+.vscode
+
+# clangd specific
+.clangd/
+
+# Karabo version (generated)
 version.hh
+
+# Exception for .install.sh
+!.install.sh
+
+report.xml
+
+# Backward compatibility with Netbeans
+.dep.inc
+nbproject/

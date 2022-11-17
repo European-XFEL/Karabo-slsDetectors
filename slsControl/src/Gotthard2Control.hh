@@ -13,7 +13,7 @@
 #include <karabo/karabo.hpp>
 
 #include "SlsControl.hh"
-#include "version.hh"  // provides PACKAGE_VERSION
+#include "version.hh"  // provides SLSCONTROL_PACKAGE_VERSION
 
 /**
  * The main Karabo namespace
@@ -22,7 +22,8 @@ namespace karabo {
 
     class Gotthard2Control : public karabo::SlsControl {
     public:
-        KARABO_CLASSINFO(Gotthard2Control, "Gotthard2Control", PACKAGE_VERSION)
+        KARABO_CLASSINFO(Gotthard2Control, "Gotthard2Control",
+            SLSCONTROL_PACKAGE_VERSION)
 
         explicit Gotthard2Control(const karabo::util::Hash& config);
 
