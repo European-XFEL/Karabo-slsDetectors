@@ -870,7 +870,7 @@ namespace karabo {
         try {
             ports = this->get<std::vector<unsigned short> >("detectorHostPort");
             ports.resize(hosts.size(), m_defaultPort); // If size mismatch: extend with default / truncate (as needed)
-        } catch (karabo::util::ParameterException) { // key not found
+        } catch (const karabo::util::ParameterException& e) { // key not found
             ports.assign(hosts.size(), m_defaultPort); // Default value
         }
 

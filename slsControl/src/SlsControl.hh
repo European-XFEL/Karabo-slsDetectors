@@ -19,7 +19,7 @@
 #include <slssimulation/Detector.h>
 #endif
 
-#include "version.hh"  // provides PACKAGE_VERSION
+#include "version.hh"  // provides SLSCONTROL_PACKAGE_VERSION
 
 /**
  * The main Karabo namespace
@@ -29,7 +29,8 @@ namespace karabo {
     class SlsControl : public karabo::core::Device<> {
     public:
 
-        KARABO_CLASSINFO(SlsControl, "SlsControl", PACKAGE_VERSION)
+        KARABO_CLASSINFO(SlsControl, "SlsControl",
+            SLSCONTROL_PACKAGE_VERSION)
 
         explicit SlsControl(const karabo::util::Hash& config);
 

@@ -3,7 +3,8 @@ SUBDIRS = slsDetectorsSimulation slsControl slsReceiver
 .PHONY: build package test $(SUBDIRS)
 
 CONF ?= Debug
-DISTDIR = dist/$(CONF)/GNU-Linux-x86
+NETBEANS_DISTDIR = dist/$(CONF)/GNU-Linux-x86
+DISTDIR = dist/$(CONF)/cmake
 
 ifndef KARABO
 	KARABO := $(shell cat ${HOME}/.karabo/karaboFramework)
@@ -14,7 +15,7 @@ build: slsDetectorsSimulation version.hh
 	$(MAKE) -C slsReceiver build
 	mkdir -p $(DISTDIR)
 	cp -a slsControl/$(DISTDIR)/*.so $(DISTDIR)
-	cp -a slsReceiver/$(DISTDIR)/*.so $(DISTDIR)
+	cp -a slsReceiver/$(NETBEANS_DISTDIR)/*.so $(DISTDIR)
 
 package: build
 	@$(KARABO)/bin/.bundle-cppplugin.sh dist $(CONF) GNU-Linux-x86
@@ -34,7 +35,7 @@ ifeq ($(CONF),Simulation)
 	$(MAKE) -C $@ CONF=Release
 endif
 
-slsControl: slsDetectorsSimulation version.hh
+slsControl: slsDetectorsSimulation
 	$(MAKE) -C $@
 
 slsReceiver: slsDetectorsSimulation version.hh
@@ -48,5 +49,4 @@ version.hh: .git/HEAD .git/index .git/refs/tags
 	# Note that --dirty can be fooled: Build once when clean and then change source files - or vice a versa...
 	@echo "#define PACKAGE_VERSION \"$(PACKAGE_NAME)-$(shell git describe --tags --match "*.*.*" --dirty --always )\"" >> $@
 	@echo "#endif" >> $@
-	cp -a version.hh slsControl/src/.
 	cp -a version.hh slsReceiver/src/.
