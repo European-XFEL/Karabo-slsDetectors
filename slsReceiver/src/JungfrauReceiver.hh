@@ -14,7 +14,7 @@
 #include <karabo/karabo.hpp>
 
 #include "SlsReceiver.hh"
-#include "version.hh"  // provides PACKAGE_VERSION
+#include "version.hh"  // provides SLSRECEIVER_PACKAGE_VERSION
 
 /**
  * The main Karabo namespace
@@ -25,7 +25,7 @@ namespace karabo {
     public:
 
         // Add reflection and version information to this class
-        KARABO_CLASSINFO(JungfrauReceiver, "JungfrauReceiver", PACKAGE_VERSION)
+        KARABO_CLASSINFO(JungfrauReceiver, "JungfrauReceiver", SLSRECEIVER_PACKAGE_VERSION)
 
         /**
          * Necessary method as part of the factory/configuration system
