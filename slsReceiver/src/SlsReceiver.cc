@@ -347,7 +347,7 @@ namespace karabo {
 
             const unsigned int numberOfFrames = dataSize / frameSize;
 
-            for (int i = 0; i < numberOfFrames; ++i) {
+            for (unsigned int i = 0; i < numberOfFrames; ++i) {
                 const size_t offset = self->getDetectorSize() * accumulatedFrames;
                 try {
                     self->unpackRawData(dataPointer, i, detectorData->adc + offset, detectorData->gain + offset);
