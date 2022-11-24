@@ -6,7 +6,7 @@
  * Copyright (c) European XFEL GmbH Hamburg. All rights reserved.
  */
 
-#include "SlsControl.hh"
+#include "../slsControl/SlsControl.hh"
 
 #include <boost/shared_ptr.hpp>
 #include <gtest/gtest.h>
@@ -182,8 +182,7 @@ protected:
 };
 
 
-// TODO: Give the test case a proper name (not "testScaffold")
-TEST_F(SlsControlFixture, testScaffold){
+TEST_F(SlsControlFixture, testSlsControl){
 
     // TODO: Provide a non-empty config for the device under test.
     instantiateTestDevice0(karabo::util::Hash());

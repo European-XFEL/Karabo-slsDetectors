@@ -1,29 +1,31 @@
 /*
- * Author: <andrea.parenti@xfel.eu>
+ * $Id: GotthardReceiver.hh 12523 2014-01-27 15:15:19Z parenti $
  *
- * Created on August, 2021,  5:16 PM
+ * Author: <andrea.parenti@xfel.eu>
  * 
- * Copyright (c) European XFEL GmbH Hamburg. All rights reserved.
+ * Created on March 18, 2016,  3:29 PM
+ *
+ * Copyright (c) 2010-2016 European XFEL GmbH Hamburg. All rights reserved.
  */
 
-#ifndef KARABO_GOTTHARD2RECEIVER_HH
-#define KARABO_GOTTHARD2RECEIVER_HH
+#ifndef KARABO_GOTTHARDRECEIVER_HH
+#define KARABO_GOTTHARDRECEIVER_HH
 
 #include <karabo/karabo.hpp>
 
 #include "SlsReceiver.hh"
-#include "version.hh"  // provides SLSRECEIVER_PACKAGE_VERSION
+#include "../common/version.hh"  // provides SLSDETECTORS_PACKAGE_VERSION
 
 /**
  * The main Karabo namespace
  */
 namespace karabo {
 
-    class Gotthard2Receiver : public karabo::SlsReceiver {
+    class GotthardReceiver : public karabo::SlsReceiver {
     public:
 
         // Add reflection and version information to this class
-        KARABO_CLASSINFO(Gotthard2Receiver, "Gotthard2Receiver", SLSRECEIVER_PACKAGE_VERSION)
+        KARABO_CLASSINFO(GotthardReceiver, "GotthardReceiver", SLSDETECTORS_PACKAGE_VERSION)
 
         /**
          * Necessary method as part of the factory/configuration system
@@ -37,12 +39,12 @@ namespace karabo {
          * already be validated using the information of the expectedParameters function.
          * The configuration is provided in a key/value fashion. 
          */
-        explicit Gotthard2Receiver(const karabo::util::Hash& config);
+        explicit GotthardReceiver(const karabo::util::Hash& config);
 
         /**
          * The destructor will be called in case the device gets killed (i.e. the event-loop returns)
          */
-        virtual ~Gotthard2Receiver();
+        virtual ~GotthardReceiver();
 
     private: // State-machine call-backs (override)
 
@@ -52,7 +54,7 @@ namespace karabo {
 
         size_t getDetectorSize() override;
         std::vector<unsigned long long> getDisplayShape() override;
-        std::vector<unsigned long long> getDaqShape(unsigned short framesperTrain) override;
+        std::vector<unsigned long long> getDaqShape(unsigned short framesPerTrain) override;
 
         void unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain) override;
 
@@ -62,4 +64,4 @@ namespace karabo {
 
 } /* namespace karabo */
 
-#endif /* KARABO_GOTTHAR2DRECEIVER_HH */
+#endif /* KARABO_GOTTHARDRECEIVER_HH */

@@ -3,7 +3,7 @@
 
 cmake_minimum_required (VERSION 3.14)
 
-project (slsControl LANGUAGES CXX)
+project (slsDetectors LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -57,6 +57,6 @@ endif()
 # Builds tests if BUILD_TESTS is true (the default).
 # The setting below is overridden by any previously set value (e.g. defined by
 # the user in the command line).
-set(BUILD_TESTS ON CACHE BOOL "Should build unit tests?")
+set(BUILD_TESTS OFF CACHE BOOL "Should build unit tests?")
 
 add_subdirectory (src ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME})

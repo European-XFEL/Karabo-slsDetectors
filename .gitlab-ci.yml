@@ -70,9 +70,7 @@ lint:
   image: europeanxfel/karabo-ci:miniconda-3lint
   script:
     - git clone https://$XFEL_TOKEN@git.xfel.eu/Karabo/linter-tools.git ci
-    - source ci/lint-cppcheck.sh "CI" "slsControl"
-    - source ci/lint-cppcheck.sh "CI" "slsDetectorsSimulation"
-    - source ci/lint-cppcheck.sh "CI" "slsReceiver"
+    - source ci/lint-cppcheck.sh
 
 ##### Static source code analysis #####
 lint-clang-tidy:
@@ -80,9 +78,7 @@ lint-clang-tidy:
   image: europeanxfel/karabo-ci:miniconda-3lint
   script:
     - git clone https://$XFEL_TOKEN@git.xfel.eu/Karabo/linter-tools.git ci
-    - source ci/lint-clang-tidy.sh "CI" "slsControl"
-    - source ci/lint-clang-tidy.sh "CI" "slsDetectorsSimulation"
-    - source ci/lint-clang-tidy.sh "CI" "slsReceiver"
+    - source ci/lint-clang-tidy.sh
 
 ##### Release build #####
     

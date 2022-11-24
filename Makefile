@@ -1,43 +1,24 @@
-SUBDIRS = slsDetectorsSimulation slsControl slsReceiver
-
-.PHONY: build package test $(SUBDIRS)
+# Makefile to fool "karabo install" into building and installing the device
+# using CMake.
 
 CONF ?= Debug
-DISTDIR = dist/$(CONF)/cmake
 
-ifndef KARABO
-	KARABO := $(shell cat ${HOME}/.karabo/karaboFramework)
-endif
+# Keep default target as make all
+all: install
 
-build: slsDetectorsSimulation
-	$(MAKE) -C slsControl build
-	$(MAKE) -C slsReceiver build
-	mkdir -p $(DISTDIR)
-	cp -a slsControl/$(DISTDIR)/*.so $(DISTDIR)
-	cp -a slsReceiver/$(DISTDIR)/*.so $(DISTDIR)
+# legacy target
+build: install
 
-package: build
-	@$(KARABO)/bin/.bundle-cppplugin.sh dist $(CONF) GNU-Linux-x86
-
-test: slsDetectorsSimulation
-	$(MAKE) -C slsControl test
-	$(MAKE) -C slsReceiver test
+# the .install.sh script will only build and copy into a dist directory
+install:
+	@./.install.sh ${CONF} $(patsubst -j%,%,$(filter -j%,$(MAKEFLAGS)))
 
 clean:
-	$(MAKE) -C slsControl clean
-	$(MAKE) -C slsReceiver clean
-	$(MAKE) -C slsDetectorsSimulation clean
-	rm -f $(DISTDIR)/*.so
+	rm -fr dist
+	rm -fr build
 
-slsDetectorsSimulation:
-ifeq ($(CONF),Simulation)
-	$(MAKE) -C $@ CONF=Release
-endif
-
-slsControl: slsDetectorsSimulation
-	$(MAKE) -C $@
-
-slsReceiver: slsDetectorsSimulation
-	$(MAKE) -C $@
-
-PACKAGE_NAME=$(shell basename -s .git `git remote -v | grep fetch | head -n1 | awk '{ print $$2 }' `)
+test: install
+	@cd build && \
+	cmake .. -DBUILD_TESTS=1 && \
+	cmake --build . && \
+	cd slsDetectors && CTEST_OUTPUT_ON_FAILURE=1 ctest -VV

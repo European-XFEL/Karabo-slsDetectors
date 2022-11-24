@@ -35,5 +35,5 @@ cmake \
     -B $BUILD_DIR .
 cd $BUILD_DIR
 cmake $BUILD_OPT
-$(cp $BUILD_DIR/slsControl/lib*.so $TARGET_DIR | true)
+$(cp $BUILD_DIR/slsDetectors/lib*.so $TARGET_DIR | true)
 
