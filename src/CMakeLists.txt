@@ -7,10 +7,15 @@ find_package(Threads REQUIRED)
 target_sources(
     ${CMAKE_PROJECT_NAME}
     PRIVATE
-    Gotthard2Control.cc
-    GotthardControl.cc
-    JungfrauControl.cc
-    SlsControl.cc
+    slsControl/Gotthard2Control.cc
+    slsControl/GotthardControl.cc
+    slsControl/JungfrauControl.cc
+    slsControl/SlsControl.cc
+
+    slsReceiver/Gotthard2Receiver.cc
+    slsReceiver/GotthardReceiver.cc
+    slsReceiver/JungfrauReceiver.cc
+    slsReceiver/SlsReceiver.cc
     # Add any other source file in here.
 
     # For shortcomings about using file(GLOB ..) to gather source files, please
@@ -33,6 +38,7 @@ target_link_libraries(
     PUBLIC
     Threads::Threads
     SlsDetector
+    SlsReceiver
     zmq
     rt
     ${KARABO_LIB_TARGET_NAME}
@@ -46,8 +52,8 @@ find_package(Git REQUIRED)
 # Generates the version.hh for the device whenever there is an update to the
 # .git directory that might have been caused by a device version change and that
 # update is newer than the current version.hh file.
-set(GIT_REPO_PRIV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../.git)
-set(VERSION_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/version.hh)
+set(GIT_REPO_PRIV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../.git)
+set(VERSION_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/common/version.hh)
 string(TOUPPER ${CMAKE_PROJECT_NAME} PROJECT_NAME_UPPER)
 
 add_custom_command(
@@ -77,6 +83,7 @@ if (BUILD_TESTS)
        test-${CMAKE_PROJECT_NAME}
        test/testrunner.cc   # The test runner entry point
        test/testSlsControl.cc
+       test/testSlsReceiver.cc
        # Add any other source file in here.
 
     )

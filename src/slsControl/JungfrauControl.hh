@@ -14,7 +14,7 @@
 #include <karabo/karabo.hpp>
 
 #include "SlsControl.hh"
-#include "version.hh"  // provides SLSCONTROL_PACKAGE_VERSION
+#include "../common/version.hh"  // provides SLSDETECTORS_PACKAGE_VERSION
 
 /**
  * The main Karabo namespace
@@ -24,7 +24,7 @@ namespace karabo {
     class JungfrauControl : public karabo::SlsControl {
     public:
         KARABO_CLASSINFO(JungfrauControl, "JungfrauControl",
-            SLSCONTROL_PACKAGE_VERSION)
+            SLSDETECTORS_PACKAGE_VERSION)
 
         explicit JungfrauControl(const karabo::util::Hash& config);
 
