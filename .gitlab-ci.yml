@@ -32,7 +32,7 @@ stages:
     - source /root/karabo/activate
     - pushd $CI_PROJECT_DIR
     - karabo -g https://$XFEL_TOKEN@git.xfel.eu install $REL_PROJECT_NAME $REL_TAG
-    - make -j build CONF=Release package
+    - make -j CONF=Release package
     - echo package/$REL_ARTIFACT_NAME
     - mv package/*sh $REL_ARTIFACT_NAME
     - echo $REL_ARTIFACT_DEST

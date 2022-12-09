@@ -13,6 +13,9 @@ build: install
 install:
 	@./.install.sh ${CONF} $(patsubst -j%,%,$(filter -j%,$(MAKEFLAGS)))
 
+package: build
+	@$(KARABO)/bin/.bundle-cppplugin.sh dist $(CONF) cmake
+
 clean:
 	rm -fr dist
 	rm -fr build
