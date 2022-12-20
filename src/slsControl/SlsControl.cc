@@ -994,7 +994,17 @@ namespace karabo {
         if (parameters.size() > 0) {
             command_and_parameters << " " << parameters;
         }
-        m_SLS->loadParameters(std::vector<std::string>({command_and_parameters.str()}));
+
+        if (command == "delay") { // XXX Workaround bug in slsDetectorsPackage v6.1.2
+            try {
+                m_SLS->loadParameters(std::vector<std::string>({command_and_parameters.str()}));
+            } catch (const std::exception& e) {
+                // Ignore exception for "delay" - known to fail with v6.1.2
+                KARABO_LOG_FRAMEWORK_INFO << "Ignore exception when setting 'delay':" << e.what();
+            }
+        } else {
+            m_SLS->loadParameters(std::vector<std::string>({command_and_parameters.str()}));
+        }
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Sent configuration: " << command_and_parameters.str();
 
