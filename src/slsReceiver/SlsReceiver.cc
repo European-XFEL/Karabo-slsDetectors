@@ -208,7 +208,7 @@ namespace karabo {
             // All went fine, update state
             this->updateState(State::PASSIVE);
 
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
             // This occurs e.g. when another receiver is listening on the same port
             status << "Error in initialize: " << e.what();
             this->set("status", status.str());
@@ -242,7 +242,7 @@ namespace karabo {
             self->m_detectorData[0].reset();
             self->m_detectorData[1].reset();
 
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
             self->log() << KARABO_LOG_PRIORITY_WARN << "startAcquisitionCallBack: " << e.what();
         } catch (...) {
             self->log() << KARABO_LOG_PRIORITY_WARN << "startAcquisitionCallBack: other exception";
@@ -276,7 +276,7 @@ namespace karabo {
             // This is done in the same strand as writeToOutputs, to preserve order
             self->m_strand->post(karabo::util::bind_weak(&SlsReceiver::signalEndOfStreams, self));
 
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
             self->log() << KARABO_LOG_PRIORITY_WARN << "acquisitionFinishedCallBack: " << e.what();
         } catch (...) {
             self->log() << KARABO_LOG_PRIORITY_WARN << "acquisitionFinishedCallBack: other exception";
@@ -357,7 +357,7 @@ namespace karabo {
 
                     detectorData->timestamp[accumulatedFrames] = currentTime;
                     detectorData->accumulatedFrames += 1;
-                } catch (std::exception& e) {
+                } catch (const std::exception& e) {
                     self->logWarning(e.what());
                 }
             }
@@ -388,7 +388,7 @@ namespace karabo {
                 self->m_lastFrameNum = detectorHeader.frameNumber;
             }
 
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
             self->log() << KARABO_LOG_PRIORITY_WARN << "rawDataReadyCallBack: " << e.what();
         } catch (...) {
             self->log() << KARABO_LOG_PRIORITY_WARN << "rawDataReadyCallBack: other exception";
