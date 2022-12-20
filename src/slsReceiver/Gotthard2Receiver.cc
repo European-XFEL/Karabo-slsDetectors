@@ -48,6 +48,7 @@ namespace karabo {
     }
 
     Gotthard2Receiver::Gotthard2Receiver(const karabo::util::Hash& config) : SlsReceiver(config) {
+        m_providesBunchId = true; // The firmware is able to provide a bunchId
     }
 
     Gotthard2Receiver::~Gotthard2Receiver() {

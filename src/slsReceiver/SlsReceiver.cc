@@ -293,8 +293,13 @@ namespace karabo {
         try {
             const unsigned short framesPerTrain = self->get<unsigned short>("framesPerTrain");
 
-            // Use trainId from meta-data, if available
-            const karabo::util::Timestamp& actualTimestamp = detectorHeader.bunchId > 0 ? Timestamp(Epochstamp(), detectorHeader.bunchId) : self->getActualTimestamp();
+            karabo::util::Timestamp actualTimestamp;
+            if (self->m_providesBunchId) {
+                // The firmware is able to provide bunchId: use it, if available
+                actualTimestamp = detectorHeader.bunchId > 0 ? Timestamp(Epochstamp(), detectorHeader.bunchId) : self->getActualTimestamp();
+            } else {
+                actualTimestamp = self->getActualTimestamp();
+            }
             const double currentTime = actualTimestamp.toTimestamp();
             const unsigned long long trainId = actualTimestamp.getTrainId();
 

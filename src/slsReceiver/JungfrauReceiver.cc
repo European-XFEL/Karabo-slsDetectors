@@ -75,6 +75,7 @@ namespace karabo {
     }
 
     JungfrauReceiver::JungfrauReceiver(const karabo::util::Hash& config) : SlsReceiver(config) {
+        m_providesBunchId = true; // The firmware is able to provide a bunchId
     }
 
     JungfrauReceiver::~JungfrauReceiver() {
