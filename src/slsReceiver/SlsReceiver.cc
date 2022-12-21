@@ -294,7 +294,7 @@ namespace karabo {
             const unsigned short framesPerTrain = self->get<unsigned short>("framesPerTrain");
 
             karabo::util::Timestamp actualTimestamp;
-            if (self->m_providesBunchId && detectorHeader.bunchId > 0) {
+            if (detectorHeader.bunchId != 0 && detectorHeader.bunchId != 0xFFFFFFFFFFFFFFFF) {
                 // The firmware is able to provide bunchId: use it, if available.
                 actualTimestamp = Timestamp(Epochstamp(), detectorHeader.bunchId);
             } else {

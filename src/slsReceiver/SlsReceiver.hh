@@ -160,10 +160,6 @@ namespace karabo {
 
         virtual void unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain) = 0;
 
-    protected: // Members
-        // Is the firmware available to provide bunchId?
-        bool m_providesBunchId = false;
-
     private: // Members
         // SLS receiver class
         std::shared_ptr<sls::Receiver> m_receiver;
