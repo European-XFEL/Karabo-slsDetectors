@@ -58,8 +58,8 @@ namespace karabo {
             } else {
                 KARABO_LOG_FRAMEWORK_WARN << "Could not remove temporary dir " << m_tmpDir;
             }
-        } catch (karabo::util::Exception& e) {
-            KARABO_LOG_FRAMEWORK_ERROR << e;
+        } catch (const std::exception& e) {
+            KARABO_LOG_FRAMEWORK_ERROR << "Exception in ~SlsControl: " << e.what();
         }
 
     }
@@ -438,14 +438,9 @@ namespace karabo {
     }
 
     void SlsControl::start() {
-        try {
-            this->updateState(State::ACQUIRING);
-            m_acquire_timer.expires_from_now(boost::posix_time::milliseconds(0));
-            m_acquire_timer.async_wait(karabo::util::bind_weak(&SlsControl::acquireBlocking, this, boost::asio::placeholders::error));
-        } catch (karabo::util::Exception& e) {
-            this->updateState(State::ERROR);
-            KARABO_LOG_FRAMEWORK_ERROR << e;
-        }
+        this->updateState(State::ACQUIRING);
+        m_acquire_timer.expires_from_now(boost::posix_time::milliseconds(0));
+        m_acquire_timer.async_wait(karabo::util::bind_weak(&SlsControl::acquireBlocking, this, boost::asio::placeholders::error));
     }
 
     void SlsControl::stop() {
@@ -472,10 +467,10 @@ namespace karabo {
                 this->configureDetectorSpecific(config);
 
                 this->updateState(State::ON);
-            } catch (karabo::util::Exception& e) {
-                this->updateState(State::ERROR);
-                KARABO_LOG_FRAMEWORK_ERROR << e;
-                this->set("status", "'reset' threw an exception");
+            } catch (const std::exception& e) {
+                const std::string msg = std::string("Exception in 'reset': ") + e.what();
+                this->updateState(State::ERROR, Hash("status", msg));
+                KARABO_LOG_FRAMEWORK_ERROR << msg;
             }
         } else {
             KARABO_LOG_ERROR << "Receiver(s) are offline";
@@ -491,7 +486,7 @@ namespace karabo {
                 m_positions[i] = i;
             }
         } catch (const karabo::util::Exception &e) {
-            KARABO_LOG_FRAMEWORK_ERROR << "SlsControl::initializationStateOnEntry - " << e;
+            KARABO_LOG_FRAMEWORK_ERROR << "Exception in initialize: " << e;
             m_numberOfModules = 0;
         }
 
@@ -503,7 +498,7 @@ namespace karabo {
         try {
             std::shared_ptr<sls::Detector> detector(new sls::Detector(m_shm_id));
             m_SLS = std::move(detector);
-        } catch (std::exception& e) {
+        } catch (const std::exception& e) {
             KARABO_LOG_FRAMEWORK_DEBUG << "    failed!";
             this->set("status", "Failed to create sls::Detector");
             return;
@@ -546,10 +541,10 @@ namespace karabo {
                     m_SLS->setDetectorType(m_detectorType);
 #endif
                     this->updateState(State::ON);
-                } catch (karabo::util::Exception& e) {
-                    this->updateState(State::ERROR);
-                    KARABO_LOG_FRAMEWORK_ERROR << e;
-                    this->set("status", "'connect' threw an exception");
+                } catch (const std::exception& e) {
+                    const std::string msg = std::string("Exception in 'connect': ") + e.what();
+                    this->updateState(State::ERROR, Hash("status", msg));
+                    KARABO_LOG_FRAMEWORK_ERROR << msg;
                 }
             } else { // !receiverOnline
                 this->updateState(State::ERROR);
@@ -734,24 +729,18 @@ namespace karabo {
     }
 
     void SlsControl::sendInitialConfiguration() {
-        try {
-            // Get current configuration
-            const Hash configHash = this->getCurrentConfiguration("sls");
+        // Get current configuration
+        const Hash configHash = this->getCurrentConfiguration("sls");
 
-            // Send some more parameters, not from configuration hash
-            this->sendConfiguration("settingspath", m_tmpDir); // settings directory
-            this->sendConfiguration("fformat", "binary"); // file format
+       // Send some more parameters, not from configuration hash
+        this->sendConfiguration("settingspath", m_tmpDir); // settings directory
+        this->sendConfiguration("fformat", "binary"); // file format
 
-            // Send all other parameters, from configuration hash
-            this->sendConfiguration(configHash);
+        // Send all other parameters, from configuration hash
+        this->sendConfiguration(configHash);
 
-            KARABO_LOG_FRAMEWORK_DEBUG << "Configuration done";
-            this->set("status", "Configuration done");
-        } catch (...) {
-            KARABO_LOG_FRAMEWORK_ERROR << "Failed to send initial configuration";
-            this->set("status", "Failed to send initial configuration");
-            throw; // Re-throw (calling function must take care)
-        }
+        KARABO_LOG_FRAMEWORK_DEBUG << "Configuration done";
+        this->set("status", "Configuration done");
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Quitting SlsControl::sendInitialConfiguration";
     }
@@ -773,53 +762,48 @@ namespace karabo {
         std::string key, alias;
         for (auto it = flat.begin(); it != flat.end(); ++it) {
 
-            try {
-                key = it->getKey();
-                if (fullSchema.isAccessReadOnly(key)) {
-                    KARABO_LOG_FRAMEWORK_DEBUG << "SlsControl::sendConfiguration - key: " << key << " is Read-Only -> Skip";
-                    continue;
+            key = it->getKey();
+            if (fullSchema.isAccessReadOnly(key)) {
+                KARABO_LOG_FRAMEWORK_DEBUG << "SlsControl::sendConfiguration - key: " << key << " is Read-Only -> Skip";
+                continue;
+            }
+            alias = this->getAliasFromKey<std::string >(key);
+            const Types::ReferenceType type = configHash.getType(key);
+
+            KARABO_LOG_FRAMEWORK_DEBUG << "SlsControl::sendConfiguration - Key: " << key << " Type: " << type;
+
+            if (Types::isSimple(type)) {
+                if (type == Types::FLOAT || type == Types::DOUBLE) {
+                    // We have to use std::to_string in order to convert
+                    // e.g. 1.0e-5 to 0.00001
+                    const double value = configHash.getAs<double>(key);
+                    this->sendConfiguration(alias, std::to_string(value));
+                } else {
+                    const std::string value = configHash.getAs<std::string>(key);
+                    this->sendConfiguration(alias, value);
                 }
-                alias = this->getAliasFromKey<std::string >(key);
-                const Types::ReferenceType type = configHash.getType(key);
 
-                KARABO_LOG_FRAMEWORK_DEBUG << "SlsControl::sendConfiguration - Key: " << key << " Type: " << type;
-
-                if (Types::isSimple(type)) {
-                    if (type == Types::FLOAT || type == Types::DOUBLE) {
-                        // We have to use std::to_string in order to convert
-                        // e.g. 1.0e-5 to 0.00001
-                        const double value = configHash.getAs<double>(key);
-                        this->sendConfiguration(alias, std::to_string(value));
-                    } else {
-                        const std::string value = configHash.getAs<std::string>(key);
-                        this->sendConfiguration(alias, value);
-                    }
-
-                } else if (Types::isVector(type)) {
-                    // XXX Here we possibly have to use std::to_string for
-                    // vectors of floate/doubles -> see simple types
-                    const auto values = configHash.getAs<std::string, std::vector>(key);
-                    if (values.size() == 0) {
-                        continue; // ignore key
-                    } else if (values.size() == 1) {
-                        // send same value to all
-                        this->sendConfiguration(alias, values[0]);
-                    } else if (values.size() == m_numberOfModules) {
-                        for (size_t i = 0; i < values.size(); ++i) {
-                            this->sendConfiguration(alias, values[i], i);
-                        }
-                    } else {
-                        KARABO_LOG_ERROR << "SlsControl::sendConfiguration error: " << key << " has "
-                                << values.size() << " elements but modules are " << m_numberOfModules;
-                        continue;
+            } else if (Types::isVector(type)) {
+                // XXX Here we possibly have to use std::to_string for
+                // vectors of floate/doubles -> see simple types
+                const auto values = configHash.getAs<std::string, std::vector>(key);
+                if (values.size() == 0) {
+                    continue; // ignore key
+                } else if (values.size() == 1) {
+                    // send same value to all
+                    this->sendConfiguration(alias, values[0]);
+                } else if (values.size() == m_numberOfModules) {
+                    for (size_t i = 0; i < values.size(); ++i) {
+                        this->sendConfiguration(alias, values[i], i);
                     }
                 } else {
-                    KARABO_LOG_WARN << "SlsControl::sendConfiguration received parameter " << key
-                            << " is neither simple nor vector";
+                    KARABO_LOG_ERROR << "SlsControl::sendConfiguration error: " << key << " has "
+                            << values.size() << " elements but modules are " << m_numberOfModules;
                     continue;
                 }
-            } catch (const karabo::util::Exception& e) {
-                KARABO_LOG_FRAMEWORK_ERROR << "SlsControl::sendConfiguration caught exception: " << e;
+            } else {
+                KARABO_LOG_WARN << "SlsControl::sendConfiguration received parameter " << key
+                        << " is neither simple nor vector";
                 continue;
             }
         }
@@ -997,28 +981,32 @@ namespace karabo {
             return;
         }
 
-        try {
-            if (command == "settings") {
-                // Create calibration and settings files (if needed)
-                this->createCalibrationAndSettings(parameters);
-            }
-
-            std::stringstream command_and_parameters;
-            if (pos >= 0) {
-                command_and_parameters << pos << ":"; // position
-            }
-            command_and_parameters << command;
-            if (parameters.size() > 0) {
-                command_and_parameters << " " << parameters;
-            }
-            m_SLS->loadParameters(std::vector<std::string>({command_and_parameters.str()}));
-
-            KARABO_LOG_FRAMEWORK_DEBUG << "Sent configuration: " << command_and_parameters.str();
-        } catch (...) {
-            KARABO_LOG_FRAMEWORK_ERROR << "Could not send configuration";
-            this->set("status", "Could not send configuration");
-            throw; // Calling function must take care
+        if (command == "settings") {
+            // Create calibration and settings files (if needed)
+            this->createCalibrationAndSettings(parameters);
         }
+
+        std::stringstream command_and_parameters;
+        if (pos >= 0) {
+            command_and_parameters << pos << ":"; // position
+        }
+        command_and_parameters << command;
+        if (parameters.size() > 0) {
+            command_and_parameters << " " << parameters;
+        }
+
+        if (command == "delay") { // XXX Workaround bug in slsDetectorsPackage v6.1.2
+            try {
+                m_SLS->loadParameters(std::vector<std::string>({command_and_parameters.str()}));
+            } catch (const std::exception& e) {
+                // Ignore exception for "delay" - known to fail with v6.1.2
+                KARABO_LOG_FRAMEWORK_INFO << "Ignore exception when setting 'delay':" << e.what();
+            }
+        } else {
+            m_SLS->loadParameters(std::vector<std::string>({command_and_parameters.str()}));
+        }
+
+        KARABO_LOG_FRAMEWORK_DEBUG << "Sent configuration: " << command_and_parameters.str();
 
         KARABO_LOG_DEBUG << "Quitting SlsControl::sendConfiguration";
     }
