@@ -774,10 +774,11 @@ namespace karabo {
 
             if (Types::isSimple(type)) {
                 if (type == Types::FLOAT || type == Types::DOUBLE) {
-                    // We have to use std::to_string in order to convert
-                    // e.g. 1.0e-5 to 0.00001
-                    const double value = configHash.getAs<double>(key);
-                    this->sendConfiguration(alias, std::to_string(value));
+                    // We have to convert the value to fixed floating-point notation
+                    std::stringstream ss;
+                    ss.precision(9);
+                    ss << std::fixed << configHash.getAs<double>(key);
+                    this->sendConfiguration(alias, ss.str());
                 } else {
                     const std::string value = configHash.getAs<std::string>(key);
                     this->sendConfiguration(alias, value);
