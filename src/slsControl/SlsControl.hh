@@ -68,9 +68,10 @@ namespace karabo {
         virtual void powerOn() {
         };
 
-        bool isHostOnline(std::string host, unsigned short port);
+        bool isServerOnline(const std::string& host, unsigned short port, std::string& errorMsg);
         bool areDetectorsOnline();
         bool areReceiversOnline();
+        bool ping(std::string host);
 
         void createTmpDir();
 
@@ -92,6 +93,7 @@ namespace karabo {
         const unsigned int m_reconnectTime = 5000;
         boost::asio::deadline_timer m_connect_timer;
 
+        bool m_isConfigured; // modules can be polled only after hostnames are set
         bool m_firstPoll;
         bool m_poll;
         boost::asio::deadline_timer m_poll_timer;
