@@ -40,8 +40,6 @@ namespace karabo {
         void createCalibrationAndSettings(const std::string& settings) {
             // nothing to be done
         }
-        std::vector<unsigned int> highVoltageDefault = {0u};
-
     };
 
 } /* namespace karabo */

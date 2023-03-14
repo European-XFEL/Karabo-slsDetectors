@@ -16,6 +16,7 @@
 USING_KARABO_NAMESPACES
 
 namespace karabo {
+    static const std::vector<unsigned int> HIGH_VOLTAGE_DEFAULT = {0u};
 
     KARABO_REGISTER_FOR_CONFIGURATION(BaseDevice, Device<>, SlsControl, Gotthard2Control)
 
@@ -40,7 +41,7 @@ namespace karabo {
         OVERWRITE_ELEMENT(expected).key("highVoltage")
                 .setNewDescription("High voltage to the sensor. "
                 "Options: 0|90|110|120|150|180|200 V.")
-                .setNewDefaultValue(highVoltageDefault)
+                .setNewDefaultValue(HIGH_VOLTAGE_DEFAULT)
                 .commit();
 
         OVERWRITE_ELEMENT(expected).key("exposureTime")
