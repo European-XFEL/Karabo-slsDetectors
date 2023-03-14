@@ -40,7 +40,6 @@ namespace karabo {
         void createCalibrationAndSettings(const std::string& settings) {
             // nothing to be done
         }
-
     };
 
 } /* namespace karabo */
