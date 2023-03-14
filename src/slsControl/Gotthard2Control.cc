@@ -40,7 +40,7 @@ namespace karabo {
         OVERWRITE_ELEMENT(expected).key("highVoltage")
                 .setNewDescription("High voltage to the sensor. "
                 "Options: 0|90|110|120|150|180|200 V.")
-                .setNewDefaultValue(0)
+                .setNewDefaultValue(highVoltageDefault)
                 .commit();
 
         OVERWRITE_ELEMENT(expected).key("exposureTime")
