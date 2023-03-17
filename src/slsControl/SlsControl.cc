@@ -654,13 +654,7 @@ namespace karabo {
         }
         h.set("firmwareVersion", version);
 
-        version.clear(); // clear content
-        for (const int64_t& v : m_SLS->getDetectorServerVersion(m_positions)) {
-            ss.str(""); // clear content
-            ss << std::hex << std::showbase << v;
-            version.push_back(ss.str());
-        }
-        h.set("detServerVersion", version);
+        h.set("detServerVersion", m_SLS->getDetectorServerVersion(m_positions));
 
         version.clear(); // clear content
         for (const int64_t& v : m_SLS->getSerialNumber(m_positions)) {
@@ -670,13 +664,7 @@ namespace karabo {
         }
         h.set("serialNumber", version);
 
-        version.clear(); // clear content
-        for (const int64_t& v : m_SLS->getReceiverVersion(m_positions)) {
-            ss.str(""); // clear content
-            ss << std::hex << std::showbase << v;
-            version.push_back(ss.str());
-        }
-        h.set("receiverVersion", version);
+        h.set("receiverVersion", m_SLS->getReceiverVersion(m_positions));
     }
 
     void SlsControl::sendBaseConfiguration() {
