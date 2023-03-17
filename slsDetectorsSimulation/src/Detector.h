@@ -48,11 +48,11 @@ namespace sls {
 
         Result<int64_t> getFirmwareVersion(Positions pos = {}) const;
 
-        Result<int64_t> getDetectorServerVersion(Positions pos = {}) const;
+        Result<std::string> getDetectorServerVersion(Positions pos = {}) const;
 
         Result<int64_t> getSerialNumber(Positions pos = {}) const;
 
-        Result<int64_t> getReceiverVersion(Positions pos = {}) const;
+        Result<std::string> getReceiverVersion(Positions pos = {}) const;
 
         Result<slsDetectorDefs::detectorType> getDetectorType(Positions pos = {}) const;
 

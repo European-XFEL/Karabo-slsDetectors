@@ -59,20 +59,20 @@ namespace sls {
 
         int64_t getReceiverVersion();
 
-        void registerCallBackStartAcquisition(int (*func)(std::string filepath, std::string filename, uint64_t fileindex, uint32_t datasize, void*), void *arg);
+        void registerCallBackStartAcquisition(int (*func)(const std::string& filepath, const std::string& filename, uint64_t fileindex, size_t datasize, void*), void *arg);
 
         void registerCallBackAcquisitionFinished(void (*func)(uint64_t nf, void*), void *arg);
 
-        void registerCallBackRawDataReady(void (*func)(char* metadata, char* datapointer, uint32_t datasize, void*), void *arg);
+        void registerCallBackRawDataReady(void (*func)(slsDetectorDefs::sls_receiver_header& header, char* datapointer, size_t datasize, void*), void *arg);
 
         void processCommand(const std::string& command);
 
     private:
-        int (*m_startAcquisitionCallBack)(std::string, std::string, uint64_t, uint32_t, void*);
+        int (*m_startAcquisitionCallBack)(const std::string&, const std::string&, uint64_t, size_t, void*);
         void *m_pStartAcquisition;
         void (*m_acquisitionFinishedCallBack)(uint64_t, void*);
         void *m_pAcquisitionFinished;
-        void (*m_rawDataReadyCallBack)(char*, char*, uint32_t, void*);
+        void (*m_rawDataReadyCallBack)(slsDetectorDefs::sls_receiver_header&, char*, size_t, void*);
         void *m_pRawDataReady;
 
     private: // Simulation properties
