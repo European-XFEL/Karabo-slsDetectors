@@ -293,7 +293,8 @@ namespace karabo {
             const unsigned short framesPerTrain = self->get<unsigned short>("framesPerTrain");
 
             karabo::util::Timestamp actualTimestamp;
-            const uint64_t& bunchId = detectorHeader.detSpec1; // Bunch ID
+            // See https://slsdetectorgroup.github.io/devdoc/udpdetspec.html
+            const uint64_t& bunchId = detectorHeader.detSpec1;
             if (bunchId != 0 && bunchId != 0xFFFFFFFFFFFFFFFF) {
                 // The firmware is able to provide bunchId: use it, if available.
                 actualTimestamp = Timestamp(Epochstamp(), bunchId);
