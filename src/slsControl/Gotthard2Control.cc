@@ -150,6 +150,11 @@ namespace karabo {
                 .allowedStates(State::ON)
                 .commit();
 
+        VECTOR_INT32_ELEMENT(expected).key("tempFpga")
+                .displayedName("FPGA Temperature")
+                .unit(Unit::DEGREE_CELSIUS)
+                .readOnly()
+                .commit();
     }
 
     void Gotthard2Control::powerOn() {
@@ -192,6 +197,11 @@ namespace karabo {
             }
         }
 
+    }
+
+    void Gotthard2Control::pollDetectorSpecific(karabo::util::Hash& h) {
+        const std::vector<int> tempFpga = m_SLS->getTemperature(slsDetectorDefs::dacIndex::TEMPERATURE_FPGA, m_positions);
+        h.set("tempFpga", tempFpga);
     }
 
 } /* namespace karabo */
