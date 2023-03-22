@@ -208,7 +208,7 @@ namespace sls {
     }
 
     Result<std::string> Detector::getDetectorServerVersion(Positions pos) const {
-        const std::string ver = "0x201117"; // 2011.11.17
+        const std::string ver = "7.0.0";
         if (pos.size() == 0) {
             return {};
         } else {
@@ -230,7 +230,7 @@ namespace sls {
     }
 
     Result<std::string> Detector::getReceiverVersion(Positions pos) const {
-        const std::string ver = "0x201125"; // 2020.11.25
+        const std::string ver = "7.0.0";
         if (pos.size() == 0) {
             return {ver};
         } else {
