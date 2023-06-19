@@ -155,7 +155,7 @@ int64_t sls::Receiver::getReceiverVersion() {
     return int64_t(7022809911320);
 }
 
-void sls::Receiver::registerCallBackStartAcquisition(int (*func)(std::string filepath, std::string filename, uint64_t fileindex, uint32_t datasize, void*), void *arg) {
+void sls::Receiver::registerCallBackStartAcquisition(int (*func)(const std::string& filepath, const std::string& filename, uint64_t fileindex, size_t datasize, void*), void *arg) {
     m_startAcquisitionCallBack = func;
     m_pStartAcquisition = arg;
 }
@@ -166,7 +166,7 @@ void sls::Receiver::registerCallBackAcquisitionFinished(void (*func)(uint64_t nf
 
 }
 
-void sls::Receiver::registerCallBackRawDataReady(void (*func)(char* metadata, char* datapointer, uint32_t datasize, void*), void *arg) {
+void sls::Receiver::registerCallBackRawDataReady(void (*func)(slsDetectorDefs::sls_receiver_header& header, char* datapointer, size_t datasize, void*), void *arg) {
     m_rawDataReadyCallBack = func;
     m_pRawDataReady = arg;
 }
@@ -179,14 +179,14 @@ void* sls::Receiver::dataWorker(void* self) {
 
     detectorHeader->expLength = 0;
     detectorHeader->packetNumber = 2;
-    detectorHeader->bunchId = 0;
+    detectorHeader->detSpec1 = 0;
     detectorHeader->timestamp = 0;
     detectorHeader->modId = 0 ;
     detectorHeader->row = 0;
     detectorHeader->column = 0;
-    detectorHeader->reserved = 0;
-    detectorHeader->debug = 0;
-    detectorHeader->roundRNumber = 0;
+    detectorHeader->detSpec2 = 0;
+    detectorHeader->detSpec3 = 0;
+    detectorHeader->detSpec4 = 0;
     detectorHeader->detType = receiver->m_detectorType;
     detectorHeader->version = 1;
 
@@ -202,9 +202,8 @@ void* sls::Receiver::dataWorker(void* self) {
         // randomly access m_data, which is twice as large as one sample
         dataPointer = receiver->m_data + sizeof(short) * rand() % channels;
 
-        // Pass frame and metadata to callback
-        metadata = reinterpret_cast<char*>(&receiver->m_header);
-        receiver->m_rawDataReadyCallBack(metadata, dataPointer, dataSize, receiver->m_pRawDataReady);
+        // Pass frame and header to callback
+        receiver->m_rawDataReadyCallBack(receiver->m_header, dataPointer, dataSize, receiver->m_pRawDataReady);
 
         if (receiver->m_enableWriteToFile) {
             ++receiver->m_currAcqFrameCounter;

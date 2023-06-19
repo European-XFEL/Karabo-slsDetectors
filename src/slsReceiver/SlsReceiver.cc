@@ -218,7 +218,7 @@ namespace karabo {
         }
     }
 
-    int SlsReceiver::startAcquisitionCallBack(std::string filePath, std::string fileName, uint64_t fileIndex, uint32_t bufferSize, void* context) {
+    int SlsReceiver::startAcquisitionCallBack(const std::string& filePath, const std::string& fileName, uint64_t fileIndex, size_t bufferSize, void* context) {
 
         Self* self = static_cast<Self*> (context);
 
@@ -285,18 +285,19 @@ namespace karabo {
         self->updateState(State::PASSIVE);
     }
 
-    void SlsReceiver::rawDataReadyCallBack(char* metadata, char* dataPointer, uint32_t dataSize, void* context) {
+    void SlsReceiver::rawDataReadyCallBack(slsDetectorDefs::sls_receiver_header& header, char* dataPointer, size_t dataSize, void* context) {
         Self* self = static_cast<Self*>(context);
-        slsDetectorDefs::sls_receiver_header* header = reinterpret_cast<slsDetectorDefs::sls_receiver_header*>(metadata);
-        const slsDetectorDefs::sls_detector_header& detectorHeader = header->detHeader;
+        const slsDetectorDefs::sls_detector_header& detectorHeader = header.detHeader;
 
         try {
             const unsigned short framesPerTrain = self->get<unsigned short>("framesPerTrain");
 
             karabo::util::Timestamp actualTimestamp;
-            if (detectorHeader.bunchId != 0 && detectorHeader.bunchId != 0xFFFFFFFFFFFFFFFF) {
+            // See https://slsdetectorgroup.github.io/devdoc/udpdetspec.html
+            const uint64_t& bunchId = detectorHeader.detSpec1;
+            if (bunchId != 0 && bunchId != 0xFFFFFFFFFFFFFFFF) {
                 // The firmware is able to provide bunchId: use it, if available.
-                actualTimestamp = Timestamp(Epochstamp(), detectorHeader.bunchId);
+                actualTimestamp = Timestamp(Epochstamp(), bunchId);
             } else {
                 actualTimestamp = self->getActualTimestamp();
             }
@@ -358,7 +359,7 @@ namespace karabo {
                     self->unpackRawData(dataPointer, i, detectorData->adc + offset, detectorData->gain + offset);
                     detectorData->memoryCell[accumulatedFrames] = memoryCell;
                     detectorData->frameNumber[accumulatedFrames] = detectorHeader.frameNumber;
-                    detectorData->bunchId[accumulatedFrames] = detectorHeader.bunchId;
+                    detectorData->bunchId[accumulatedFrames] = bunchId;
 
                     detectorData->timestamp[accumulatedFrames] = currentTime;
                     detectorData->accumulatedFrames += 1;
