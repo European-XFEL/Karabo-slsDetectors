@@ -654,13 +654,7 @@ namespace karabo {
         }
         h.set("firmwareVersion", version);
 
-        version.clear(); // clear content
-        for (const int64_t& v : m_SLS->getDetectorServerVersion(m_positions)) {
-            ss.str(""); // clear content
-            ss << std::hex << std::showbase << v;
-            version.push_back(ss.str());
-        }
-        h.set("detServerVersion", version);
+        h.set<std::vector<std::string>>("detServerVersion", m_SLS->getDetectorServerVersion(m_positions));
 
         version.clear(); // clear content
         for (const int64_t& v : m_SLS->getSerialNumber(m_positions)) {
@@ -670,13 +664,7 @@ namespace karabo {
         }
         h.set("serialNumber", version);
 
-        version.clear(); // clear content
-        for (const int64_t& v : m_SLS->getReceiverVersion(m_positions)) {
-            ss.str(""); // clear content
-            ss << std::hex << std::showbase << v;
-            version.push_back(ss.str());
-        }
-        h.set("receiverVersion", version);
+        h.set<std::vector<std::string>>("receiverVersion", m_SLS->getReceiverVersion(m_positions));
     }
 
     void SlsControl::sendBaseConfiguration() {
@@ -1024,16 +1012,7 @@ namespace karabo {
             command_and_parameters << " " << parameters;
         }
 
-        if (command == "delay") { // XXX Workaround bug in slsDetectorsPackage v6.1.2
-            try {
-                m_SLS->loadParameters(std::vector<std::string>({command_and_parameters.str()}));
-            } catch (const std::exception& e) {
-                // Ignore exception for "delay" - known to fail with v6.1.2
-                KARABO_LOG_FRAMEWORK_INFO << "Ignore exception when setting 'delay':" << e.what();
-            }
-        } else {
-            m_SLS->loadParameters(std::vector<std::string>({command_and_parameters.str()}));
-        }
+        m_SLS->loadParameters(std::vector<std::string>({command_and_parameters.str()}));
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Sent configuration: " << command_and_parameters.str();
 

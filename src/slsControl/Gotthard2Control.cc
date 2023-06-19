@@ -113,17 +113,13 @@ namespace karabo {
                 .allowedStates(State::ON)
                 .commit();
 
-        // XXX: clkdiv, clkfreq, clkphase
-
-
-        // TODO badchannels: create bad channel file on the fly in /dev/shm or /tmp?
         STRING_ELEMENT(expected).key("badChannels")
                 .alias("badchannels")
                 .tags("sls")
                 .displayedName("Bad Channels")
-                .description("Sets the bad channel filename. Bad channels will be "
-                "omitted in the data file. Load an empty file to unset all bad channels.")
-                .assignmentOptional().defaultValue("badchannels.txt")
+                .description("Sets the bad channels (from file of bad channel numbers) to be "
+                "masked out. Use 'none' or '0' to unset all the bad channels.")
+                .assignmentOptional().defaultValue("0")
                 .reconfigurable()
                 .allowedStates(State::ON)
                .commit();
@@ -150,6 +146,19 @@ namespace karabo {
                 .allowedStates(State::ON)
                 .commit();
 
+        BOOL_ELEMENT(expected).key("reverseSlaveReadOutMode")
+                .displayedName("Reverse Slave Read-Out Mode")
+                .description("Reverse the readout order for the slave module.")
+                .assignmentOptional().defaultValue(false)
+                .reconfigurable()
+                .allowedStates(State::ON)
+                .commit();
+
+        VECTOR_INT32_ELEMENT(expected).key("tempFpga")
+                .displayedName("FPGA Temperature")
+                .unit(Unit::DEGREE_CELSIUS)
+                .readOnly()
+                .commit();
     }
 
     void Gotthard2Control::powerOn() {
@@ -192,6 +201,30 @@ namespace karabo {
             }
         }
 
+        if (configHash.has("reverseSlaveReadOutMode")) {
+            const bool& reverseSlaveReadOutMode = configHash.get<bool>("reverseSlaveReadOutMode");
+            std::stringstream ss;
+            if (reverseSlaveReadOutMode) {
+                for (size_t i = 1; i < m_numberOfModules; ++i) {
+                    // 1. Module 0 is the master by default
+                    // 2. Reverse slave read-out mode is the default
+                    ss.str(std::string());
+                    ss << i << ":clearbit";
+                    this->sendConfiguration(ss.str(), "0x20 20");
+                }
+            } else {
+                for (size_t i = 1; i < m_numberOfModules; ++i) {
+                    ss.str(std::string());
+                    ss << i << ":setbit";
+                    this->sendConfiguration(ss.str(), "0x20 20");
+                }
+            }
+        }
+    }
+
+    void Gotthard2Control::pollDetectorSpecific(karabo::util::Hash& h) {
+        const std::vector<int> tempFpga = m_SLS->getTemperature(slsDetectorDefs::dacIndex::TEMPERATURE_FPGA, m_positions);
+        h.set("tempFpga", tempFpga);
     }
 
 } /* namespace karabo */

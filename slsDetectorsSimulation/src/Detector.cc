@@ -207,12 +207,12 @@ namespace sls {
         }
     }
 
-    Result<int64_t> Detector::getDetectorServerVersion(Positions pos) const {
-        const int64_t ver = 0x201117; // 2011.11.17
+    Result<std::string> Detector::getDetectorServerVersion(Positions pos) const {
+        const std::string ver = "7.0.0";
         if (pos.size() == 0) {
             return {};
         } else {
-            return std::vector<int64_t>(pos.size(), ver);
+            return std::vector<std::string>(pos.size(), ver);
         }
     }
 
@@ -229,12 +229,12 @@ namespace sls {
         }
     }
 
-    Result<int64_t> Detector::getReceiverVersion(Positions pos) const {
-        const int64_t ver = 0x201125; // 2020.11.25
+    Result<std::string> Detector::getReceiverVersion(Positions pos) const {
+        const std::string ver = "7.0.0";
         if (pos.size() == 0) {
             return {ver};
         } else {
-            return std::vector<int64_t>(pos.size(), ver);
+            return std::vector<std::string>(pos.size(), ver);
         }
     }
 
