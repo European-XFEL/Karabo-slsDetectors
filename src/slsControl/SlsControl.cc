@@ -567,15 +567,14 @@ namespace karabo {
             return;
         }
 
-        KARABO_LOG_FRAMEWORK_DEBUG << "Stop polling, as it would interfere with acquisition";
-        this->stopPoll();
-
         this->set("status", "Acquisition started");
-        m_SLS->acquire(); // Blocking function - will return when acquisition is over!
+        // The following is a blocking function: it will only return when the
+        // acquisition is over!
+        // If the detector is powered off during an acquisition, this thread
+        // will never return!
+        m_SLS->acquire();
         this->set("status", "Acquisition finished (or stopped)");
 
-        KARABO_LOG_FRAMEWORK_DEBUG << "Restart polling";
-        this->startPoll();
         this->updateState(State::ON);
         KARABO_LOG_FRAMEWORK_DEBUG << "Quitting acquireBlocking";
     }
@@ -596,7 +595,6 @@ namespace karabo {
         if (ec) {
             return;
         }
-
 
         if (!this->areDetectorsOnline()) {
             // stops polling and tries to reconnect
