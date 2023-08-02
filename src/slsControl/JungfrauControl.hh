@@ -4,7 +4,7 @@
  * 
  * Created on March 23, 2016,  3:39 PM
  *
- * Copyright (c) European XFEL GmbH Hamburg. All rights reserved.
+ * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
  */
 
 #ifndef KARABO_JUNGFRAUCONTROL_HH

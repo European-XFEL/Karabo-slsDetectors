@@ -4,7 +4,7 @@
  * 
  * Created on Januar 12, 2021, 11:38 AM
  *
- * Copyright (c) European XFEL GmbH Hamburg. All rights reserved.
+ * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
  */
 
 #ifndef KARABO_GOTTHARD2CONTROL_HH

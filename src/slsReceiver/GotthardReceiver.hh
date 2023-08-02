@@ -1,11 +1,9 @@
 /*
- * $Id: GotthardReceiver.hh 12523 2014-01-27 15:15:19Z parenti $
- *
  * Author: <andrea.parenti@xfel.eu>
  * 
  * Created on March 18, 2016,  3:29 PM
  *
- * Copyright (c) 2010-2016 European XFEL GmbH Hamburg. All rights reserved.
+ * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
  */
 
 #ifndef KARABO_GOTTHARDRECEIVER_HH

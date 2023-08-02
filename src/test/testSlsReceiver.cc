@@ -3,7 +3,7 @@
  *
  * Created on September 09, 2022, 10:02 AM
  *
- * Copyright (c) European XFEL GmbH Hamburg. All rights reserved.
+ * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
  */
 
 #include "../slsReceiver/SlsReceiver.hh"

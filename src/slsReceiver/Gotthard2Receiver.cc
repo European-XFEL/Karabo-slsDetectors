@@ -3,7 +3,7 @@
  * 
  * Created on August 20, 2021, 5:16 PM
  *
- * Copyright (c) European XFEL GmbH Hamburg. All rights reserved.
+ * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
  */
 
 // Gotthard2 channels

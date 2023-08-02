@@ -1,3 +1,10 @@
+/*
+ *
+ * Author: <andrea.parenti@xfel.eu>
+ * 
+ * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
+ */
+
 #ifndef SLS_SIMULATION_DEFS_H
 #define SLS_SIMULATION_DEFS_H
 
