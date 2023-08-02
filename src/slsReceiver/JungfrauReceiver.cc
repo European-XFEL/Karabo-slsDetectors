@@ -1,11 +1,9 @@
 /*
- * $Id: JungfrauReceiver.cc 12523 2014-01-27 15:15:19Z parenti $
- *
  * Author: <andrea.parenti@xfel.eu>
  * 
  * Created on March 21, 2016, 11:37 AM
  *
- * Copyright (c) 2010-2016 European XFEL GmbH Hamburg. All rights reserved.
+ * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
  */
 
 #define JUNGFRAU_PIXEL_X            (4 * 256)

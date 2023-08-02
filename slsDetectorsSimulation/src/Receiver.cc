@@ -1,3 +1,10 @@
+/*
+ *
+ * Author: <andrea.parenti@xfel.eu>
+ * 
+ * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
+ */
+
 #include <iostream>
 #include <unordered_map>
 

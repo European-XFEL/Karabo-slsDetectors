@@ -1,11 +1,9 @@
 /*
- * $Id: SlsReceiver.hh 12523 2014-01-27 15:15:19Z parenti $
- *
  * Author: <andrea.parenti@xfel.eu>
  * 
  * Created on December 19, 2013, 12:01 PM
  *
- * Copyright (c) 2010-2013 European XFEL GmbH Hamburg. All rights reserved.
+ * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
  */
 
 #ifndef KARABO_SLSRECEIVER_HH

@@ -1,6 +1,32 @@
-*****************
-SlsControl Device
-*****************
+*******************
+slsDetector Package
+*******************
+
+Overview
+========
+
+The slsDetector package provides a way to interface with SLS Detectors
+https://www.psi.ch/en/lxn/documentation
+
+Contact
+========
+
+For questions, please contact opensource@xfel.eu.
+
+License and Contributing
+=========================
+
+This software is released by the European XFEL GmbH as is and without any
+warranty under the GPLv3 license.
+If you have questions on contributing to the project, please get in touch at
+opensource@xfel.eu.
+
+Dependencies
+============
+
+- slsDetectorPackage v7.0.x
+  https://github.com/slsdetectorgroup/slsDetectorPackage.git
+
 
 Gotthard troubleshooting
 ========================

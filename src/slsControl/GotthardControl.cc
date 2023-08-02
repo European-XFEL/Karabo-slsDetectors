@@ -4,7 +4,7 @@
  * 
  * Created on March 21, 2016,  3:15 PM
  *
- * Copyright (c) European XFEL GmbH Hamburg. All rights reserved.
+ * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
  */
 
 #ifdef SLS_SIMULATION
