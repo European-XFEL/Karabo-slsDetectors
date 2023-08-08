@@ -464,7 +464,6 @@ namespace karabo {
                 KARABO_LOG_INFO << "Connected to detector(s)";
                 this->set("status", "Connected to detector(s)");
 
-                m_isConfigured = false;
                 this->sendBaseConfiguration();
                 this->sendInitialConfiguration();
                 const Hash& config = this->getCurrentConfiguration();
@@ -599,7 +598,6 @@ namespace karabo {
         if (!this->areDetectorsOnline()) {
             // stops polling and tries to reconnect
             this->updateState(State::UNKNOWN);
-            m_isConfigured = false;
             m_firstPoll = true;
             m_connect = true;
             m_connect_timer.expires_from_now(boost::posix_time::milliseconds(0));
@@ -692,7 +690,7 @@ namespace karabo {
 
         const std::string fname = m_tmpDir + "/base.config";
         std::ofstream configFile(fname.c_str(), std::ofstream::trunc);
-        if (configFile.is_open()) {
+        if (configFile.is_open() && !m_isConfigured) {
             configFile << "hostname ";
             for (auto hostname : hostnames) {
                 configFile << hostname << "+";
@@ -714,7 +712,7 @@ namespace karabo {
             this->powerOn();
 
             m_isConfigured = true;
-        } else {
+        } else if (!configFile.is_open()) {
             throw KARABO_RECONFIGURE_EXCEPTION("Could not open file " + fname + "for writing");
         }
     }
