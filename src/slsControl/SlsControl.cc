@@ -809,6 +809,10 @@ namespace karabo {
             errorMsg = host + " is not pingable";
             return false;
         }
+        else {
+            errorMsg = "";
+            return true;
+        }
 
         bool online;
         const std::string portString = std::to_string(port);
