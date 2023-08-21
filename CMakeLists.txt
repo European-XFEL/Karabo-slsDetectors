@@ -54,7 +54,7 @@ if(NOT DEFINED KARABO_LIB_TARGET_NAME)
     )
 endif()
 
-# Builds tests if BUILD_TESTS is true (the default).
+# Builds tests if BUILD_TESTS is true.
 # The setting below is overridden by any previously set value (e.g. defined by
 # the user in the command line).
 set(BUILD_TESTS OFF CACHE BOOL "Should build unit tests?")

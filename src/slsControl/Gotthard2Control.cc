@@ -8,7 +8,7 @@
  */
 
 #ifdef SLS_SIMULATION
-#include <slssimulation/sls_simulation_defs.h>
+#include "../slsDetectorsSimulation/sls_simulation_defs.h"
 #endif
 
 #include "Gotthard2Control.hh"
@@ -22,7 +22,7 @@ namespace karabo {
 
     Gotthard2Control::Gotthard2Control(const Hash& config) : SlsControl(config) {
 #ifdef SLS_SIMULATION
-        m_detectorType = static_cast<int>(detectorType::GOTTHARD2);
+        m_detectorType = slsDetectorDefs::detectorType::GOTTHARD2;
 #endif
     }
 

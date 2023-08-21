@@ -17,7 +17,7 @@
 #include <sls/sls_detector_defs.h>
 #include <sls/Receiver.h>
 #else
-#include <slssimulation/Receiver.h>
+#include "../slsDetectorsSimulation/Receiver.h"
 #endif
 
 #include "../common/version.hh"  // provides SLSDETECTORS_PACKAGE_VERSION

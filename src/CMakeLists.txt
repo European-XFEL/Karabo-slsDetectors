@@ -37,12 +37,31 @@ target_link_libraries(
     ${CMAKE_PROJECT_NAME}
     PUBLIC
     Threads::Threads
-    SlsDetector
-    SlsReceiver
-    zmq
-    rt
     ${KARABO_LIB_TARGET_NAME}
 )
+
+if (SIMULATION_MODE)
+    add_compile_definitions(SLS_SIMULATION)
+
+    target_sources(
+        ${CMAKE_PROJECT_NAME}
+        PRIVATE
+        slsDetectorsSimulation/Detector.cc
+        slsDetectorsSimulation/Receiver.cc
+    )
+
+else()
+    target_link_libraries(
+        ${CMAKE_PROJECT_NAME}
+        PUBLIC
+        SlsDetector
+        SlsReceiver
+        zmq
+        rt
+        ${KARABO_LIB_TARGET_NAME}
+    )
+
+endif()
 
 # Finds Git - it will be used by the custom command that generates version.hh
 # A successful find_package for Git, sets the variable GIT_EXECUTABLE with the

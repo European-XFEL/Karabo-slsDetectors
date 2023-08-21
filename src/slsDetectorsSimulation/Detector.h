@@ -49,9 +49,9 @@ namespace sls {
 
         int getShmId() const {return m_shm_id;}
 
-        std::string getPackageVersion() const {return "5.0.1";} // 5.0.1 API
+        std::string getPackageVersion() const {return "7.0.1";} // 7.0.1 API
 
-        int64_t getClientVersion() const {return 0x201125;} // 2020.11.25
+        std::string getClientVersion() const {return "7.0.1";}
 
         Result<int64_t> getFirmwareVersion(Positions pos = {}) const;
 
@@ -65,7 +65,7 @@ namespace sls {
 
         int size() const {return m_hostname.size();}
 
-        bool empty() const {return (m_hostname.size() == 0);}
+        bool empty() const;
 
         /** list of possible settings for this detector */
         std::vector<slsDetectorDefs::detectorSettings> getSettingsList() const;
@@ -138,7 +138,7 @@ namespace sls {
 
         void acquire();
 
-        void stopDetector();
+        void stopDetector(Positions pos = {});
 
         Result<slsDetectorDefs::runStatus> getDetectorStatus(Positions pos = {}) const;
 
