@@ -253,6 +253,10 @@ namespace sls {
         }
     }
 
+    bool Detector::empty() const {
+        return (m_hostname.size() == 0);
+    }
+
     std::vector<slsDetectorDefs::detectorSettings> Detector::getSettingsList() const {
         if (m_detectorType == JUNGFRAU) {
             return {DYNAMICGAIN, DYNAMICHG0, FIXGAIN1, FIXGAIN2, FORCESWITCHG1, FORCESWITCHG2};
@@ -452,7 +456,7 @@ namespace sls {
         }
     }
 
-    void Detector::stopDetector() {
+    void Detector::stopDetector(Positions pos) {
         m_status = slsDetectorDefs::runStatus::IDLE;
         for (int i = 0; i < this->size() ; ++i) {
             m_fileIndex[i] += 1; // increase file index

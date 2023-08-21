@@ -24,6 +24,7 @@ namespace karabo {
             m_isConfigured(false), m_firstPoll(true), m_poll(false),
             m_poll_timer(EventLoop::getIOService()),
             m_acquire_timer(EventLoop::getIOService()) {
+
         KARABO_INITIAL_FUNCTION(initialize);
 
         KARABO_SLOT(start);

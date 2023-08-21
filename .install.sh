@@ -24,10 +24,16 @@ elif command -v nproc &> /dev/null; then
   BUILD_OPT="--build . -j${NPROC}"
 fi
 
+# Build in simulation mode if $CONF == "Simulation"
+SIMULATION_MODE=0
+if [[ "${1}" == "Simulation" ]]; then
+  SIMULATION_MODE=1
+fi
 
 cmake \
     -DCMAKE_BUILD_TYPE=$1 \
     -DBUILD_TESTS=0 \
+    -DSIMULATION_MODE=$SIMULATION_MODE \
     -DBoost_NO_BOOST_CMAKE=ON \
     -DBoost_NO_SYSTEM_PATHS=ON \
     -DCMAKE_PREFIX_PATH=$KARABO/extern \

@@ -16,7 +16,7 @@
 #ifndef SLS_SIMULATION
 #include <sls/Detector.h>
 #else
-#include <slssimulation/Detector.h>
+#include "../slsDetectorsSimulation/Detector.h"
 #endif
 
 #include "../common/version.hh"  // provides SLSDETECTORS_PACKAGE_VERSION

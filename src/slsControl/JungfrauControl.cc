@@ -8,7 +8,7 @@
  */
 
 #ifdef SLS_SIMULATION
-#include <slssimulation/sls_simulation_defs.h>
+#include "../slsDetectorsSimulation/sls_simulation_defs.h"
 #endif
 
 #include "JungfrauControl.hh"
