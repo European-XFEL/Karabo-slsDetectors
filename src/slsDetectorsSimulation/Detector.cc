@@ -1,7 +1,7 @@
 /*
  *
  * Author: <andrea.parenti@xfel.eu>
- * 
+ *
  * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
  */
 
@@ -11,7 +11,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/format.hpp>
-#include <boost/thread/thread.hpp> 
+#include <boost/thread/thread.hpp>
 
 #include "sls_simulation_defs.h"
 #include "Detector.h"

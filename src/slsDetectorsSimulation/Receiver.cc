@@ -1,7 +1,7 @@
 /*
  *
  * Author: <andrea.parenti@xfel.eu>
- * 
+ *
  * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
  */
 
@@ -12,7 +12,7 @@
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
-#include <boost/thread/thread.hpp> 
+#include <boost/thread/thread.hpp>
 
 #include "Receiver.h"
 

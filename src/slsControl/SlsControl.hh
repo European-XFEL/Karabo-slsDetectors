@@ -1,7 +1,7 @@
 /*
  *
  * Author: <Iryna.Kozlova@xfel.eu>
- * 
+ *
  * Created on July 12, 2013, 11:30 AM
  *
  * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
