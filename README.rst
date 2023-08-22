@@ -116,4 +116,3 @@ exposureTime       s         ns        FLOAT     INT64
 exposurePeriod     s         ns        FLOAT     INT64
 delayAfterTrigger  s         ns        FLOAT     INT64
 =================  ========  ========  ========  ========
-

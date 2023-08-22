@@ -1,6 +1,6 @@
 /*
  * Author: <andrea.parenti@xfel.eu>
- * 
+ *
  * Created on March 21, 2016, 11:37 AM
  *
  * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
@@ -35,7 +35,7 @@ namespace karabo {
          * Constructor providing the initial configuration in form of a Hash object.
          * If this class is constructed using the configuration system the Hash object will
          * already be validated using the information of the expectedParameters function.
-         * The configuration is provided in a key/value fashion. 
+         * The configuration is provided in a key/value fashion.
          */
         explicit JungfrauReceiver(const karabo::util::Hash& config);
 

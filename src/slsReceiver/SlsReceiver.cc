@@ -1,6 +1,6 @@
 /*
  * Author: <andrea.parenti@xfel.eu>
- * 
+ *
  * Created on December 19, 2013, 12:01 PM
  *
  * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
@@ -336,7 +336,7 @@ namespace karabo {
                 self->logWarning("rawDataReadyCallBack: received empty buffer. Skip!");
                 return;
             } else if (dataSize % frameSize != 0) {
-                self->logWarning("rawDataReadyCallBack: data size (" + util::toString(dataSize) + 
+                self->logWarning("rawDataReadyCallBack: data size (" + util::toString(dataSize) +
                         ") is not multiple of frameSize size (" + util::toString(frameSize) + ")! Skip data.");
                 return;
             }

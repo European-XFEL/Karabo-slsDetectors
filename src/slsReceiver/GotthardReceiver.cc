@@ -1,6 +1,6 @@
 /*
  * Author: <andrea.parenti@xfel.eu>
- * 
+ *
  * Created on March 18, 2016,  3:29 PM
  *
  * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
