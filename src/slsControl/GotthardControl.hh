@@ -12,8 +12,8 @@
 
 #include <karabo/karabo.hpp>
 
+#include "../common/version.hh" // provides SLSDETECTORS_PACKAGE_VERSION
 #include "SlsControl.hh"
-#include "../common/version.hh"  // provides SLSDETECTORS_PACKAGE_VERSION
 
 /**
  * The main Karabo namespace
@@ -21,9 +21,8 @@
 namespace karabo {
 
     class GotthardControl : public karabo::SlsControl {
-    public:
-        KARABO_CLASSINFO(GotthardControl, "GotthardControl",
-            SLSDETECTORS_PACKAGE_VERSION)
+       public:
+        KARABO_CLASSINFO(GotthardControl, "GotthardControl", SLSDETECTORS_PACKAGE_VERSION)
 
         explicit GotthardControl(const karabo::util::Hash& config);
 
@@ -31,12 +30,11 @@ namespace karabo {
 
         static void expectedParameters(karabo::util::Schema& expected);
 
-    private: // functions
+       private: // functions
         void pollDetectorSpecific(karabo::util::Hash& h) override;
         void createCalibrationAndSettings(const std::string& settings) {
             // nothing to be done
         }
-
     };
 
 } /* namespace karabo */

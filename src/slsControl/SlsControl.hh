@@ -19,7 +19,7 @@
 #include "../slsDetectorsSimulation/Detector.h"
 #endif
 
-#include "../common/version.hh"  // provides SLSDETECTORS_PACKAGE_VERSION
+#include "../common/version.hh" // provides SLSDETECTORS_PACKAGE_VERSION
 
 /**
  * The main Karabo namespace
@@ -27,10 +27,8 @@
 namespace karabo {
 
     class SlsControl : public karabo::core::Device<> {
-    public:
-
-        KARABO_CLASSINFO(SlsControl, "SlsControl",
-            SLSDETECTORS_PACKAGE_VERSION)
+       public:
+        KARABO_CLASSINFO(SlsControl, "SlsControl", SLSDETECTORS_PACKAGE_VERSION)
 
         explicit SlsControl(const karabo::util::Hash& config);
 
@@ -40,12 +38,12 @@ namespace karabo {
 
         virtual void preReconfigure(karabo::util::Hash& incomingReconfiguration) override;
 
-    private: // Slots
+       private: // Slots
         void start();
         void stop();
         void reset();
 
-    private: // Functions
+       private: // Functions
         void initialize();
 
         void connect(const boost::system::error_code& ec);
@@ -56,17 +54,14 @@ namespace karabo {
         void stopPoll();
         void pollHardware(const boost::system::error_code& ec);
         void pollOnce(karabo::util::Hash& h);
-        virtual void pollDetectorSpecific(karabo::util::Hash& h) {
-        };
+        virtual void pollDetectorSpecific(karabo::util::Hash& h){};
 
         void sendBaseConfiguration();
         void sendInitialConfiguration();
         void sendConfiguration(const karabo::util::Hash& configHash);
-        virtual void configureDetectorSpecific(const karabo::util::Hash& configHash) {
-        };
+        virtual void configureDetectorSpecific(const karabo::util::Hash& configHash){};
 
-        virtual void powerOn() {
-        };
+        virtual void powerOn(){};
 
         bool isServerOnline(const std::string& host, unsigned short port, std::string& errorMsg);
         bool areDetectorsOnline();
@@ -75,7 +70,7 @@ namespace karabo {
 
         void createTmpDir();
 
-    protected:
+       protected:
 #ifdef SLS_SIMULATION
         slsDetectorDefs::detectorType m_detectorType;
 #endif
@@ -86,7 +81,7 @@ namespace karabo {
         void sendConfiguration(const std::string& command, const std::string& parameters = "", int pos = -1);
         void createCalibrationAndSettings(const std::string& settings);
 
-    private: // Members
+       private: // Members
         const unsigned short m_defaultPort = 1952;
 
         bool m_connect;

@@ -29,29 +29,34 @@ namespace sls {
 
 
     class Detector {
-    public:
-
+       public:
         Detector(int shm_id = 0);
 
         virtual ~Detector();
 
         void freeSharedMemory();
 
-        void loadConfig(const std::string &fname);
+        void loadConfig(const std::string& fname);
 
-        void loadParameters(const std::string &fname);
+        void loadParameters(const std::string& fname);
 
-        void loadParameters(const std::vector<std::string> &parameters);
+        void loadParameters(const std::vector<std::string>& parameters);
 
         Result<std::string> getHostname(Positions pos = {}) const;
 
-        void setHostname(const std::vector<std::string> &hostname);
+        void setHostname(const std::vector<std::string>& hostname);
 
-        int getShmId() const {return m_shm_id;}
+        int getShmId() const {
+            return m_shm_id;
+        }
 
-        std::string getPackageVersion() const {return "7.0.1";} // 7.0.1 API
+        std::string getPackageVersion() const {
+            return "7.0.1";
+        } // 7.0.1 API
 
-        std::string getClientVersion() const {return "7.0.1";}
+        std::string getClientVersion() const {
+            return "7.0.1";
+        }
 
         Result<int64_t> getFirmwareVersion(Positions pos = {}) const;
 
@@ -63,7 +68,9 @@ namespace sls {
 
         Result<slsDetectorDefs::detectorType> getDetectorType(Positions pos = {}) const;
 
-        int size() const {return m_hostname.size();}
+        int size() const {
+            return m_hostname.size();
+        }
 
         bool empty() const;
 
@@ -80,11 +87,11 @@ namespace sls {
          *                                                *
          * ************************************************/
 
-        void registerAcquisitionFinishedCallback(void (*func)(double, int, void *), void *pArg) {
+        void registerAcquisitionFinishedCallback(void (*func)(double, int, void*), void* pArg) {
             throw std::runtime_error("Detector::registerAcquisitionFinishedCallback not implemented");
         }
 
-        void registerDataCallback(void (*func)(detectorData *, uint64_t, uint32_t, void *), void *pArg) {
+        void registerDataCallback(void (*func)(detectorData*, uint64_t, uint32_t, void*), void* pArg) {
             throw std::runtime_error("Detector::registerDataCallback not implemented");
         }
 
@@ -144,11 +151,11 @@ namespace sls {
 
         Result<std::string> getFilePath(Positions pos = {}) const;
 
-        void setFilePath(const std::string &fpath, Positions pos = {});
+        void setFilePath(const std::string& fpath, Positions pos = {});
 
         Result<std::string> getFileNamePrefix(Positions pos = {}) const;
 
-        void setFileNamePrefix(const std::string &fname, Positions pos = {});
+        void setFileNamePrefix(const std::string& fname, Positions pos = {});
 
         Result<int64_t> getAcquisitionIndex(Positions pos = {}) const;
 
@@ -160,11 +167,11 @@ namespace sls {
 
         void setTimingMode(slsDetectorDefs::timingMode value, Positions pos = {});
 
-       /**************************************************
-        *                                                *
-        *    Jungfrau Specific                           *
-        *                                                *
-        * ************************************************/
+        /**************************************************
+         *                                                *
+         *    Jungfrau Specific                           *
+         *                                                *
+         * ************************************************/
 
         Result<int> getTemperatureEvent(Positions pos = {}) const;
 
@@ -183,8 +190,7 @@ namespace sls {
         // Not available in "real" Detector
         slsDetectorDefs::detectorType setDetectorType(slsDetectorDefs::detectorType type);
 
-    private: // Simulation properties
-
+       private: // Simulation properties
         int m_shm_id;
         slsDetectorDefs::detectorType m_detectorType;
         slsDetectorDefs::runStatus m_status;
@@ -211,18 +217,17 @@ namespace sls {
         std::string m_udp_srcip; // detector UDP/IP
         int m_rx_tcpport;
         std::string m_rx_hostname;
-        std::string m_udp_dstip; // receiver UDP/IP
-        int m_udp_dstport; // receiver UDP port
-        std::string m_udp_srcmac; // detector UDP MAC
+        std::string m_udp_dstip;                           // receiver UDP/IP
+        int m_udp_dstport;                                 // receiver UDP port
+        std::string m_udp_srcmac;                          // detector UDP MAC
         std::unordered_map<uint32_t, uint32_t> m_register; // XXX std::vector
 
-    private:
-
+       private:
         int dumpDetectorSetup(std::string const fname);
         int retrieveDetectorSetup(std::string const fname);
 
-        std::string putCommand(int narg, char *args[]);
-        std::string getCommand(int narg, char *args[]);
+        std::string putCommand(int narg, char* args[]);
+        std::string getCommand(int narg, char* args[]);
 
         void configureReceiver();
         void toReceiver(const std::string& command, const std::string& parameters = "");
@@ -235,7 +240,6 @@ namespace sls {
         static void* dataWorker(void* self);
 
         int64_t m_neededFrames;
-
     };
 
 } // namespace sls

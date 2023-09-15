@@ -7,12 +7,12 @@
  */
 
 // Gotthard2 channels
-#define GOTTHARD2_CHANNELS         1280
+#define GOTTHARD2_CHANNELS 1280
 
 // Gotthard2 raw data: unpacking adc/gain bytes
-#define GOTTHARD2_ADC_MASK       0x0FFF
-#define GOTTHARD2_GAIN_MASK      0x3000
-#define GOTTHARD2_GAIN_OFFSET        12
+#define GOTTHARD2_ADC_MASK 0x0FFF
+#define GOTTHARD2_GAIN_MASK 0x3000
+#define GOTTHARD2_GAIN_OFFSET 12
 
 #include "Gotthard2Receiver.hh"
 
@@ -23,35 +23,29 @@ namespace karabo {
     KARABO_REGISTER_FOR_CONFIGURATION(BaseDevice, Device<>, SlsReceiver, Gotthard2Receiver)
 
     void Gotthard2Receiver::expectedParameters(Schema& expected) {
-
         Schema displayData;
 
-        NODE_ELEMENT(displayData).key("data")
-                .displayedName("Data")
-                .commit();
+        NODE_ELEMENT(displayData).key("data").displayedName("Data").commit();
 
-        VECTOR_UINT16_ELEMENT(displayData).key("data.adc")
-                .displayedName("ADC")
-                .description("The ADC counts.")
-                .readOnly()
-                .commit();
+        VECTOR_UINT16_ELEMENT(displayData)
+              .key("data.adc")
+              .displayedName("ADC")
+              .description("The ADC counts.")
+              .readOnly()
+              .commit();
 
-        VECTOR_UINT8_ELEMENT(displayData).key("data.gain")
-                .displayedName("Gain")
-                .description("The ADC gain.")
-                .readOnly()
-                .commit();
-        OUTPUT_CHANNEL(expected).key("display")
-                .displayedName("Display")
-                .dataSchema(displayData)
-                .commit();
+        VECTOR_UINT8_ELEMENT(displayData)
+              .key("data.gain")
+              .displayedName("Gain")
+              .description("The ADC gain.")
+              .readOnly()
+              .commit();
+        OUTPUT_CHANNEL(expected).key("display").displayedName("Display").dataSchema(displayData).commit();
     }
 
-    Gotthard2Receiver::Gotthard2Receiver(const karabo::util::Hash& config) : SlsReceiver(config) {
-    }
+    Gotthard2Receiver::Gotthard2Receiver(const karabo::util::Hash& config) : SlsReceiver(config) {}
 
-    Gotthard2Receiver::~Gotthard2Receiver() {
-    }
+    Gotthard2Receiver::~Gotthard2Receiver() {}
 
     size_t Gotthard2Receiver::getDetectorSize() {
         return GOTTHARD2_CHANNELS;
@@ -72,8 +66,9 @@ namespace karabo {
         const char* ptr = data + offset; // Base address of the <idx> frame
 
         for (size_t i = 0; i < frameSize; ++i) {
-            adc[i] = (reinterpret_cast<const unsigned short*> (ptr))[i] & GOTTHARD2_ADC_MASK;
-            gain[i] = ((reinterpret_cast<const unsigned short*> (ptr))[i] & GOTTHARD2_GAIN_MASK) >> GOTTHARD2_GAIN_OFFSET;
+            adc[i] = (reinterpret_cast<const unsigned short*>(ptr))[i] & GOTTHARD2_ADC_MASK;
+            gain[i] =
+                  ((reinterpret_cast<const unsigned short*>(ptr))[i] & GOTTHARD2_GAIN_MASK) >> GOTTHARD2_GAIN_OFFSET;
         }
     }
 

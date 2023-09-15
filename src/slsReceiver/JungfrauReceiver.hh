@@ -11,8 +11,8 @@
 
 #include <karabo/karabo.hpp>
 
+#include "../common/version.hh" // provides SLSDETECTORS_PACKAGE_VERSION
 #include "SlsReceiver.hh"
-#include "../common/version.hh"  // provides SLSDETECTORS_PACKAGE_VERSION
 
 /**
  * The main Karabo namespace
@@ -20,8 +20,7 @@
 namespace karabo {
 
     class JungfrauReceiver : public karabo::SlsReceiver {
-    public:
-
+       public:
         // Add reflection and version information to this class
         KARABO_CLASSINFO(JungfrauReceiver, "JungfrauReceiver", SLSDETECTORS_PACKAGE_VERSION)
 
@@ -44,22 +43,19 @@ namespace karabo {
          */
         virtual ~JungfrauReceiver();
 
-    private: // State-machine call-backs (override)
-
-    private: // Functions
+       private: // State-machine call-backs (override)
+       private: // Functions
         virtual bool isNewTrain(const karabo::util::Hash& meta) override;
         virtual unsigned char getMemoryCell(const slsDetectorDefs::sls_detector_header& detectorHeader) override;
 
-    private: // Raw data unpacking
-
+       private: // Raw data unpacking
         size_t getDetectorSize() override;
         std::vector<unsigned long long> getDisplayShape() override;
         std::vector<unsigned long long> getDaqShape(unsigned short framesPerTrain) override;
 
         void unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain) override;
 
-    private: // Members
-
+       private: // Members
     };
 
 } /* namespace karabo */

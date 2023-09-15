@@ -5,81 +5,78 @@
  * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
  */
 
-#include <fstream>
-#include <iostream>
+#include "Detector.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
+#include <fstream>
+#include <iostream>
 
 #include "sls_simulation_defs.h"
-#include "Detector.h"
 
 namespace slsDetectorDefs {
-    std::unordered_map<int, std::string> detector_type_string {
-        {static_cast<int>(detectorType::GENERIC), "Undefined"},
-        {static_cast<int>(detectorType::GOTTHARD), "Gotthard"},
-        {static_cast<int>(detectorType::JUNGFRAU), "Jungfrau"}
-    };
+    std::unordered_map<int, std::string> detector_type_string{{static_cast<int>(detectorType::GENERIC), "Undefined"},
+                                                              {static_cast<int>(detectorType::GOTTHARD), "Gotthard"},
+                                                              {static_cast<int>(detectorType::JUNGFRAU), "Jungfrau"}};
 
-    std::unordered_map<int, std::string> detector_settings_string {
-        {static_cast<int>(detectorSettings::STANDARD), "standard"},
-        {static_cast<int>(detectorSettings::FAST), "fast"},
-        {static_cast<int>(detectorSettings::HIGHGAIN), "highgain"},
-        {static_cast<int>(detectorSettings::DYNAMICGAIN), "dynamicgain"},
-        {static_cast<int>(detectorSettings::LOWGAIN), "lowgain"},
-        {static_cast<int>(detectorSettings::MEDIUMGAIN), "mediumgain"},
-        {static_cast<int>(detectorSettings::VERYHIGHGAIN), "veryhighgain"},
-        {static_cast<int>(detectorSettings::DYNAMICHG0), "dynamichg0"},
-        {static_cast<int>(detectorSettings::FIXGAIN1), "fixgain1"},
-        {static_cast<int>(detectorSettings::FIXGAIN2), "fixgain2"},
-        {static_cast<int>(detectorSettings::FORCESWITCHG1), "forceswitchg1"},
-        {static_cast<int>(detectorSettings::FORCESWITCHG2), "forceswitchg2"},
-        {static_cast<int>(detectorSettings::VERYLOWGAIN), "verylowgain"},
-        {static_cast<int>(detectorSettings::G1_HIGHGAIN), "g1_hg"},
-        {static_cast<int>(detectorSettings::G1_LOWGAIN), "g1_lg"},
-        {static_cast<int>(detectorSettings::G2_HIGHCAP_HIGHGAIN), "g2_hc_hg"},
-        {static_cast<int>(detectorSettings::G2_HIGHCAP_LOWGAIN), "g2_hc_lg"},
-        {static_cast<int>(detectorSettings::G2_LOWCAP_HIGHGAIN), "g2_lc_hg"},
-        {static_cast<int>(detectorSettings::G2_LOWCAP_LOWGAIN), "g2_lc_lg"},
-        {static_cast<int>(detectorSettings::G4_HIGHGAIN), "g4_hg"},
-        {static_cast<int>(detectorSettings::G4_LOWGAIN), "g4_lg"},
-        {static_cast<int>(detectorSettings::UNDEFINED), "undefined"},
-        {static_cast<int>(detectorSettings::UNINITIALIZED), "uninitialized"},
+    std::unordered_map<int, std::string> detector_settings_string{
+          {static_cast<int>(detectorSettings::STANDARD), "standard"},
+          {static_cast<int>(detectorSettings::FAST), "fast"},
+          {static_cast<int>(detectorSettings::HIGHGAIN), "highgain"},
+          {static_cast<int>(detectorSettings::DYNAMICGAIN), "dynamicgain"},
+          {static_cast<int>(detectorSettings::LOWGAIN), "lowgain"},
+          {static_cast<int>(detectorSettings::MEDIUMGAIN), "mediumgain"},
+          {static_cast<int>(detectorSettings::VERYHIGHGAIN), "veryhighgain"},
+          {static_cast<int>(detectorSettings::DYNAMICHG0), "dynamichg0"},
+          {static_cast<int>(detectorSettings::FIXGAIN1), "fixgain1"},
+          {static_cast<int>(detectorSettings::FIXGAIN2), "fixgain2"},
+          {static_cast<int>(detectorSettings::FORCESWITCHG1), "forceswitchg1"},
+          {static_cast<int>(detectorSettings::FORCESWITCHG2), "forceswitchg2"},
+          {static_cast<int>(detectorSettings::VERYLOWGAIN), "verylowgain"},
+          {static_cast<int>(detectorSettings::G1_HIGHGAIN), "g1_hg"},
+          {static_cast<int>(detectorSettings::G1_LOWGAIN), "g1_lg"},
+          {static_cast<int>(detectorSettings::G2_HIGHCAP_HIGHGAIN), "g2_hc_hg"},
+          {static_cast<int>(detectorSettings::G2_HIGHCAP_LOWGAIN), "g2_hc_lg"},
+          {static_cast<int>(detectorSettings::G2_LOWCAP_HIGHGAIN), "g2_lc_hg"},
+          {static_cast<int>(detectorSettings::G2_LOWCAP_LOWGAIN), "g2_lc_lg"},
+          {static_cast<int>(detectorSettings::G4_HIGHGAIN), "g4_hg"},
+          {static_cast<int>(detectorSettings::G4_LOWGAIN), "g4_lg"},
+          {static_cast<int>(detectorSettings::UNDEFINED), "undefined"},
+          {static_cast<int>(detectorSettings::UNINITIALIZED), "uninitialized"},
     };
 
     std::unordered_map<std::string, int> detector_settings_from_string;
 
-    std::unordered_map<int, std::string> timing_mode_string {
-        {static_cast<int>(timingMode::AUTO_TIMING), "auto"},
-        {static_cast<int>(timingMode::TRIGGER_EXPOSURE), "trigger"},
-        {static_cast<int>(timingMode::GATED), "gating"},
-        {static_cast<int>(timingMode::BURST_TRIGGER), "burst_trigger"},
-        {static_cast<int>(timingMode::TRIGGER_GATED), "trigger_gating"},
-        {static_cast<int>(timingMode::NUM_TIMING_MODES), ""},
+    std::unordered_map<int, std::string> timing_mode_string{
+          {static_cast<int>(timingMode::AUTO_TIMING), "auto"},
+          {static_cast<int>(timingMode::TRIGGER_EXPOSURE), "trigger"},
+          {static_cast<int>(timingMode::GATED), "gating"},
+          {static_cast<int>(timingMode::BURST_TRIGGER), "burst_trigger"},
+          {static_cast<int>(timingMode::TRIGGER_GATED), "trigger_gating"},
+          {static_cast<int>(timingMode::NUM_TIMING_MODES), ""},
     };
 
     std::unordered_map<std::string, int> timing_mode_from_string;
 
-    std::unordered_map<int, std::string> run_status_string {
-        {static_cast<int>(runStatus::IDLE), "idle"},
-        {static_cast<int>(runStatus::ERROR), "error"},
-        {static_cast<int>(runStatus::WAITING), "waiting"},
-        {static_cast<int>(runStatus::RUN_FINISHED), "finished"},
-        {static_cast<int>(runStatus::TRANSMITTING), "transmitting"},
-        {static_cast<int>(runStatus::RUNNING), "running"},
-        {static_cast<int>(runStatus::STOPPED), "stopped"},
+    std::unordered_map<int, std::string> run_status_string{
+          {static_cast<int>(runStatus::IDLE), "idle"},
+          {static_cast<int>(runStatus::ERROR), "error"},
+          {static_cast<int>(runStatus::WAITING), "waiting"},
+          {static_cast<int>(runStatus::RUN_FINISHED), "finished"},
+          {static_cast<int>(runStatus::TRANSMITTING), "transmitting"},
+          {static_cast<int>(runStatus::RUNNING), "running"},
+          {static_cast<int>(runStatus::STOPPED), "stopped"},
     };
 
-}
+} // namespace slsDetectorDefs
 
 namespace sls {
 
     using namespace slsDetectorDefs;
 
     Detector::Detector(int shm_id) {
-
         m_shm_id = shm_id;
 
         this->freeSharedMemory();
@@ -94,7 +91,7 @@ namespace sls {
 
         m_keepRunning = true;
         m_neededFrames = 0;
-        const int ret = pthread_create(&m_dataThread, NULL, dataWorker, (void*) this);
+        const int ret = pthread_create(&m_dataThread, NULL, dataWorker, (void*)this);
         if (ret != 0) {
             throw std::runtime_error("pthread_create returned error code " + std::to_string(ret));
         }
@@ -116,7 +113,7 @@ namespace sls {
         m_fileName = {};
         m_fileIndex = {};
         m_enableWriteToFile = false;
-        m_exposureTime = ns(10000); // 10 us
+        m_exposureTime = ns(10000);     // 10 us
         m_exposurePeriod = ns(1000000); // 1 ms
         m_delayAfterTrigger = ns(0);
         m_numberOfFrames = 1;
@@ -138,12 +135,12 @@ namespace sls {
         m_udp_dstport = 50001;
     }
 
-    void Detector::loadConfig(const std::string &fname) {
+    void Detector::loadConfig(const std::string& fname) {
         this->freeSharedMemory();
         this->loadParameters(fname);
     }
 
-    void Detector::loadParameters(const std::string &fname) {
+    void Detector::loadParameters(const std::string& fname) {
         char line[MAX_LEN];
         std::ifstream cfile;
 
@@ -164,7 +161,7 @@ namespace sls {
         }
     }
 
-    void Detector::loadParameters(const std::vector<std::string> &parameters) {
+    void Detector::loadParameters(const std::vector<std::string>& parameters) {
         for (const std::string& command : parameters) {
             std::vector<std::string> v;
             boost::algorithm::split(v, command, boost::algorithm::is_space());
@@ -193,7 +190,7 @@ namespace sls {
         }
     }
 
-    void Detector::setHostname(const std::vector<std::string> &hostname) {
+    void Detector::setHostname(const std::vector<std::string>& hostname) {
         this->freeSharedMemory();
         const size_t size = hostname.size();
         m_hostname = hostname;
@@ -418,7 +415,7 @@ namespace sls {
     }
 
     void Detector::setPowerChip(bool on, Positions pos) {
-       if (pos.size() == 0) {
+        if (pos.size() == 0) {
             m_powerchip.assign(this->size(), on);
         } else {
             for (const int p : pos) {
@@ -449,16 +446,14 @@ namespace sls {
 
         while (m_keepRunning) {
             // startMeasurement must block, till acquisition is done
-            if (m_status != slsDetectorDefs::runStatus::RUNNING)
-                break;
-            else
-                boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            if (m_status != slsDetectorDefs::runStatus::RUNNING) break;
+            else boost::this_thread::sleep(boost::posix_time::milliseconds(100));
         }
     }
 
     void Detector::stopDetector(Positions pos) {
         m_status = slsDetectorDefs::runStatus::IDLE;
-        for (int i = 0; i < this->size() ; ++i) {
+        for (int i = 0; i < this->size(); ++i) {
             m_fileIndex[i] += 1; // increase file index
         }
         this->toReceiver("stop");
@@ -488,7 +483,7 @@ namespace sls {
         }
     }
 
-    void Detector::setFilePath(const std::string &fpath, Positions pos) {
+    void Detector::setFilePath(const std::string& fpath, Positions pos) {
         if (pos.size() == 0) {
             m_filePath.assign(this->size(), fpath);
         } else {
@@ -518,7 +513,7 @@ namespace sls {
         }
     }
 
-    void Detector::setFileNamePrefix(const std::string &fname, Positions pos) {
+    void Detector::setFileNamePrefix(const std::string& fname, Positions pos) {
         if (pos.size() == 0) {
             m_fileName.assign(this->size(), fname);
         } else {
@@ -586,8 +581,7 @@ namespace sls {
         return std::vector<int>(pos.size(), 0);
     }
 
-    void Detector::resetTemperatureEvent(Positions pos) {
-    }
+    void Detector::resetTemperatureEvent(Positions pos) {}
 
     Result<uint32_t> Detector::readRegister(uint32_t addr, Positions pos) const {
         if (m_register.find(addr) == m_register.end()) {
@@ -610,7 +604,7 @@ namespace sls {
         cfile.open(fname, std::ofstream::out | std::ofstream::trunc);
         if (cfile.is_open()) {
             cfile << "hostname ";
-            for (int i = 0; i < m_hostname.size(); ++ i) {
+            for (int i = 0; i < m_hostname.size(); ++i) {
                 cfile << m_hostname[i] << "+";
             }
             cfile << std::endl;
@@ -619,16 +613,15 @@ namespace sls {
             cfile << "stopport " << m_stopport << std::endl;
             cfile << "rx_tcpport " << m_rx_tcpport << std::endl;
             cfile << "settingspath " << m_settingspath << std::endl; // used to be "settingsdir"
-            for (int i = 0; i < 4; ++i)
-                cfile << "extsig " << i << " " << m_extsig[i] << std::endl;
-            cfile << "udp_srcip " << m_udp_srcip << std::endl; // used to be "detectorip"
+            for (int i = 0; i < 4; ++i) cfile << "extsig " << i << " " << m_extsig[i] << std::endl;
+            cfile << "udp_srcip " << m_udp_srcip << std::endl;   // used to be "detectorip"
             cfile << "udp_srcmac " << m_udp_srcmac << std::endl; // used to be "detectormac"
             cfile << "udp_dstport " << m_udp_dstport << std::endl;
             cfile << "udp_dstip " << m_udp_dstip << std::endl; // used to be "rx_udpip"
             cfile << "rx_hostname " << m_rx_hostname << std::endl;
             cfile << "badchannels " << m_badchannels << std::endl;
 
-            for (int i = 0; i < m_hostname.size(); ++ i) {
+            for (int i = 0; i < m_hostname.size(); ++i) {
                 cfile << i << ":settings " << detector_settings_string[m_settings[i]] << std::endl;
                 cfile << i << ":highvoltage " << m_highvoltage[i] << std::endl;
                 cfile << i << ":fpath " << m_filePath[i] << std::endl;
@@ -655,8 +648,7 @@ namespace sls {
                 boost::algorithm::split(v, line, boost::algorithm::is_space());
                 const int argc = v.size();
                 char* argv[argc];
-                for (int i = 0; i < argc; ++i)
-                    argv[i] = (char*) v.at(i).c_str();
+                for (int i = 0; i < argc; ++i) argv[i] = (char*)v.at(i).c_str();
                 this->putCommand(argc, argv);
             }
             cfile.close();
@@ -670,9 +662,9 @@ namespace sls {
         return type;
     }
 
-    std::string Detector::putCommand(int narg, char *args[]) {
-    // A definition of commands can be found in:
-    // https://slsdetectorgroup.github.io/devdoc/commandline.html#commands
+    std::string Detector::putCommand(int narg, char* args[]) {
+        // A definition of commands can be found in:
+        // https://slsdetectorgroup.github.io/devdoc/commandline.html#commands
         if (narg == 0) {
             return std::string(); // empty command
         }
@@ -710,7 +702,8 @@ namespace sls {
         } else if (parameter == "parameters") {
             this->retrieveDetectorSetup(value);
         } else if (parameter == "settings") {
-            const slsDetectorDefs::detectorSettings settings = static_cast<slsDetectorDefs::detectorSettings>(detector_settings_from_string[value]);
+            const slsDetectorDefs::detectorSettings settings =
+                  static_cast<slsDetectorDefs::detectorSettings>(detector_settings_from_string[value]);
             if (pos > 0) {
                 m_settings[pos] = settings;
             } else {
@@ -758,10 +751,8 @@ namespace sls {
         } else if (parameter == "triggers") {
             this->setNumberOfTriggers(std::stoll(value));
         } else if (parameter == "status") {
-            if (value == "start")
-                this->startMeasurementNoWait();
-            else if (value == "stop")
-                this->stopDetector();
+            if (value == "start") this->startMeasurementNoWait();
+            else if (value == "stop") this->stopDetector();
         } else if (parameter == "type") {
             // Ignored
         } else if (parameter == "hostname") {
@@ -812,7 +803,7 @@ namespace sls {
         return reply;
     }
 
-    std::string Detector::getCommand(int narg, char *args[]) {
+    std::string Detector::getCommand(int narg, char* args[]) {
         for (int i = 0; i < narg; ++i) {
             std::string cmdline = args[i];
             std::string parameter, value;
@@ -959,11 +950,11 @@ namespace sls {
     void Detector::configureReceiver() {
         // This is the minimal configuration of the receiver
         this->toReceiver("detectortype", std::to_string(m_detectorType));
-        this->toReceiver("exptime", std::to_string(1.e-9 * m_exposureTime.count())); // s
+        this->toReceiver("exptime", std::to_string(1.e-9 * m_exposureTime.count()));    // s
         this->toReceiver("delay", std::to_string(1.e-9 * m_delayAfterTrigger.count())); // s
-        this->toReceiver("period", std::to_string(1.e-9 * m_exposurePeriod.count())); // s
-        this->toReceiver("fpath", m_filePath[0]); // XXX support for multiple receivers
-        this->toReceiver("fname", m_fileName[0]); // XXX
+        this->toReceiver("period", std::to_string(1.e-9 * m_exposurePeriod.count()));   // s
+        this->toReceiver("fpath", m_filePath[0]);                   // XXX support for multiple receivers
+        this->toReceiver("fname", m_fileName[0]);                   // XXX
         this->toReceiver("findex", std::to_string(m_fileIndex[0])); // XXX
         this->toReceiver("fwrite", std::to_string(m_enableWriteToFile));
         if (m_settings.size() > 0) {
@@ -989,10 +980,8 @@ namespace sls {
         // Establish a connection to the server.
         stream.connect(m_rx_hostname, std::to_string(m_rx_tcpport));
 
-        if (parameters == "")
-            line = command;
-        else
-            line = command + " " + parameters;
+        if (parameters == "") line = command;
+        else line = command + " " + parameters;
         line += ";";
 
         // Send the command
@@ -1016,7 +1005,7 @@ namespace sls {
     }
 
     void* Detector::dataWorker(void* self) {
-        Detector* detector = static_cast<Detector*> (self);
+        Detector* detector = static_cast<Detector*>(self);
 
         while (detector->m_keepRunning) {
             long delay_us = detector->m_delayAfterTrigger.count() / 1000;
@@ -1024,7 +1013,7 @@ namespace sls {
             long period_us = detector->m_exposurePeriod.count() / 1000;
 
             if (detector->m_status == slsDetectorDefs::runStatus::RUNNING && detector->m_neededFrames <= 0) {
-                //std::cout << "Stopping measurement" << std::endl;
+                // std::cout << "Stopping measurement" << std::endl;
                 detector->stopDetector();
                 continue;
             } else if (detector->m_status == slsDetectorDefs::runStatus::RUNNING) {

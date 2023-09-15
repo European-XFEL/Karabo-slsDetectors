@@ -10,17 +10,16 @@
 #define KARABO_SLSRECEIVER_HH
 
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
-
 #include <karabo/karabo.hpp>
 
 #ifndef SLS_SIMULATION
-#include <sls/sls_detector_defs.h>
 #include <sls/Receiver.h>
+#include <sls/sls_detector_defs.h>
 #else
 #include "../slsDetectorsSimulation/Receiver.h"
 #endif
 
-#include "../common/version.hh"  // provides SLSDETECTORS_PACKAGE_VERSION
+#include "../common/version.hh" // provides SLSDETECTORS_PACKAGE_VERSION
 
 /**
  * The main Karabo namespace
@@ -29,7 +28,7 @@ namespace karabo {
 
     // Detector data (accumulated per train)
     struct DetectorData {
-        DetectorData() : mutex(1), accumulatedFrames(0), size(0), adc(0), gain(0) {};
+        DetectorData() : mutex(1), accumulatedFrames(0), size(0), adc(0), gain(0){};
 
         ~DetectorData() {
             this->free();
@@ -50,10 +49,10 @@ namespace karabo {
 
         void free() {
             if (adc != NULL) {
-                delete [] adc;
+                delete[] adc;
             }
             if (gain != NULL) {
-                delete [] gain;
+                delete[] gain;
             }
             size = 0;
         }
@@ -62,8 +61,8 @@ namespace karabo {
             this->free();
 
             size = detectorSize * framesPerTrain;
-            adc = new unsigned short [size];
-            gain = new unsigned char [size];
+            adc = new unsigned short[size];
+            gain = new unsigned char[size];
 
             memoryCell.resize(framesPerTrain);
             frameNumber.resize(framesPerTrain);
@@ -87,8 +86,7 @@ namespace karabo {
     };
 
     class SlsReceiver : public karabo::core::Device<> {
-    public:
-
+       public:
         // Add reflection and version information to this class
         KARABO_CLASSINFO(SlsReceiver, "SlsReceiver", SLSDETECTORS_PACKAGE_VERSION)
 
@@ -113,19 +111,19 @@ namespace karabo {
          */
         virtual ~SlsReceiver();
 
-    private: // State-machine call-backs (override)
-
+       private: // State-machine call-backs (override)
         void reset();
 
         void initialize();
 
-    private: // Functions
-
-        static int startAcquisitionCallBack(const std::string& filePath, const std::string& fileName, uint64_t fileIndex, size_t bufferSize, void* context);
+       private: // Functions
+        static int startAcquisitionCallBack(const std::string& filePath, const std::string& fileName,
+                                            uint64_t fileIndex, size_t bufferSize, void* context);
 
         static void acquisitionFinishedCallBack(uint64_t totalFramesCaught, void* context);
 
-        static void rawDataReadyCallBack(slsDetectorDefs::sls_receiver_header& header, char* dataPointer, size_t dataSize, void* context);
+        static void rawDataReadyCallBack(slsDetectorDefs::sls_receiver_header& header, char* dataPointer,
+                                         size_t dataSize, void* context);
 
         /**
          * The base implementation returns true if meta("trainId") is incremented w.r.t. meta("lastTrainId").
@@ -151,14 +149,14 @@ namespace karabo {
         // Write to OUTPUT channels
         void writeToOutputs(unsigned char idx, const karabo::util::Timestamp& actualTimestamp);
 
-    private: // Raw data unpacking
+       private: // Raw data unpacking
         virtual size_t getDetectorSize() = 0;
         virtual std::vector<unsigned long long> getDisplayShape() = 0;
         virtual std::vector<unsigned long long> getDaqShape(unsigned short framesPerTrain) = 0;
 
         virtual void unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain) = 0;
 
-    private: // Members
+       private: // Members
         // SLS receiver class
         std::shared_ptr<sls::Receiver> m_receiver;
 
@@ -179,7 +177,6 @@ namespace karabo {
 
         const unsigned short m_maxWarnPerAcq;
         unsigned short m_warnCounter;
-
     };
 
 } /* namespace karabo */
