@@ -24,8 +24,8 @@ namespace sls {
 
 
     class session {
-    // Mainly from boost's async_tcp_echo_server.cpp example
-    public:
+        // Mainly from boost's async_tcp_echo_server.cpp example
+       public:
         session(boost::asio::io_service& io_service, Receiver* receiver);
 
         boost::asio::ip::tcp::socket& socket() {
@@ -36,7 +36,7 @@ namespace sls {
 
         void handle_read(const boost::system::error_code& ec);
 
-    private:
+       private:
         boost::asio::ip::tcp::socket m_socket;
         boost::asio::streambuf m_streambuf;
         Receiver* m_receiver;
@@ -44,13 +44,13 @@ namespace sls {
 
 
     class server {
-    // Mainly from boost's async_tcp_echo_server.cpp example
-    public:
+        // Mainly from boost's async_tcp_echo_server.cpp example
+       public:
         server(boost::asio::io_service& io_service, short port, Receiver* receiver);
 
         void handle_accept(session* new_session, const boost::system::error_code& ec);
 
-    private:
+       private:
         boost::asio::io_service& m_io_service;
         boost::asio::ip::tcp::acceptor m_acceptor;
         Receiver* m_receiver;
@@ -58,31 +58,35 @@ namespace sls {
 
 
     class Receiver {
-    public:
-        Receiver(int argc, char *argv[]);
+       public:
+        Receiver(int argc, char* argv[]);
         Receiver(int tcpip_port_no = 1954);
 
         ~Receiver();
 
         int64_t getReceiverVersion();
 
-        void registerCallBackStartAcquisition(int (*func)(const std::string& filepath, const std::string& filename, uint64_t fileindex, size_t datasize, void*), void *arg);
+        void registerCallBackStartAcquisition(int (*func)(const std::string& filepath, const std::string& filename,
+                                                          uint64_t fileindex, size_t datasize, void*),
+                                              void* arg);
 
-        void registerCallBackAcquisitionFinished(void (*func)(uint64_t nf, void*), void *arg);
+        void registerCallBackAcquisitionFinished(void (*func)(uint64_t nf, void*), void* arg);
 
-        void registerCallBackRawDataReady(void (*func)(slsDetectorDefs::sls_receiver_header& header, char* datapointer, size_t datasize, void*), void *arg);
+        void registerCallBackRawDataReady(void (*func)(slsDetectorDefs::sls_receiver_header& header, char* datapointer,
+                                                       size_t datasize, void*),
+                                          void* arg);
 
         void processCommand(const std::string& command);
 
-    private:
+       private:
         int (*m_startAcquisitionCallBack)(const std::string&, const std::string&, uint64_t, size_t, void*);
-        void *m_pStartAcquisition;
+        void* m_pStartAcquisition;
         void (*m_acquisitionFinishedCallBack)(uint64_t, void*);
-        void *m_pAcquisitionFinished;
+        void* m_pAcquisitionFinished;
         void (*m_rawDataReadyCallBack)(slsDetectorDefs::sls_receiver_header&, char*, size_t, void*);
-        void *m_pRawDataReady;
+        void* m_pRawDataReady;
 
-    private: // Simulation properties
+       private: // Simulation properties
         bool m_acquisitionStarted;
 
         long m_delay_us;
@@ -106,7 +110,7 @@ namespace sls {
         int m_fileWriteOption;
         FILE* m_filePointer;
 
-    private:
+       private:
         boost::asio::io_service m_io_service;
         server* m_server;
         pthread_t m_dataThread, m_ioServThread;
@@ -114,7 +118,6 @@ namespace sls {
         static void* ioServWorker(void* self);
         std::string generateFileName();
         void setGain(int gain);
-
     };
 
 } // namespace sls

@@ -110,24 +110,12 @@ namespace slsDetectorDefs {
     /**
       use of the external signals
     */
-    enum externalSignalFlag {
-        TRIGGER_IN_RISING_EDGE,
-        TRIGGER_IN_FALLING_EDGE,
-        INVERSION_ON,
-        INVERSION_OFF
-    };
+    enum externalSignalFlag { TRIGGER_IN_RISING_EDGE, TRIGGER_IN_FALLING_EDGE, INVERSION_ON, INVERSION_OFF };
 
     /**
       communication mode using external signals
     */
-    enum timingMode {
-        AUTO_TIMING,
-        TRIGGER_EXPOSURE,
-        GATED,
-        BURST_TRIGGER,
-        TRIGGER_GATED,
-        NUM_TIMING_MODES
-    };
+    enum timingMode { AUTO_TIMING, TRIGGER_EXPOSURE, GATED, BURST_TRIGGER, TRIGGER_GATED, NUM_TIMING_MODES };
 
     /**
        detector dacs indexes
@@ -145,25 +133,17 @@ namespace slsDetectorDefs {
     };
 
     /** staus mask */
-    enum runStatus {
-        IDLE,
-        ERROR,
-        WAITING,
-        RUN_FINISHED,
-        TRANSMITTING,
-        RUNNING,
-        STOPPED
-    };
+    enum runStatus { IDLE, ERROR, WAITING, RUN_FINISHED, TRANSMITTING, RUNNING, STOPPED };
 
-}
+} // namespace slsDetectorDefs
 
 
 namespace sls {
-    template<class T>
+    template <class T>
     using Result = std::vector<T>;
 
-    using Positions = const std::vector<int> &;
+    using Positions = const std::vector<int>&;
 
-}
+} // namespace sls
 
 #endif

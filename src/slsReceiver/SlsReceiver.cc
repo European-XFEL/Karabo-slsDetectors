@@ -16,119 +16,123 @@ USING_KARABO_NAMESPACES
 namespace karabo {
 
     void SlsReceiver::expectedParameters(Schema& expected) {
+        OVERWRITE_ELEMENT(expected)
+              .key("state")
+              .setNewOptions(State::UNKNOWN, State::PASSIVE, State::ACTIVE, State::ERROR)
+              .commit();
 
-        OVERWRITE_ELEMENT(expected).key("state")
-                .setNewOptions(State::UNKNOWN, State::PASSIVE, State::ACTIVE, State::ERROR)
-                .commit();
+        SLOT_ELEMENT(expected).key("reset").displayedName("Reset").allowedStates(State::ERROR).commit();
 
-        SLOT_ELEMENT(expected).key("reset")
-                .displayedName("Reset")
-                .allowedStates(State::ERROR)
-                .commit();
+        UINT16_ELEMENT(expected)
+              .key("rxTcpPort")
+              .tags("sls")
+              .alias("--rx_tcpport")
+              .displayedName("rxTcpPort")
+              .description("Receiver TCP Port")
+              .assignmentOptional()
+              .defaultValue(1954)
+              .init()
+              .commit();
 
-        UINT16_ELEMENT(expected).key("rxTcpPort")
-                .tags("sls")
-                .alias("--rx_tcpport")
-                .displayedName("rxTcpPort")
-                .description("Receiver TCP Port")
-                .assignmentOptional().defaultValue(1954)
-                .init()
-                .commit();
+        UINT16_ELEMENT(expected)
+              .key("framesPerTrain")
+              .displayedName("Frames per Train")
+              .description(
+                    "How many frames will be sent to DAQ for each train."
+                    "If more are received from detector, they will be discarded.")
+              .assignmentOptional()
+              .defaultValue(1)
+              .minInc(1)
+              .reconfigurable()
+              .allowedStates(State::PASSIVE)
+              .commit();
 
-        UINT16_ELEMENT(expected).key("framesPerTrain")
-                .displayedName("Frames per Train")
-                .description("How many frames will be sent to DAQ for each train."
-                "If more are received from detector, they will be discarded.")
-                .assignmentOptional().defaultValue(1)
-                .minInc(1)
-                .reconfigurable()
-                .allowedStates(State::PASSIVE)
-                .commit();
+        FLOAT_ELEMENT(expected)
+              .key("frameRateIn")
+              .displayedName("Frame Rate In")
+              .description("Frame rate - incoming data from detector.")
+              .unit(Unit::HERTZ)
+              .readOnly()
+              .commit();
 
-        FLOAT_ELEMENT(expected).key("frameRateIn")
-                .displayedName("Frame Rate In")
-                .description("Frame rate - incoming data from detector.")
-                .unit(Unit::HERTZ)
-                .readOnly()
-                .commit();
-
-        FLOAT_ELEMENT(expected).key("frameRateOut")
-                .displayedName("Frame Rate Out")
-                .description("Frame rate - decoded data to output channels.")
-                .unit(Unit::HERTZ)
-                .readOnly()
-                .commit();
+        FLOAT_ELEMENT(expected)
+              .key("frameRateOut")
+              .displayedName("Frame Rate Out")
+              .description("Frame rate - decoded data to output channels.")
+              .unit(Unit::HERTZ)
+              .readOnly()
+              .commit();
 
         Schema outputData;
 
-        NODE_ELEMENT(outputData).key("data")
-                .displayedName("Data")
-                .setDaqDataType(DaqDataType::TRAIN)
-                .commit();
+        NODE_ELEMENT(outputData).key("data").displayedName("Data").setDaqDataType(DaqDataType::TRAIN).commit();
 
-        NDARRAY_ELEMENT(outputData).key("data.adc")
-                .displayedName("ADC")
-                .description("The ADC counts.")
-                .dtype(karabo::util::Types::UINT16)
-                .readOnly()
-                .commit();
+        NDARRAY_ELEMENT(outputData)
+              .key("data.adc")
+              .displayedName("ADC")
+              .description("The ADC counts.")
+              .dtype(karabo::util::Types::UINT16)
+              .readOnly()
+              .commit();
 
-        NDARRAY_ELEMENT(outputData).key("data.gain")
-                .displayedName("Gain")
-                .description("The ADC gains.")
-                .dtype(karabo::util::Types::UINT8)
-                .readOnly()
-                .commit();
+        NDARRAY_ELEMENT(outputData)
+              .key("data.gain")
+              .displayedName("Gain")
+              .description("The ADC gains.")
+              .dtype(karabo::util::Types::UINT8)
+              .readOnly()
+              .commit();
 
-        VECTOR_UINT8_ELEMENT(outputData).key("data.memoryCell")
-                .displayedName("Memory Cell")
-                .description("The number of the memory cell used to store the image (only for Jungfrau).")
-                .readOnly()
-                .commit();
+        VECTOR_UINT8_ELEMENT(outputData)
+              .key("data.memoryCell")
+              .displayedName("Memory Cell")
+              .description("The number of the memory cell used to store the image (only for Jungfrau).")
+              .readOnly()
+              .commit();
 
-        VECTOR_UINT64_ELEMENT(outputData).key("data.frameNumber")
-                .displayedName("Frame Number")
-                .description("The frame number.")
-                .readOnly()
-                .commit();
+        VECTOR_UINT64_ELEMENT(outputData)
+              .key("data.frameNumber")
+              .displayedName("Frame Number")
+              .description("The frame number.")
+              .readOnly()
+              .commit();
 
-        VECTOR_UINT64_ELEMENT(outputData).key("data.bunchId")
-                .displayedName("Bunch ID")
-                .description("The bunch ID from the beamline, if available.")
-                .readOnly()
-                .commit();
+        VECTOR_UINT64_ELEMENT(outputData)
+              .key("data.bunchId")
+              .displayedName("Bunch ID")
+              .description("The bunch ID from the beamline, if available.")
+              .readOnly()
+              .commit();
 
-        VECTOR_DOUBLE_ELEMENT(outputData).key("data.timestamp")
-                .displayedName("Timestamp")
-                .description("The data timestamp.")
-                .readOnly()
-                .commit();
+        VECTOR_DOUBLE_ELEMENT(outputData)
+              .key("data.timestamp")
+              .displayedName("Timestamp")
+              .description("The data timestamp.")
+              .readOnly()
+              .commit();
 
-        OUTPUT_CHANNEL(expected).key("output")
-                .displayedName("PP Output")
-                .dataSchema(outputData)
-                .commit();
+        OUTPUT_CHANNEL(expected).key("output").displayedName("PP Output").dataSchema(outputData).commit();
 
         // Second output channel for the DAQ
-        OUTPUT_CHANNEL(expected).key("daqOutput")
-                .displayedName("DAQ Output")
-                .dataSchema(outputData)
-                .commit();
+        OUTPUT_CHANNEL(expected).key("daqOutput").displayedName("DAQ Output").dataSchema(outputData).commit();
 
-        BOOL_ELEMENT(expected).key("onlineDisplayEnable")
-                .displayedName("Online Display Enable")
-                .description("Enable online display of detector data.")
-                .assignmentOptional().defaultValue(false)
-                .reconfigurable()
-                .commit();
+        BOOL_ELEMENT(expected)
+              .key("onlineDisplayEnable")
+              .displayedName("Online Display Enable")
+              .description("Enable online display of detector data.")
+              .assignmentOptional()
+              .defaultValue(false)
+              .reconfigurable()
+              .commit();
 
-        UINT16_ELEMENT(expected).key("frameToDisplay")
-                .displayedName("Frame To Display")
-                .description("The index of the frame to be displayed in the train, starting from 0.")
-                .assignmentOptional().defaultValue(0)
-                .reconfigurable()
-                .commit();
-
+        UINT16_ELEMENT(expected)
+              .key("frameToDisplay")
+              .displayedName("Frame To Display")
+              .description("The index of the frame to be displayed in the train, starting from 0.")
+              .assignmentOptional()
+              .defaultValue(0)
+              .reconfigurable()
+              .commit();
     }
 
     void SlsReceiver::preReconfigure(Hash& incomingReconfiguration) {
@@ -138,16 +142,21 @@ namespace karabo {
         }
     }
 
-    SlsReceiver::SlsReceiver(const karabo::util::Hash& config) : Device<>(config), m_receiver(nullptr),
-            m_lastFrameNum(0), m_lastRateTime(0.), m_detectorDataIdx(0),
-            m_strand(boost::make_shared<karabo::net::Strand>(karabo::net::EventLoop::getIOService())),
-            m_frameCount(0), m_maxWarnPerAcq(10), m_warnCounter(0) {
+    SlsReceiver::SlsReceiver(const karabo::util::Hash& config)
+        : Device<>(config),
+          m_receiver(nullptr),
+          m_lastFrameNum(0),
+          m_lastRateTime(0.),
+          m_detectorDataIdx(0),
+          m_strand(boost::make_shared<karabo::net::Strand>(karabo::net::EventLoop::getIOService())),
+          m_frameCount(0),
+          m_maxWarnPerAcq(10),
+          m_warnCounter(0) {
         KARABO_INITIAL_FUNCTION(initialize);
         KARABO_SLOT(reset);
     }
 
-    SlsReceiver::~SlsReceiver() {
-    }
+    SlsReceiver::~SlsReceiver() {}
 
     void SlsReceiver::reset() {
         if (m_receiver == nullptr) {
@@ -168,11 +177,12 @@ namespace karabo {
             try {
                 const std::string key = it->getKey();
                 const std::string value = config.getAs<std::string>(key);
-                const std::string alias = getAliasFromKey<std::string >(key);
+                const std::string alias = getAliasFromKey<std::string>(key);
                 if (alias == "--rx_tcpport") rxTcpPort = value;
                 __argv__.push_back(alias);
                 __argv__.push_back(value);
-                KARABO_LOG_FRAMEWORK_DEBUG << "Parameter for receiver: key=" << key << " alias=" << alias << " value=" << value;
+                KARABO_LOG_FRAMEWORK_DEBUG << "Parameter for receiver: key=" << key << " alias=" << alias
+                                           << " value=" << value;
             } catch (const karabo::util::Exception& e) {
                 status << "Error in initialize: " << e.what();
                 this->set("status", status.str());
@@ -182,9 +192,8 @@ namespace karabo {
 
         // Create list of arguments for slsReceiverUsers object
         const int argc = __argv__.size();
-        char *argv[argc];
-        for (int i = 0; i < argc; ++i)
-            argv[i] = (char*) __argv__.at(i).c_str();
+        char* argv[argc];
+        for (int i = 0; i < argc; ++i) argv[i] = (char*)__argv__.at(i).c_str();
 
         try {
             std::shared_ptr<sls::Receiver> receiver(new sls::Receiver(argc, argv));
@@ -216,9 +225,9 @@ namespace karabo {
         }
     }
 
-    int SlsReceiver::startAcquisitionCallBack(const std::string& filePath, const std::string& fileName, uint64_t fileIndex, size_t bufferSize, void* context) {
-
-        Self* self = static_cast<Self*> (context);
+    int SlsReceiver::startAcquisitionCallBack(const std::string& filePath, const std::string& fileName,
+                                              uint64_t fileIndex, size_t bufferSize, void* context) {
+        Self* self = static_cast<Self*>(context);
 
         try {
             self->m_frameCount = 0;
@@ -252,7 +261,6 @@ namespace karabo {
     }
 
     void SlsReceiver::acquisitionFinishedCallBack(uint64_t totalFramesCaught, void* context) {
-
         Self* self = static_cast<Self*>(context);
 
         try {
@@ -283,7 +291,8 @@ namespace karabo {
         self->updateState(State::PASSIVE);
     }
 
-    void SlsReceiver::rawDataReadyCallBack(slsDetectorDefs::sls_receiver_header& header, char* dataPointer, size_t dataSize, void* context) {
+    void SlsReceiver::rawDataReadyCallBack(slsDetectorDefs::sls_receiver_header& header, char* dataPointer,
+                                           size_t dataSize, void* context) {
         Self* self = static_cast<Self*>(context);
         const slsDetectorDefs::sls_detector_header& detectorHeader = header.detHeader;
 
@@ -314,16 +323,19 @@ namespace karabo {
             const unsigned char memoryCell = self->getMemoryCell(detectorHeader);
             meta.set("memoryCell", memoryCell);
 
-            if ((self->isNewTrain(meta) && detectorData->accumulatedFrames > 0) || (trainId == 0 && detectorData->accumulatedFrames >= framesPerTrain)) {
+            if ((self->isNewTrain(meta) && detectorData->accumulatedFrames > 0) ||
+                (trainId == 0 && detectorData->accumulatedFrames >= framesPerTrain)) {
                 // A call to 'writeToOutputs' will be posted if:
                 // 1) 'isNewTrain' returns true AND at least one frame has been accumulated;
                 // OR
                 // 2) 'trainId' is 0 AND 'framesPerTrain' frames are accumulated.
-                // If the SlsReceiver receives trainIds from a TimeServer, condition 1) will be satisfied as soon as a new train starts,
-                // in case there is no connection to TimeServer 2) will be satisfied when 'detectorData' is full.
+                // If the SlsReceiver receives trainIds from a TimeServer, condition 1) will be satisfied as soon as a
+                // new train starts, in case there is no connection to TimeServer 2) will be satisfied when
+                // 'detectorData' is full.
 
                 detectorData->mutex.wait(); // "lock", then process detectorData in the event loop
-                self->m_strand->post(karabo::util::bind_weak(&SlsReceiver::writeToOutputs, self, self->m_detectorDataIdx, actualTimestamp));
+                self->m_strand->post(karabo::util::bind_weak(&SlsReceiver::writeToOutputs, self,
+                                                             self->m_detectorDataIdx, actualTimestamp));
 
                 // Use next DetectorData object for receiving data
                 self->m_detectorDataIdx = (self->m_detectorDataIdx + 1) % 2;
@@ -337,7 +349,7 @@ namespace karabo {
                 return;
             } else if (dataSize % frameSize != 0) {
                 self->logWarning("rawDataReadyCallBack: data size (" + util::toString(dataSize) +
-                        ") is not multiple of frameSize size (" + util::toString(frameSize) + ")! Skip data.");
+                                 ") is not multiple of frameSize size (" + util::toString(frameSize) + ")! Skip data.");
                 return;
             }
 
@@ -376,13 +388,16 @@ namespace karabo {
                 self->m_lastFrameNum = detectorHeader.frameNumber;
             } else if (elapsedTime > 1. && detectorHeader.frameNumber > self->m_lastFrameNum) {
                 // Log frame rate once per second
-                const double frameRateIn = (detectorHeader.frameNumber - self->m_lastFrameNum) / elapsedTime; // Detector rate
-                const double frameRateOut = self->m_frameCount / elapsedTime; // Receiver rate
+                const double frameRateIn =
+                      (detectorHeader.frameNumber - self->m_lastFrameNum) / elapsedTime; // Detector rate
+                const double frameRateOut = self->m_frameCount / elapsedTime;            // Receiver rate
 
                 const Hash h("frameRateIn", frameRateIn, "frameRateOut", frameRateOut);
                 self->set(h);
 
-                KARABO_LOG_FRAMEWORK_DEBUG << "Current Frame: " << detectorHeader.frameNumber << " Last Frame: " << self->m_lastFrameNum << " Elapsed time [s]: " << elapsedTime;
+                KARABO_LOG_FRAMEWORK_DEBUG << "Current Frame: " << detectorHeader.frameNumber
+                                           << " Last Frame: " << self->m_lastFrameNum
+                                           << " Elapsed time [s]: " << elapsedTime;
                 KARABO_LOG_FRAMEWORK_INFO << "Frame rate (detector) " << frameRateIn << " Hz";
                 KARABO_LOG_FRAMEWORK_INFO << "Frame rate (receiver) " << frameRateOut << " Hz";
                 KARABO_LOG_FRAMEWORK_INFO << "Train ID " << trainId;
@@ -426,67 +441,67 @@ namespace karabo {
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Updating output schema";
 
-        NODE_ELEMENT(daqData).key("data")
-                .displayedName("Data")
-                .setDaqDataType(DaqDataType::TRAIN)
-                .commit();
+        NODE_ELEMENT(daqData).key("data").displayedName("Data").setDaqDataType(DaqDataType::TRAIN).commit();
 
-        NDARRAY_ELEMENT(daqData).key("data.adc")
-                .displayedName("ADC")
-                .description("The ADC counts.")
-                .dtype(karabo::util::Types::UINT16)
-                .shape(karabo::util::toString(daqShape))
-                .readOnly()
-                .commit();
+        NDARRAY_ELEMENT(daqData)
+              .key("data.adc")
+              .displayedName("ADC")
+              .description("The ADC counts.")
+              .dtype(karabo::util::Types::UINT16)
+              .shape(karabo::util::toString(daqShape))
+              .readOnly()
+              .commit();
 
-        NDARRAY_ELEMENT(daqData).key("data.gain")
-                .displayedName("Gain")
-                .description("The ADC gains.")
-                .dtype(karabo::util::Types::UINT8)
-                .shape(karabo::util::toString(daqShape))
-                .readOnly()
-                .commit();
+        NDARRAY_ELEMENT(daqData)
+              .key("data.gain")
+              .displayedName("Gain")
+              .description("The ADC gains.")
+              .dtype(karabo::util::Types::UINT8)
+              .shape(karabo::util::toString(daqShape))
+              .readOnly()
+              .commit();
 
-        VECTOR_UINT8_ELEMENT(daqData).key("data.memoryCell")
-                .displayedName("Memory Cell")
-                .description("The number of the memory cell used to store the image (only for Jungfrau).")
-                .maxSize(framesPerTrain)
-                .readOnly()
-                .commit();
+        VECTOR_UINT8_ELEMENT(daqData)
+              .key("data.memoryCell")
+              .displayedName("Memory Cell")
+              .description("The number of the memory cell used to store the image (only for Jungfrau).")
+              .maxSize(framesPerTrain)
+              .readOnly()
+              .commit();
 
-        VECTOR_UINT64_ELEMENT(daqData).key("data.frameNumber")
-                .displayedName("Frame Number")
-                .description("The frame number.")
-                .maxSize(framesPerTrain)
-                .readOnly()
-                .commit();
+        VECTOR_UINT64_ELEMENT(daqData)
+              .key("data.frameNumber")
+              .displayedName("Frame Number")
+              .description("The frame number.")
+              .maxSize(framesPerTrain)
+              .readOnly()
+              .commit();
 
-        VECTOR_UINT64_ELEMENT(daqData).key("data.bunchId")
-                .displayedName("Bunch ID")
-                .description("The bunch ID from the beamline, if available.")
-                .maxSize(framesPerTrain)
-                .readOnly()
-                .commit();
+        VECTOR_UINT64_ELEMENT(daqData)
+              .key("data.bunchId")
+              .displayedName("Bunch ID")
+              .description("The bunch ID from the beamline, if available.")
+              .maxSize(framesPerTrain)
+              .readOnly()
+              .commit();
 
-        VECTOR_DOUBLE_ELEMENT(daqData).key("data.timestamp")
-                .displayedName("Timestamp")
-                .description("The data timestamp.")
-                .maxSize(framesPerTrain)
-                .readOnly()
-                .commit();
+        VECTOR_DOUBLE_ELEMENT(daqData)
+              .key("data.timestamp")
+              .displayedName("Timestamp")
+              .description("The data timestamp.")
+              .maxSize(framesPerTrain)
+              .readOnly()
+              .commit();
 
         // New schema for output channel
         Schema schema;
 
-        OUTPUT_CHANNEL(schema).key("daqOutput")
-                .displayedName("DAQ Output")
-                .dataSchema(daqData)
-                .commit();
+        OUTPUT_CHANNEL(schema).key("daqOutput").displayedName("DAQ Output").dataSchema(daqData).commit();
 
         std::string outputHostname;
         try {
             outputHostname = this->get<std::string>("daqOutput.hostname");
-        } catch(const karabo::util::ParameterException& e) {
+        } catch (const karabo::util::ParameterException& e) {
             // Current configuration does not contain "output.hostname"
         }
 
@@ -517,11 +532,11 @@ namespace karabo {
         vPPShape.insert(vPPShape.begin(), framesPerTrain);
         const Dims ppShape = vPPShape;
         const Dims daqShape = this->getDaqShape(framesPerTrain);
-        NDArray adcTrainData(detectorData->adc, size, NDArray::NullDeleter(), ppShape); // No-copy constructor
+        NDArray adcTrainData(detectorData->adc, size, NDArray::NullDeleter(), ppShape);   // No-copy constructor
         NDArray gainTrainData(detectorData->gain, size, NDArray::NullDeleter(), ppShape); // No-copy constructor
 
-        //KARABO_LOG_FRAMEWORK_DEBUG << "Ready to output data. trainId=" << trainId <<
-        //        " lastTrainId=" << lastTrainId << " accumulatedFrames=" << detectorData.accumulatedFrames;
+        // KARABO_LOG_FRAMEWORK_DEBUG << "Ready to output data. trainId=" << trainId <<
+        //         " lastTrainId=" << lastTrainId << " accumulatedFrames=" << detectorData.accumulatedFrames;
 
         // Send unpacked data to output channel - for PP
 
@@ -576,7 +591,7 @@ namespace karabo {
             }
         }
 
-        detectorData->reset(); // reset detector data
+        detectorData->reset();      // reset detector data
         detectorData->mutex.post(); // "unlock"
     }
 } /* namespace karabo */

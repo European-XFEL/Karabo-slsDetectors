@@ -5,16 +5,15 @@
  * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
  */
 
-#include <iostream>
-#include <unordered_map>
+#include "Receiver.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
-
-#include "Receiver.h"
+#include <iostream>
+#include <unordered_map>
 
 using namespace boost::asio::ip;
 
@@ -22,42 +21,36 @@ using namespace boost::asio::ip;
 
 
 namespace slsDetectorDefs {
-    std::unordered_map<int, const int> channels {
-        {static_cast<int>(detectorType::GENERIC), 0}, // UNDEFINED
-        {static_cast<int>(detectorType::GOTTHARD), 1280},
-        {static_cast<int>(detectorType::JUNGFRAU), 1024 * 512}
+    std::unordered_map<int, const int> channels{{static_cast<int>(detectorType::GENERIC), 0}, // UNDEFINED
+                                                {static_cast<int>(detectorType::GOTTHARD), 1280},
+                                                {static_cast<int>(detectorType::JUNGFRAU), 1024 * 512}};
+
+
+    std::unordered_map<int, const std::vector<int>> generic_baseline_noise{
+          {static_cast<int>(detectorSettings::UNINITIALIZED), {81, 12}}};
+
+
+    std::unordered_map<int, const std::vector<int>> gotthard_baseline_noise{
+          {static_cast<int>(detectorSettings::UNINITIALIZED), {4781, 156}}, // Default: HIGHGAIN
+          {static_cast<int>(detectorSettings::LOWGAIN), {1962, 113}},
+          {static_cast<int>(detectorSettings::MEDIUMGAIN), {2676, 79}},
+          {static_cast<int>(detectorSettings::HIGHGAIN), {4781, 156}},
+          {static_cast<int>(detectorSettings::VERYHIGHGAIN), {5431, 187}}};
+
+
+    std::unordered_map<int, std::unordered_map<int, const std::vector<int>>> baseline_noise{
+          {static_cast<int>(detectorType::GENERIC), generic_baseline_noise},
+          {static_cast<int>(detectorType::GOTTHARD), gotthard_baseline_noise}
+          //{static_cast<int>(detectorType::JUNGFRAU), jungfrau_baseline_noise} // TODO
     };
+} // namespace slsDetectorDefs
 
-
-    std::unordered_map<int, const std::vector<int>> generic_baseline_noise {
-        {static_cast<int>(detectorSettings::UNINITIALIZED), {81, 12}}
-    };
-
-
-    std::unordered_map<int, const std::vector<int>> gotthard_baseline_noise {
-        {static_cast<int>(detectorSettings::UNINITIALIZED), {4781, 156}}, // Default: HIGHGAIN
-        {static_cast<int>(detectorSettings::LOWGAIN), {1962, 113}},
-        {static_cast<int>(detectorSettings::MEDIUMGAIN), {2676, 79}},
-        {static_cast<int>(detectorSettings::HIGHGAIN), {4781, 156}},
-        {static_cast<int>(detectorSettings::VERYHIGHGAIN), {5431, 187}}
-    };
-
-
-    std::unordered_map<int, std::unordered_map<int, const std::vector<int>>> baseline_noise {
-        {static_cast<int>(detectorType::GENERIC), generic_baseline_noise},
-        {static_cast<int>(detectorType::GOTTHARD), gotthard_baseline_noise}
-        //{static_cast<int>(detectorType::JUNGFRAU), jungfrau_baseline_noise} // TODO
-    };
-}
-
-sls::session::session(boost::asio::io_service& io_service, Receiver* receiver) :
-        m_socket(io_service), m_receiver(receiver) {
-}
+sls::session::session(boost::asio::io_service& io_service, Receiver* receiver)
+    : m_socket(io_service), m_receiver(receiver) {}
 
 void sls::session::start() {
     boost::asio::async_read_until(m_socket, m_streambuf, ";",
-        boost::bind(&session::handle_read, this,
-        boost::asio::placeholders::error));
+                                  boost::bind(&session::handle_read, this, boost::asio::placeholders::error));
 }
 
 void sls::session::handle_read(const boost::system::error_code& ec) {
@@ -70,37 +63,34 @@ void sls::session::handle_read(const boost::system::error_code& ec) {
         m_receiver->processCommand(command); // process received command
 
         boost::asio::async_read_until(m_socket, m_streambuf, ";",
-            boost::bind(&session::handle_read, this,
-            boost::asio::placeholders::error));
+                                      boost::bind(&session::handle_read, this, boost::asio::placeholders::error));
 
     } else {
         delete this;
     }
 }
 
-sls::server::server(boost::asio::io_service& io_service, short port, Receiver* receiver) :
-        m_io_service(io_service), m_acceptor(io_service,
-        boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
-        m_receiver(receiver) {
+sls::server::server(boost::asio::io_service& io_service, short port, Receiver* receiver)
+    : m_io_service(io_service),
+      m_acceptor(io_service, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
+      m_receiver(receiver) {
     session* new_session = new session(m_io_service, m_receiver);
     m_acceptor.async_accept(new_session->socket(),
-        boost::bind(&server::handle_accept, this, new_session,
-        boost::asio::placeholders::error));
+                            boost::bind(&server::handle_accept, this, new_session, boost::asio::placeholders::error));
 }
 
 void sls::server::handle_accept(session* new_session, const boost::system::error_code& ec) {
     if (!ec) {
         new_session->start();
         new_session = new session(m_io_service, m_receiver);
-        m_acceptor.async_accept(new_session->socket(),
-            boost::bind(&server::handle_accept, this, new_session,
-            boost::asio::placeholders::error));
+        m_acceptor.async_accept(new_session->socket(), boost::bind(&server::handle_accept, this, new_session,
+                                                                   boost::asio::placeholders::error));
     } else {
         delete new_session;
     }
 }
 
-sls::Receiver::Receiver(int argc, char *argv[]) : m_filePath("/tmp"), m_fileName("run") {
+sls::Receiver::Receiver(int argc, char* argv[]) : m_filePath("/tmp"), m_fileName("run") {
     m_acquisitionStarted = false;
     m_delay_us = 0;
     m_exptime_us = 10;
@@ -131,7 +121,7 @@ sls::Receiver::Receiver(int argc, char *argv[]) : m_filePath("/tmp"), m_fileName
 
     try {
         m_server = new server(m_io_service, m_rx_tcpport, this);
-        pthread_create(&m_ioServThread, NULL, ioServWorker, (void*) this);
+        pthread_create(&m_ioServThread, NULL, ioServWorker, (void*)this);
     } catch (const std::exception& e) {
         std::cout << "Receiver::Receiver: " << e.what() << std::endl;
         throw; // re-throw
@@ -162,24 +152,28 @@ int64_t sls::Receiver::getReceiverVersion() {
     return int64_t(7022809911320);
 }
 
-void sls::Receiver::registerCallBackStartAcquisition(int (*func)(const std::string& filepath, const std::string& filename, uint64_t fileindex, size_t datasize, void*), void *arg) {
+void sls::Receiver::registerCallBackStartAcquisition(int (*func)(const std::string& filepath,
+                                                                 const std::string& filename, uint64_t fileindex,
+                                                                 size_t datasize, void*),
+                                                     void* arg) {
     m_startAcquisitionCallBack = func;
     m_pStartAcquisition = arg;
 }
 
-void sls::Receiver::registerCallBackAcquisitionFinished(void (*func)(uint64_t nf, void*), void *arg) {
+void sls::Receiver::registerCallBackAcquisitionFinished(void (*func)(uint64_t nf, void*), void* arg) {
     m_acquisitionFinishedCallBack = func;
     m_pAcquisitionFinished = arg;
-
 }
 
-void sls::Receiver::registerCallBackRawDataReady(void (*func)(slsDetectorDefs::sls_receiver_header& header, char* datapointer, size_t datasize, void*), void *arg) {
+void sls::Receiver::registerCallBackRawDataReady(void (*func)(slsDetectorDefs::sls_receiver_header& header,
+                                                              char* datapointer, size_t datasize, void*),
+                                                 void* arg) {
     m_rawDataReadyCallBack = func;
     m_pRawDataReady = arg;
 }
 
 void* sls::Receiver::dataWorker(void* self) {
-    Receiver* receiver = static_cast<Receiver*> (self);
+    Receiver* receiver = static_cast<Receiver*>(self);
 
     // Fill-up header
     slsDetectorDefs::sls_detector_header* detectorHeader = &(receiver->m_header.detHeader);
@@ -188,7 +182,7 @@ void* sls::Receiver::dataWorker(void* self) {
     detectorHeader->packetNumber = 2;
     detectorHeader->detSpec1 = 0;
     detectorHeader->timestamp = 0;
-    detectorHeader->modId = 0 ;
+    detectorHeader->modId = 0;
     detectorHeader->row = 0;
     detectorHeader->column = 0;
     detectorHeader->detSpec2 = 0;
@@ -216,7 +210,7 @@ void* sls::Receiver::dataWorker(void* self) {
             ++receiver->m_currAcqFrameCounter;
 
             if (receiver->m_currAcqFrameCounter - receiver->m_currFileFirstFrame >= MAX_FRAMES_PER_FILE) {
-            // Open new file if needed
+                // Open new file if needed
                 receiver->m_currFileFirstFrame = receiver->m_currAcqFrameCounter;
                 std::string fname = receiver->generateFileName();
                 fclose(receiver->m_filePointer);
@@ -238,22 +232,21 @@ void* sls::Receiver::dataWorker(void* self) {
         if (sleep_time_us > 0) {
             boost::this_thread::sleep(boost::posix_time::microseconds(sleep_time_us));
         }
-
     }
 
     return nullptr;
 }
 
 void* sls::Receiver::ioServWorker(void* self) {
-    Receiver* receiver = static_cast<Receiver*> (self);
+    Receiver* receiver = static_cast<Receiver*>(self);
     receiver->m_io_service.run();
     return nullptr;
 }
 
 std::string sls::Receiver::generateFileName() {
-
     // Create filename (without path and extension)
-    boost::filesystem::path fileName = boost::str(boost::format("%s_d0_f%012d_%d") % m_fileName % m_currFileFirstFrame % m_fileIndex);
+    boost::filesystem::path fileName =
+          boost::str(boost::format("%s_d0_f%012d_%d") % m_fileName % m_currFileFirstFrame % m_fileIndex);
 
     // Prepend path and append extension
     fileName = (boost::filesystem::path(m_filePath) / fileName).replace_extension("raw");
@@ -298,8 +291,7 @@ void sls::Receiver::processCommand(const std::string& command) {
             m_acquisitionStarted = true;
             const int ret = pthread_create(&m_dataThread, NULL, Receiver::dataWorker, this);
             if (ret != 0) {
-                std::cout << "Receiver::processCommand: cannot create data thread. ret="
-                    << ret << std::endl;
+                std::cout << "Receiver::processCommand: cannot create data thread. ret=" << ret << std::endl;
                 return;
             }
 
@@ -405,7 +397,6 @@ void sls::Receiver::processCommand(const std::string& command) {
             std::cout << "Receiver::processCommand: settings=" << m_settings << std::endl;
         }
     }
-
 }
 
 void sls::Receiver::setGain(int gain) {
@@ -417,15 +408,13 @@ void sls::Receiver::setGain(int gain) {
     // Get baseline/noise map for detector type
     int detType = m_detectorType;
     if (slsDetectorDefs::baseline_noise.count(detType) == 0) {
-        std::cout << "WARN Cannot find baseline/noise for this detectorType -> using generic"
-                  << std::endl;
+        std::cout << "WARN Cannot find baseline/noise for this detectorType -> using generic" << std::endl;
         detType = static_cast<int>(slsDetectorDefs::detectorType::GENERIC);
     }
 
     // Get baseline/noise values for gain settings
     if (slsDetectorDefs::baseline_noise[detType].count(gain) == 0) {
-        std::cout << "WARN Cannot find baseline/noise for this gain -> using default"
-                  << std::endl;
+        std::cout << "WARN Cannot find baseline/noise for this gain -> using default" << std::endl;
         gain = static_cast<int>(slsDetectorDefs::detectorSettings::UNINITIALIZED);
     }
     const int baseline = slsDetectorDefs::baseline_noise[detType][gain][0];
@@ -435,8 +424,8 @@ void sls::Receiver::setGain(int gain) {
     const int channels = slsDetectorDefs::channels[m_detectorType];
     short* adc_and_gain = reinterpret_cast<short*>(m_data);
     for (int i = 0; i < 2 * channels; ++i) {
-        adc_and_gain[i] = baseline + rand()%noise; // Generate random data
-        adc_and_gain[i] |= (gain << 14); // Pack gain together with ADC value
+        adc_and_gain[i] = baseline + rand() % noise; // Generate random data
+        adc_and_gain[i] |= (gain << 14);             // Pack gain together with ADC value
     }
 
     // Update settings

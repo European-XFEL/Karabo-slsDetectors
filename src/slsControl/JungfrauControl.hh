@@ -13,8 +13,8 @@
 
 #include <karabo/karabo.hpp>
 
+#include "../common/version.hh" // provides SLSDETECTORS_PACKAGE_VERSION
 #include "SlsControl.hh"
-#include "../common/version.hh"  // provides SLSDETECTORS_PACKAGE_VERSION
 
 /**
  * The main Karabo namespace
@@ -22,9 +22,8 @@
 namespace karabo {
 
     class JungfrauControl : public karabo::SlsControl {
-    public:
-        KARABO_CLASSINFO(JungfrauControl, "JungfrauControl",
-            SLSDETECTORS_PACKAGE_VERSION)
+       public:
+        KARABO_CLASSINFO(JungfrauControl, "JungfrauControl", SLSDETECTORS_PACKAGE_VERSION)
 
         explicit JungfrauControl(const karabo::util::Hash& config);
 
@@ -32,7 +31,7 @@ namespace karabo {
 
         static void expectedParameters(karabo::util::Schema& expected);
 
-    private:
+       private:
         void resetTempEvent();
         void powerOn() override;
         void pollDetectorSpecific(karabo::util::Hash& h) override;
@@ -40,7 +39,6 @@ namespace karabo {
         void createCalibrationAndSettings(const std::string& settings) {
             // nothing to be done
         }
-
     };
 
 } /* namespace karabo */

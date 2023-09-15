@@ -6,13 +6,13 @@
  * Copyright (c) European XFEL GmbH Schenefeld. All rights reserved.
  */
 
-#include "../slsControl/SlsControl.hh"
+#include <gtest/gtest.h>
 
 #include <boost/shared_ptr.hpp>
-#include <gtest/gtest.h>
 #include <thread>
 #include <utility>
 
+#include "../slsControl/SlsControl.hh"
 #include "karabo/core/DeviceClient.hh"
 #include "karabo/core/DeviceServer.hh"
 #include "karabo/net/EventLoop.hh"
@@ -28,7 +28,7 @@
 #define TEST_DEVICE_ID_4 "testGotthardControl"
 #define TEST_DEVICE_ID_5 "testJFControl"
 
-#define LOG_PRIORITY     "FATAL"  // Can also be "DEBUG", "INFO" or "ERROR"
+#define LOG_PRIORITY "FATAL" // Can also be "DEBUG", "INFO" or "ERROR"
 
 #define DEV_CLI_TIMEOUT_SEC 2
 
@@ -36,12 +36,11 @@
 /**
  * @brief Test fixture for the SlsControl device class.
  */
-class SlsControlFixture: public testing::Test {
-protected:
-
+class SlsControlFixture : public testing::Test {
+   protected:
     SlsControlFixture() = default;
 
-    void SetUp( ) {
+    void SetUp() {
         m_eventLoopThread = std::thread(&karabo::net::EventLoop::work);
 
         // Load the library dynamically
@@ -49,16 +48,14 @@ protected:
         karabo::util::PluginLoader::create("PluginLoader", pluginConfig)->update();
 
         // Instantiate C++ Device Server.
-        karabo::util::Hash config("serverId", DEVICE_SERVER_ID,
-                                  "scanPlugins", true,
-                                  "Logger.priority", LOG_PRIORITY);
+        karabo::util::Hash config("serverId", DEVICE_SERVER_ID, "scanPlugins", true, "Logger.priority", LOG_PRIORITY);
         m_deviceSrv = karabo::core::DeviceServer::create("DeviceServer", config);
         m_deviceSrv->finalizeInternalInitialization();
         // Instantiate Device Client.
         m_deviceCli = boost::make_shared<karabo::core::DeviceClient>();
     }
 
-    void TearDown( ) {
+    void TearDown() {
         m_deviceCli.reset();
         m_deviceSrv.reset();
         karabo::net::EventLoop::stop();
@@ -70,12 +67,9 @@ protected:
         devCfg.merge(devSpecificCfg);
 
         std::pair<bool, std::string> success =
-            m_deviceCli->instantiate(DEVICE_SERVER_ID, "Gotthard2Control",
-                                     devCfg, DEV_CLI_TIMEOUT_SEC);
+              m_deviceCli->instantiate(DEVICE_SERVER_ID, "Gotthard2Control", devCfg, DEV_CLI_TIMEOUT_SEC);
 
-        ASSERT_FALSE(success.first)
-            << "Error instantiating '" << TEST_DEVICE_ID_0 << "':\n"
-            << success.second;
+        ASSERT_FALSE(success.first) << "Error instantiating '" << TEST_DEVICE_ID_0 << "':\n" << success.second;
     }
 
     void instantiateTestDevice1(const karabo::util::Hash& devSpecificCfg) {
@@ -83,12 +77,9 @@ protected:
         devCfg.merge(devSpecificCfg);
 
         std::pair<bool, std::string> success =
-            m_deviceCli->instantiate(DEVICE_SERVER_ID, "GotthardControl",
-                                     devCfg, DEV_CLI_TIMEOUT_SEC);
+              m_deviceCli->instantiate(DEVICE_SERVER_ID, "GotthardControl", devCfg, DEV_CLI_TIMEOUT_SEC);
 
-        ASSERT_FALSE(success.first)
-            << "Error instantiating '" << TEST_DEVICE_ID_1 << "':\n"
-            << success.second;
+        ASSERT_FALSE(success.first) << "Error instantiating '" << TEST_DEVICE_ID_1 << "':\n" << success.second;
     }
 
     void instantiateTestDevice2(const karabo::util::Hash& devSpecificCfg) {
@@ -96,12 +87,9 @@ protected:
         devCfg.merge(devSpecificCfg);
 
         std::pair<bool, std::string> success =
-            m_deviceCli->instantiate(DEVICE_SERVER_ID, "JungfrauControl",
-                                     devCfg, DEV_CLI_TIMEOUT_SEC);
+              m_deviceCli->instantiate(DEVICE_SERVER_ID, "JungfrauControl", devCfg, DEV_CLI_TIMEOUT_SEC);
 
-        ASSERT_FALSE(success.first)
-            << "Error instantiating '" << TEST_DEVICE_ID_2 << "':\n"
-            << success.second;
+        ASSERT_FALSE(success.first) << "Error instantiating '" << TEST_DEVICE_ID_2 << "':\n" << success.second;
     }
 
     void instantiateTestDevice3(const karabo::util::Hash& devSpecificCfg) {
@@ -115,12 +103,9 @@ protected:
         devCfg.merge(devSpecificCfg);
 
         std::pair<bool, std::string> success =
-            m_deviceCli->instantiate(DEVICE_SERVER_ID, "Gotthard2Control",
-                                     devCfg, DEV_CLI_TIMEOUT_SEC);
+              m_deviceCli->instantiate(DEVICE_SERVER_ID, "Gotthard2Control", devCfg, DEV_CLI_TIMEOUT_SEC);
 
-        ASSERT_TRUE(success.first)
-            << "Error instantiating '" << TEST_DEVICE_ID_3 << "':\n"
-            << success.second;
+        ASSERT_TRUE(success.first) << "Error instantiating '" << TEST_DEVICE_ID_3 << "':\n" << success.second;
     }
 
     void instantiateTestDevice4(const karabo::util::Hash& devSpecificCfg) {
@@ -134,12 +119,9 @@ protected:
         devCfg.merge(devSpecificCfg);
 
         std::pair<bool, std::string> success =
-            m_deviceCli->instantiate(DEVICE_SERVER_ID, "GotthardControl",
-                                     devCfg, DEV_CLI_TIMEOUT_SEC);
+              m_deviceCli->instantiate(DEVICE_SERVER_ID, "GotthardControl", devCfg, DEV_CLI_TIMEOUT_SEC);
 
-        ASSERT_TRUE(success.first)
-            << "Error instantiating '" << TEST_DEVICE_ID_4 << "':\n"
-            << success.second;
+        ASSERT_TRUE(success.first) << "Error instantiating '" << TEST_DEVICE_ID_4 << "':\n" << success.second;
     }
 
     void instantiateTestDevice5(const karabo::util::Hash& devSpecificCfg) {
@@ -153,26 +135,20 @@ protected:
         devCfg.merge(devSpecificCfg);
 
         std::pair<bool, std::string> success =
-            m_deviceCli->instantiate(DEVICE_SERVER_ID, "JungfrauControl",
-                                     devCfg, DEV_CLI_TIMEOUT_SEC);
+              m_deviceCli->instantiate(DEVICE_SERVER_ID, "JungfrauControl", devCfg, DEV_CLI_TIMEOUT_SEC);
 
-        ASSERT_TRUE(success.first)
-            << "Error instantiating '" << TEST_DEVICE_ID_5 << "':\n"
-            << success.second;
+        ASSERT_TRUE(success.first) << "Error instantiating '" << TEST_DEVICE_ID_5 << "':\n" << success.second;
     }
 
     void deinstantiateTestDevice() {
-        ASSERT_NO_THROW(
-            m_deviceCli->killDevice(TEST_DEVICE_ID_3, DEV_CLI_TIMEOUT_SEC))
-        << "Failed to deinstantiate device '" << TEST_DEVICE_ID_3 << "'";
+        ASSERT_NO_THROW(m_deviceCli->killDevice(TEST_DEVICE_ID_3, DEV_CLI_TIMEOUT_SEC))
+              << "Failed to deinstantiate device '" << TEST_DEVICE_ID_3 << "'";
 
-        ASSERT_NO_THROW(
-            m_deviceCli->killDevice(TEST_DEVICE_ID_4, DEV_CLI_TIMEOUT_SEC))
-        << "Failed to deinstantiate device '" << TEST_DEVICE_ID_4 << "'";
+        ASSERT_NO_THROW(m_deviceCli->killDevice(TEST_DEVICE_ID_4, DEV_CLI_TIMEOUT_SEC))
+              << "Failed to deinstantiate device '" << TEST_DEVICE_ID_4 << "'";
 
-        ASSERT_NO_THROW(
-            m_deviceCli->killDevice(TEST_DEVICE_ID_5, DEV_CLI_TIMEOUT_SEC))
-        << "Failed to deinstantiate device '" << TEST_DEVICE_ID_5 << "'";
+        ASSERT_NO_THROW(m_deviceCli->killDevice(TEST_DEVICE_ID_5, DEV_CLI_TIMEOUT_SEC))
+              << "Failed to deinstantiate device '" << TEST_DEVICE_ID_5 << "'";
     }
 
     std::thread m_eventLoopThread;
@@ -182,8 +158,7 @@ protected:
 };
 
 
-TEST_F(SlsControlFixture, testSlsControl){
-
+TEST_F(SlsControlFixture, testSlsControl) {
     // TODO: Provide a non-empty config for the device under test.
     instantiateTestDevice0(karabo::util::Hash());
     instantiateTestDevice1(karabo::util::Hash());
