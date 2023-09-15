@@ -53,6 +53,7 @@ namespace karabo {
                 .assignmentOptional().defaultValue("dynamic")
                 .options(gainModeOptions)
                 .reconfigurable()
+                .allowedStates(State::ON)
                 .commit();
 
         OVERWRITE_ELEMENT(expected).key("highVoltage")
