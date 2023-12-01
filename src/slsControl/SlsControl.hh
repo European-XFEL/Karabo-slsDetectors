@@ -48,7 +48,7 @@ namespace karabo {
 
         void connect(const boost::system::error_code& ec);
 
-        void acquireBlocking(const boost::system::error_code& ec);
+        void acquireBlocking();
 
         void startPoll();
         void stopPoll();
@@ -93,7 +93,7 @@ namespace karabo {
         bool m_poll;
         boost::asio::deadline_timer m_poll_timer;
 
-        boost::asio::deadline_timer m_acquire_timer;
+        bool m_acquireForever;
 
         std::string m_tmpDir;
         unsigned int m_shm_id; // shared memory segment index

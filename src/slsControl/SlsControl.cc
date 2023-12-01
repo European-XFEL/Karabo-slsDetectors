@@ -27,12 +27,15 @@ namespace karabo {
           m_firstPoll(true),
           m_poll(false),
           m_poll_timer(EventLoop::getIOService()),
-          m_acquire_timer(EventLoop::getIOService()) {
+          m_acquireForever(false) {
         KARABO_INITIAL_FUNCTION(initialize);
 
         KARABO_SLOT(start);
         KARABO_SLOT(stop);
         KARABO_SLOT(reset);
+
+        // Need an additional thread as the acquire function is blocking
+        EventLoop::addThread(1);
 
         this->createTmpDir(); // Create temporary directory
     }
@@ -42,6 +45,8 @@ namespace karabo {
         m_connect = false;
         m_connect_timer.cancel();
         this->stopPoll();
+
+        EventLoop::removeThread(1);
 
         try {
             bool success = true;
@@ -395,6 +400,18 @@ namespace karabo {
               .allowedStates(State::ON)
               .commit();
 
+        BOOL_ELEMENT(expected)
+              .key("continuousMode")
+              .displayedName("Continuous Mode")
+              .description(
+                    "Set this to 'True' to automatically restart image "
+                    "sending when the acquisition time is over.")
+              .assignmentOptional()
+              .defaultValue(false)
+              .reconfigurable()
+              .allowedStates(State::ON)
+              .commit();
+
         // Mythen3 only
         //        INT64_ELEMENT(expected).key("numberOfGates")
         //                .alias("gates")
@@ -513,21 +530,20 @@ namespace karabo {
     }
 
     void SlsControl::start() {
-        this->updateState(State::ACQUIRING);
-        m_acquire_timer.expires_from_now(boost::posix_time::milliseconds(0));
-        m_acquire_timer.async_wait(
-              karabo::util::bind_weak(&SlsControl::acquireBlocking, this, boost::asio::placeholders::error));
+        this->updateState(State::ACQUIRING, Hash("status", "Acquisition started"));
+        m_acquireForever = this->get<bool>("continuousMode");
+        EventLoop::getIOService().post(boost::bind(&SlsControl::acquireBlocking, this));
     }
 
     void SlsControl::stop() {
         KARABO_LOG_FRAMEWORK_DEBUG << "In stop";
+        m_acquireForever = false;
 
+        KARABO_LOG_INFO << "Stopping acquisition";
+        this->set("status", "Stopping acquisition");
         m_SLS->stopDetector();
-        KARABO_LOG_INFO << "Acquisition stopped";
-        this->set("status", "Acquisition stopped");
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Quitting stop";
-        this->updateState(State::ON);
     }
 
     void SlsControl::reset() {
@@ -636,21 +652,22 @@ namespace karabo {
         }
     }
 
-    void SlsControl::acquireBlocking(const boost::system::error_code& ec) {
+    void SlsControl::acquireBlocking() {
         KARABO_LOG_FRAMEWORK_DEBUG << "In acquireBlocking";
-        if (ec) {
-            return;
-        }
 
-        this->set("status", "Acquisition started");
         // The following is a blocking function: it will only return when the
         // acquisition is over!
         // If the detector is powered off during an acquisition, this thread
         // will never return!
         m_SLS->acquire();
-        this->set("status", "Acquisition finished (or stopped)");
 
-        this->updateState(State::ON);
+        if (m_acquireForever) {
+            KARABO_LOG_FRAMEWORK_DEBUG << "Restarting acquisition";
+            EventLoop::getIOService().post(boost::bind(&SlsControl::acquireBlocking, this));
+        } else {
+            this->updateState(State::ON, Hash("status", "Acquisition finished"));
+	}
+
         KARABO_LOG_FRAMEWORK_DEBUG << "Quitting acquireBlocking";
     }
 
