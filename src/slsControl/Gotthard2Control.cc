@@ -172,14 +172,14 @@ namespace karabo {
               .allowedStates(State::ON)
               .commit();
 
+        // 7.2.2024: Changed to read-only as it must always be `true`.
+        // The property is still needed as validated by the calibration code.
         BOOL_ELEMENT(expected)
               .key("reverseSlaveReadOutMode")
               .displayedName("Reverse Slave Read-Out Mode")
               .description("Reverse the readout order for the slave module.")
-              .assignmentOptional()
-              .defaultValue(false)
-              .reconfigurable()
-              .allowedStates(State::ON)
+              .readOnly()
+              .initialValue(true)
               .commit();
 
         VECTOR_INT32_ELEMENT(expected)
