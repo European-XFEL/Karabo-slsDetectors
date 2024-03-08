@@ -1,3 +1,9 @@
+# This file is intended to be used together with Karabo:
+#
+# http://www.karabo.eu
+#
+# IF YOU REQUIRE ANY LICENSING AND COPYRIGHT TERMS, PLEASE ADD THEM HERE.
+# Karabo itself is licensed under the terms of the MPL 2.0 license.
 add_library (
     ${CMAKE_PROJECT_NAME} SHARED
 )
@@ -28,9 +34,9 @@ target_compile_options(
            -Wno-deprecated-declarations -Wall)
 
 target_include_directories(
-    ${CMAKE_PROJECT_NAME} SYSTEM
+    ${CMAKE_PROJECT_NAME}
     PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}
  )
 
 target_link_libraries(
@@ -120,6 +126,7 @@ if (BUILD_TESTS)
         PRIVATE
         Threads::Threads
         ${CMAKE_PROJECT_NAME}
+        ${KARABO_LIB}
         ${gtest_LIB}
     )
 
