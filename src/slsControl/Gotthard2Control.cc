@@ -165,7 +165,7 @@ namespace karabo {
                     "sampling and readout rate that allows operation at 1.1 MHz.")
               .assignmentOptional()
               .defaultValue("4.5")
-              .options("1.1,4.5")
+              .options("1.1,2.25,4.5")
               .unit(Unit::HERTZ)
               .metricPrefix(MetricPrefix::MEGA)
               .reconfigurable()
@@ -213,18 +213,29 @@ namespace karabo {
                 // Reduce by a factor 4 the running clock
                 this->sendConfiguration("clkdiv", "2 20");
                 this->sendConfiguration("clkdiv", "3 40");
-                this->sendConfiguration("clkdiv", "2 20");
+                this->sendConfiguration("clkdiv", "4 20");
                 // Reduce the data output sampling
                 this->sendConfiguration("reg", "0x120 0x00000000");
                 this->sendConfiguration("clkdiv", "0 16");
                 this->sendConfiguration("clkdiv", "1 16");
                 this->sendConfiguration("clkphase", "1 270 deg");
 
+            } else if (acquisitionRate == "2.25") { // 2.25 MHz
+                // Reduce by a factor 2 the running clock
+                this->sendConfiguration("clkdiv", "2 10");
+                this->sendConfiguration("clkdiv", "3 20");
+                this->sendConfiguration("clkdiv", "4 10");
+                // Reduce the data output sampling
+                this->sendConfiguration("reg", "0x120 0x00000000");
+                this->sendConfiguration("clkdiv", "0 16");
+                this->sendConfiguration("clkdiv", "1 16");
+                this->sendConfiguration("clkphase", "1 240 deg");
+
             } else { // Restore the 4.5 MHz default
                 // Increase the running clock settings
                 this->sendConfiguration("clkdiv", "2 5");
                 this->sendConfiguration("clkdiv", "3 10");
-                this->sendConfiguration("clkdiv", "2 5");
+                this->sendConfiguration("clkdiv", "4 5");
                 // Restore the readout clock speed
                 this->sendConfiguration("readoutspeed", "108");
             }
