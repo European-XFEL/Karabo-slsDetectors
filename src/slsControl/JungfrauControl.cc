@@ -78,7 +78,7 @@ namespace karabo {
         INT16_ELEMENT(expected)
               .key("storageCells")
               .alias("storagecells")
-              .tags("sls")
+              //.tags("sls")
               .displayedName("Additional Storage Cells")
               .description(
                     "Number of additional storage cells. "
