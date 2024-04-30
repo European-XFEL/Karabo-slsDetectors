@@ -29,13 +29,6 @@ namespace karabo {
     }
 
 
-    JungfrauControl::~JungfrauControl() {
-        if (m_SLS && !m_SLS->empty()) {
-            m_SLS->setPowerChip(false, m_positions); // power off
-        }
-    }
-
-
     void JungfrauControl::expectedParameters(Schema& expected) {
         std::vector<std::string> settingsOptions = {"gain0", "highgain0"};
         OVERWRITE_ELEMENT(expected)
@@ -246,6 +239,11 @@ namespace karabo {
         m_SLS->writeRegister(0x4d, 0x108000, m_positions); // set additional read-out timeout (bit 15)
     }
 
+    void JungfrauControl::powerOff() {
+        if (m_SLS && !m_SLS->empty()) {
+            m_SLS->setPowerChip(false, m_positions); // power off
+        }
+    }
 
     void JungfrauControl::pollDetectorSpecific(karabo::util::Hash& h) {
         const std::vector<int> tempAdc = m_SLS->getTemperature(slsDetectorDefs::dacIndex::TEMPERATURE_ADC, m_positions);

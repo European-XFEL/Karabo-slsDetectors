@@ -41,36 +41,7 @@ namespace karabo {
     }
 
     SlsControl::~SlsControl() {
-        // Stop deadline timers
-        m_connect = false;
-        m_connect_timer.cancel();
-        this->stopPoll();
-
         EventLoop::removeThread(1);
-
-        try {
-            bool success = true;
-            std::string baseName("/dev/shm/slsDetectorPackage_multi_" + karabo::util::toString(m_shm_id));
-            success &= fs::remove(baseName);
-            for (size_t i = 0; i < m_numberOfModules; ++i) {
-                success &= fs::remove(baseName + "_sls_" + karabo::util::toString(i));
-            }
-            if (success) {
-                KARABO_LOG_FRAMEWORK_DEBUG << "Deleted shared memory segment " << m_shm_id;
-            } else {
-                KARABO_LOG_FRAMEWORK_WARN << "Could not remove shared memory segment " << m_shm_id;
-            }
-
-            // Remove temporary directory and its content
-            success = fs::remove_all(m_tmpDir);
-            if (success) {
-                KARABO_LOG_FRAMEWORK_DEBUG << "Removed temporary dir " << m_tmpDir;
-            } else {
-                KARABO_LOG_FRAMEWORK_WARN << "Could not remove temporary dir " << m_tmpDir;
-            }
-        } catch (const std::exception& e) {
-            KARABO_LOG_FRAMEWORK_ERROR << "Exception in ~SlsControl: " << e.what();
-        }
     }
 
     void SlsControl::expectedParameters(Schema& expected) {
@@ -659,14 +630,18 @@ namespace karabo {
         // acquisition is over!
         // If the detector is powered off during an acquisition, this thread
         // will never return!
-        m_SLS->acquire();
+        try {
+            m_SLS->acquire();
+        } catch (const std::exception& e) {
+            KARABO_LOG_FRAMEWORK_ERROR << "Exception in acquireBlocking: " << e.what(); 
+        }
 
         if (m_acquireForever) {
             KARABO_LOG_FRAMEWORK_DEBUG << "Restarting acquisition";
             EventLoop::getIOService().post(boost::bind(&SlsControl::acquireBlocking, this));
         } else {
             this->updateState(State::ON, Hash("status", "Acquisition finished"));
-	}
+        }
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Quitting acquireBlocking";
     }
@@ -906,7 +881,8 @@ namespace karabo {
     }
 
     // Return true if a TCP server is running on host:port
-    bool SlsControl::isServerOnline(const std::string& host, unsigned short port, std::string& errorMsg) {
+    bool SlsControl::isServerOnline(const std::string& host, unsigned short port, HostType hostType,
+                                    std::string& errorMsg) {
         KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::isServerOnline";
 
         if (!this->ping(host)) {
@@ -931,8 +907,13 @@ namespace karabo {
             if (s) {
                 errorMsg = "";
                 online = true;
-            } else {
-                errorMsg = host + ":" + portString + " is offline";
+            } else if (hostType == HostType::detector) {
+                errorMsg = "No detector server process running on " + host + ":" + portString;
+                online = false;
+
+            } else { // HostType::receiver
+                errorMsg =
+                      "No receiver process running on " + host + ":" + portString + ". Is the Karabo device running?";
                 online = false;
             }
         } catch (const std::exception& e) {
@@ -961,7 +942,7 @@ namespace karabo {
         bool online = true;
         std::string errorMsg;
         for (size_t i = 0; i < hosts.size(); ++i) {
-            if (!this->isServerOnline(hosts[i], ports[i], errorMsg)) {
+            if (!this->isServerOnline(hosts[i], ports[i], HostType::detector, errorMsg)) {
                 online = false;
                 break;
             }
@@ -1001,7 +982,7 @@ namespace karabo {
         bool online = true;
         std::string errorMsg;
         for (size_t i = 0; i < hosts.size(); ++i) {
-            if (!this->isServerOnline(hosts[i], ports[i], errorMsg)) {
+            if (!this->isServerOnline(hosts[i], ports[i], HostType::receiver, errorMsg)) {
                 online = false;
                 break;
             }
@@ -1234,6 +1215,48 @@ namespace karabo {
         }
 
         KARABO_LOG_DEBUG << "Quitting SlsControl::preReconfigure";
+    }
+
+    void SlsControl::preDestruction() {
+        if (this->getState() == State::ACQUIRING && m_SLS && !m_SLS->empty()) {
+            // Stop acquisition
+            m_acquireForever = false;
+            m_SLS->loadParameters({"stop", "rx_stop", "clearbusy"});
+        }
+
+        // Stop deadline timers
+        m_connect = false;
+        m_connect_timer.cancel();
+        this->stopPoll();
+
+        // Power off
+        this->powerOff();
+
+        try {
+            bool success = true;
+            std::string baseName("/dev/shm/slsDetectorPackage_multi_" + karabo::util::toString(m_shm_id));
+            success &= fs::remove(baseName);
+
+            for (size_t i = 0; i < m_numberOfModules; ++i) {
+                success &= fs::remove(baseName + "_sls_" + karabo::util::toString(i));
+            }
+
+            if (success) {
+                KARABO_LOG_FRAMEWORK_DEBUG << "Deleted shared memory segment " << m_shm_id;
+            } else {
+                KARABO_LOG_FRAMEWORK_WARN << "Could not remove shared memory segment " << m_shm_id;
+            }
+
+            // Remove temporary directory and its content
+            success = fs::remove_all(m_tmpDir);
+            if (success) {
+                KARABO_LOG_FRAMEWORK_DEBUG << "Removed temporary dir " << m_tmpDir;
+            } else {
+                KARABO_LOG_FRAMEWORK_WARN << "Could not remove temporary dir " << m_tmpDir;
+            }
+        } catch (const std::exception& e) {
+            KARABO_LOG_FRAMEWORK_ERROR << "Exception in preDestruction: " << e.what();
+        }
     }
 
 } /* namespace karabo */

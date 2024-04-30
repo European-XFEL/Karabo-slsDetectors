@@ -26,8 +26,6 @@ namespace karabo {
 
         explicit GotthardControl(const karabo::util::Hash& config);
 
-        virtual ~GotthardControl();
-
         static void expectedParameters(karabo::util::Schema& expected);
 
        private: // functions

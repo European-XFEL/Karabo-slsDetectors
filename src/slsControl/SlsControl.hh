@@ -26,6 +26,8 @@
  */
 namespace karabo {
 
+    enum class HostType { detector, receiver };
+
     class SlsControl : public karabo::core::Device<> {
        public:
         KARABO_CLASSINFO(SlsControl, "SlsControl", SLSDETECTORS_PACKAGE_VERSION)
@@ -37,6 +39,8 @@ namespace karabo {
         static void expectedParameters(karabo::util::Schema& expected);
 
         virtual void preReconfigure(karabo::util::Hash& incomingReconfiguration) override;
+
+        virtual void preDestruction() final;
 
        private: // Slots
         void start();
@@ -62,8 +66,9 @@ namespace karabo {
         virtual void configureDetectorSpecific(const karabo::util::Hash& configHash){};
 
         virtual void powerOn(){};
+        virtual void powerOff(){};
 
-        bool isServerOnline(const std::string& host, unsigned short port, std::string& errorMsg);
+        bool isServerOnline(const std::string& host, unsigned short port, HostType hostType, std::string& errorMsg);
         bool areDetectorsOnline();
         bool areReceiversOnline();
         bool ping(std::string host);
