@@ -26,12 +26,6 @@ namespace karabo {
 #endif
     }
 
-    Gotthard2Control::~Gotthard2Control() {
-        if (m_SLS && !m_SLS->empty()) {
-            m_SLS->setPowerChip(false, m_positions); // power off
-        }
-    }
-
     void Gotthard2Control::expectedParameters(Schema& expected) {
         OVERWRITE_ELEMENT(expected)
               .key("settings")
@@ -192,6 +186,12 @@ namespace karabo {
 
     void Gotthard2Control::powerOn() {
         m_SLS->setPowerChip(true, m_positions); // power on
+    }
+
+    void Gotthard2Control::powerOff() {
+        if (m_SLS && !m_SLS->empty()) {
+            m_SLS->setHighVoltage(0, m_positions);   // HV off
+        }
     }
 
     void Gotthard2Control::configureDetectorSpecific(const karabo::util::Hash& configHash) {
