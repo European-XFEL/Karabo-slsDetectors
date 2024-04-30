@@ -27,9 +27,6 @@ namespace karabo {
     }
 
 
-    GotthardControl::~GotthardControl() {}
-
-
     void GotthardControl::expectedParameters(Schema& expected) {
         OVERWRITE_ELEMENT(expected)
               .key("settings")
