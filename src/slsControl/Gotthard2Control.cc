@@ -190,7 +190,7 @@ namespace karabo {
 
     void Gotthard2Control::powerOff() {
         if (m_SLS && !m_SLS->empty()) {
-            m_SLS->setHighVoltage(0, m_positions);   // HV off
+            m_SLS->setHighVoltage(0, m_positions); // HV off
         }
     }
 
@@ -199,11 +199,14 @@ namespace karabo {
             const bool& singlePhoton = configHash.get<bool>("singlePhoton");
             if (singlePhoton) {
                 // Change to 'single photon' settings
-                this->sendConfiguration("dac", "vref_rstore 0");   // shift the Vref of the storage cells
+                // XXX Special settings for tests at FXE on 4-6/6/2024
+                this->sendConfiguration("dac", "vref_rstore 150"); // shift the Vref of the storage cells
                 this->sendConfiguration("cdsgain", "1");           // increase the CDS gain
+                this->sendConfiguration("filterresistor", "2");
             } else {                                               // Restore default conditions
                 this->sendConfiguration("dac", "vref_rstore 150"); // shift back the Vref
                 this->sendConfiguration("cdsgain", "0");           // lower the CDS gain
+                this->sendConfiguration("filterresistor", "0");
             }
         }
 
