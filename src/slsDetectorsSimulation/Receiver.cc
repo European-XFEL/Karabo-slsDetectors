@@ -193,7 +193,7 @@ void* sls::Receiver::dataWorker(void* self) {
 
     const int channels = slsDetectorDefs::channels[receiver->m_detectorType];
     const uint32_t dataSize = channels * sizeof(short);
-    char *dataPointer, *metadata;
+    char* dataPointer;
 
     while (receiver->m_acquisitionStarted) {
         receiver->m_frameCounter += 1;

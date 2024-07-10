@@ -15,6 +15,8 @@ extern "C" {
 #include <pthread.h>
 }
 
+#include <boost/asio.hpp>
+
 #include "sls_simulation_defs.h"
 
 namespace sls {
