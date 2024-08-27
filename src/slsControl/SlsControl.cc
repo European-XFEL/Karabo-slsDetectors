@@ -313,8 +313,8 @@ namespace karabo {
               .displayedName("Exposure Time")
               .description("The exposure time.")
               .assignmentOptional()
-              .defaultValue(1.e-5) // 10 us
-              // .minExc(0.) // Set in the derived classes
+              .noDefaultValue()
+              .minInc(0.)
               .unit(Unit::SECOND)
               .reconfigurable()
               .allowedStates(State::ON)
@@ -327,8 +327,8 @@ namespace karabo {
               .displayedName("Exposure Period")
               .description("The period between frames.")
               .assignmentOptional()
-              .defaultValue(0.1) // 100 ms
-              // .minExc(0.) // Set in the derived classes
+              .defaultValue(0.)
+              .minInc(0.)
               .unit(Unit::SECOND)
               .reconfigurable()
               .allowedStates(State::ON)
@@ -366,7 +366,7 @@ namespace karabo {
               .displayedName("Number of Triggers")
               .description("Number of triggers per acquisition. Used to be named \"numberOfCycles\".")
               .assignmentOptional()
-              .defaultValue(1)
+              .defaultValue(10000000)
               .reconfigurable()
               .allowedStates(State::ON)
               .commit();
@@ -378,7 +378,7 @@ namespace karabo {
                     "Set this to 'True' to automatically restart image "
                     "sending when the acquisition time is over.")
               .assignmentOptional()
-              .defaultValue(false)
+              .defaultValue(true)
               .reconfigurable()
               .allowedStates(State::ON)
               .commit();
@@ -401,7 +401,7 @@ namespace karabo {
               .displayedName("Timing Mode")
               .description("The timing mode of the detector.")
               .assignmentOptional()
-              .defaultValue("auto")
+              .defaultValue("trigger")
               .options({"auto", "gating", "trigger", "ro_trigger", "triggered_gating"}) // OVERWRITE in derived class
               .reconfigurable()
               .allowedStates(State::ON)
@@ -633,7 +633,7 @@ namespace karabo {
         try {
             m_SLS->acquire();
         } catch (const std::exception& e) {
-            KARABO_LOG_FRAMEWORK_ERROR << "Exception in acquireBlocking: " << e.what(); 
+            KARABO_LOG_FRAMEWORK_ERROR << "Exception in acquireBlocking: " << e.what();
         }
 
         if (m_acquireForever) {
