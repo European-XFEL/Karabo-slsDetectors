@@ -59,16 +59,21 @@ namespace karabo {
                     "Options: 0|60-200 V.")
               .commit();
 
+        std::vector<std::string> timingOptions = {"auto", "trigger"};
+        OVERWRITE_ELEMENT(expected).key("timing").setNewOptions(timingOptions).commit();
+
         OVERWRITE_ELEMENT(expected)
               .key("exposureTime")
+              .setNewDefaultValue(1.e-5) // 10 us
               .setNewMinExc(0.)
               .setNewMaxInc(0.001) // 1 ms
               .commit();
 
-        OVERWRITE_ELEMENT(expected).key("exposurePeriod").setNewMinExc(0.).commit();
-
-        std::vector<std::string> timingOptions = {"auto", "trigger"};
-        OVERWRITE_ELEMENT(expected).key("timing").setNewOptions(timingOptions).commit();
+        OVERWRITE_ELEMENT(expected)
+              .key("exposurePeriod")
+              .setNewMinExc(0.)
+              .setNewDefaultValue(0.1) // 100 ms
+              .commit();
 
         INT16_ELEMENT(expected)
               .key("storageCells")

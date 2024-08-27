@@ -47,7 +47,6 @@ namespace karabo {
               .setNewDescription(
                     "The additional exposure time. Setting it to 0, will result in "
                     "an effective exposure time of ~110 ns.")
-              .setNewMinInc(0.)
               .setNewDefaultValue(0.)
               .commit();
 
@@ -57,7 +56,6 @@ namespace karabo {
               .setNewDescription(
                     "The additional period between frames. Setting it to 0, will "
                     "result in an effective frame period of 222 ns.")
-              .setNewMinInc(0.)
               .setNewDefaultValue(0.)
               .commit();
 
@@ -74,7 +72,7 @@ namespace karabo {
                     "The timing source. Internal is crystal and "
                     "external is system timing.")
               .assignmentOptional()
-              .defaultValue("internal")
+              .defaultValue("external")
               .options(timingSourceOptions)
               .reconfigurable()
               .allowedStates(State::ON)
@@ -107,6 +105,8 @@ namespace karabo {
               .reconfigurable()
               .allowedStates(State::ON)
               .commit();
+
+        OVERWRITE_ELEMENT(expected).key("numberOfFrames").setNewDefaultValue(2720).commit();
 
         INT64_ELEMENT(expected)
               .key("numberOfBursts")
@@ -190,7 +190,7 @@ namespace karabo {
 
     void Gotthard2Control::powerOff() {
         if (m_SLS && !m_SLS->empty()) {
-            m_SLS->setHighVoltage(0, m_positions);   // HV off
+            m_SLS->setHighVoltage(0, m_positions); // HV off
         }
     }
 
