@@ -7,8 +7,6 @@
  */
 
 
-#define KARABO_LOG_PRIORITY_WARN krb_log4cpp::Priority::WARN
-
 #include "SlsReceiver.hh"
 
 USING_KARABO_NAMESPACES
@@ -250,9 +248,9 @@ namespace karabo {
             self->m_detectorData[1].reset();
 
         } catch (const std::exception& e) {
-            self->log() << KARABO_LOG_PRIORITY_WARN << "startAcquisitionCallBack: " << e.what();
+            KARABO_LOG_FRAMEWORK_WARN << "startAcquisitionCallBack: " << e.what();
         } catch (...) {
-            self->log() << KARABO_LOG_PRIORITY_WARN << "startAcquisitionCallBack: other exception";
+            KARABO_LOG_FRAMEWORK_WARN << "startAcquisitionCallBack: other exception";
         }
 
         // From "slsReceiverUsers.h": return value is insignificant at the moment, we write depending on file
@@ -283,9 +281,9 @@ namespace karabo {
             self->m_strand->post(karabo::util::bind_weak(&SlsReceiver::signalEndOfStreams, self));
 
         } catch (const std::exception& e) {
-            self->log() << KARABO_LOG_PRIORITY_WARN << "acquisitionFinishedCallBack: " << e.what();
+            KARABO_LOG_FRAMEWORK_WARN << "acquisitionFinishedCallBack: " << e.what();
         } catch (...) {
-            self->log() << KARABO_LOG_PRIORITY_WARN << "acquisitionFinishedCallBack: other exception";
+            KARABO_LOG_FRAMEWORK_WARN << "acquisitionFinishedCallBack: other exception";
         }
 
         self->updateState(State::PASSIVE);
@@ -408,9 +406,9 @@ namespace karabo {
             }
 
         } catch (const std::exception& e) {
-            self->log() << KARABO_LOG_PRIORITY_WARN << "rawDataReadyCallBack: " << e.what();
+            KARABO_LOG_FRAMEWORK_WARN << "rawDataReadyCallBack: " << e.what();
         } catch (...) {
-            self->log() << KARABO_LOG_PRIORITY_WARN << "rawDataReadyCallBack: other exception";
+            KARABO_LOG_FRAMEWORK_WARN << "rawDataReadyCallBack: other exception";
         }
     }
 
