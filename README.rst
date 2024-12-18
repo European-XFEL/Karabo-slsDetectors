@@ -24,12 +24,12 @@ opensource@xfel.eu.
 Dependencies
 ============
 
-- slsDetectorPackage v7.0.x
+- slsDetectorPackage v8.0.x
   https://github.com/slsdetectorgroup/slsDetectorPackage.git
 
 
-Gotthard troubleshooting
-========================
+Gotthard-I Troubleshooting
+==========================
 
 It happens sometimes that Gotthard starts sending data and cannot be stopped.
 If you click `stop` the Karabo device will be stuck in "CHANGING".
