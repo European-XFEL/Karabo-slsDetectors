@@ -78,6 +78,7 @@ namespace karabo {
               .allowedStates(State::ON)
               .commit();
 
+        const std::vector<std::string> burstModeOptions = {"burst_internal", "cw_external"};
         STRING_ELEMENT(expected)
               .key("burstMode")
               .alias("burstmode")
@@ -85,7 +86,7 @@ namespace karabo {
               .displayedName("Burst Mode")
               .assignmentOptional()
               .defaultValue("burst_internal")
-              .options({"burst_internal", "burst_external", "cw_internal", "cw_external"})
+              .options(burstModeOptions)
               .reconfigurable()
               .allowedStates(State::ON)
               .commit();

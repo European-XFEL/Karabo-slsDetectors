@@ -240,8 +240,8 @@ namespace karabo {
 
 
     void JungfrauControl::powerOn() {
-        m_SLS->setPowerChip(true, m_positions);            // power on
-        m_SLS->writeRegister(0x4d, 0x108000, m_positions); // set additional read-out timeout (bit 15)
+        m_SLS->setPowerChip(true, m_positions);                   // power on
+        m_SLS->writeRegister(0x4d, 0x108000, false, m_positions); // set additional read-out timeout (bit 15)
     }
 
     void JungfrauControl::powerOff() {
@@ -292,7 +292,7 @@ namespace karabo {
                 // Replace bits 16-31
                 asicCtrl = (asicCtrl & 0xFFFF) | (exposureTimer << 16);
 
-                m_SLS->writeRegister(addr, asicCtrl, {i++});
+                m_SLS->writeRegister(addr, asicCtrl, false, {i++});
             }
         }
     }
