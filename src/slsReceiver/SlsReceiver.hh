@@ -117,13 +117,13 @@ namespace karabo {
         void initialize();
 
        private: // Functions
-        static int startAcquisitionCallBack(const std::string& filePath, const std::string& fileName,
-                                            uint64_t fileIndex, size_t bufferSize, void* context);
+        static int startAcquisitionCallBack(const slsDetectorDefs::startCallbackHeader, void* context);
 
-        static void acquisitionFinishedCallBack(uint64_t totalFramesCaught, void* context);
+        static void acquisitionFinishedCallBack(const slsDetectorDefs::endCallbackHeader, void* context);
 
-        static void rawDataReadyCallBack(slsDetectorDefs::sls_receiver_header& header, char* dataPointer,
-                                         size_t dataSize, void* context);
+        static void rawDataReadyCallBack(slsDetectorDefs::sls_receiver_header& header,
+                                         const slsDetectorDefs::dataCallbackHeader, char* dataPointer, size_t& dataSize,
+                                         void* context);
 
         /**
          * The base implementation returns true if meta("trainId") is incremented w.r.t. meta("lastTrainId").

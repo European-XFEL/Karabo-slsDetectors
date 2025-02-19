@@ -60,6 +60,8 @@ namespace sls {
 
         Result<int64_t> getFirmwareVersion(Positions pos = {}) const;
 
+        Result<std::string> getHardwareVersion(Positions pos = {}) const;
+
         Result<std::string> getDetectorServerVersion(Positions pos = {}) const;
 
         Result<int64_t> getSerialNumber(Positions pos = {}) const;
@@ -185,7 +187,7 @@ namespace sls {
 
         Result<uint32_t> readRegister(uint32_t addr, Positions pos = {}) const;
 
-        void writeRegister(uint32_t addr, uint32_t val, Positions pos = {});
+        void writeRegister(uint32_t addr, uint32_t val, bool validate = false, Positions pos = {});
 
         // Not available in "real" Detector
         slsDetectorDefs::detectorType setDetectorType(slsDetectorDefs::detectorType type);

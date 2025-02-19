@@ -97,6 +97,8 @@ sls::Receiver::Receiver(int argc, char* argv[]) : m_filePath("/tmp"), m_fileName
     m_period_us = 1000; // 1 ms
     m_rx_tcpport = SLS_RX_DEFAULT_PORT;
     m_settings = static_cast<int>(slsDetectorDefs::detectorSettings::UNINITIALIZED);
+    m_acqIndex = 0;
+    m_frameIndex = 0;
     m_frameCounter = 0;
     m_detectorType = static_cast<int>(slsDetectorDefs::detectorType::GENERIC); // UNDEFINED
     m_fileIndex = 0;
@@ -152,21 +154,22 @@ int64_t sls::Receiver::getReceiverVersion() {
     return int64_t(7022809911320);
 }
 
-void sls::Receiver::registerCallBackStartAcquisition(int (*func)(const std::string& filepath,
-                                                                 const std::string& filename, uint64_t fileindex,
-                                                                 size_t datasize, void*),
+void sls::Receiver::registerCallBackStartAcquisition(int (*func)(const slsDetectorDefs::startCallbackHeader, void*),
                                                      void* arg) {
     m_startAcquisitionCallBack = func;
     m_pStartAcquisition = arg;
+    ++m_acqIndex;
 }
 
-void sls::Receiver::registerCallBackAcquisitionFinished(void (*func)(uint64_t nf, void*), void* arg) {
+void sls::Receiver::registerCallBackAcquisitionFinished(void (*func)(const slsDetectorDefs::endCallbackHeader, void*),
+                                                        void* arg) {
     m_acquisitionFinishedCallBack = func;
     m_pAcquisitionFinished = arg;
 }
 
-void sls::Receiver::registerCallBackRawDataReady(void (*func)(slsDetectorDefs::sls_receiver_header& header,
-                                                              char* datapointer, size_t datasize, void*),
+void sls::Receiver::registerCallBackRawDataReady(void (*func)(slsDetectorDefs::sls_receiver_header&,
+                                                              const slsDetectorDefs::dataCallbackHeader, char*, size_t&,
+                                                              void*),
                                                  void* arg) {
     m_rawDataReadyCallBack = func;
     m_pRawDataReady = arg;
@@ -191,20 +194,26 @@ void* sls::Receiver::dataWorker(void* self) {
     detectorHeader->detType = receiver->m_detectorType;
     detectorHeader->version = 1;
 
+    slsDetectorDefs::dataCallbackHeader dataHeater;
+    dataHeater.acqIndex = receiver->m_acqIndex;
+    dataHeater.completeImage = true;
+
     const int channels = slsDetectorDefs::channels[receiver->m_detectorType];
-    const uint32_t dataSize = channels * sizeof(short);
+    size_t dataSize = channels * sizeof(short);
     char* dataPointer;
 
     while (receiver->m_acquisitionStarted) {
         receiver->m_frameCounter += 1;
         detectorHeader->frameNumber = receiver->m_frameCounter;
+        ++receiver->m_frameCounter;
         receiver->m_header.packetsMask.reset();
 
         // randomly access m_data, which is twice as large as one sample
         dataPointer = receiver->m_data + sizeof(short) * rand() % channels;
 
         // Pass frame and header to callback
-        receiver->m_rawDataReadyCallBack(receiver->m_header, dataPointer, dataSize, receiver->m_pRawDataReady);
+        receiver->m_rawDataReadyCallBack(receiver->m_header, dataHeater, dataPointer, dataSize,
+                                         receiver->m_pRawDataReady);
 
         if (receiver->m_enableWriteToFile) {
             ++receiver->m_currAcqFrameCounter;
@@ -277,7 +286,13 @@ void sls::Receiver::processCommand(const std::string& command) {
             if (m_startAcquisitionCallBack != NULL) {
                 // call registered start function
                 const uint32_t datasize = channels * sizeof(short); // sample data size
-                m_startAcquisitionCallBack(m_filePath, m_fileName, m_fileIndex, datasize, m_pStartAcquisition);
+                slsDetectorDefs::startCallbackHeader startHeader;
+                startHeader.imageSize = datasize;
+                startHeader.filePath = m_filePath;
+                startHeader.fileName = m_fileName;
+                startHeader.fileIndex = m_fileIndex;
+
+                m_startAcquisitionCallBack(startHeader, m_pStartAcquisition);
 
                 if (m_enableWriteToFile) {
                     m_currAcqFrameCounter = 0;
@@ -308,7 +323,10 @@ void sls::Receiver::processCommand(const std::string& command) {
         try {
             if (m_acquisitionFinishedCallBack != NULL) {
                 // call registerd stop function
-                m_acquisitionFinishedCallBack(m_frameCounter, m_pAcquisitionFinished);
+                slsDetectorDefs::endCallbackHeader endHeader;
+                endHeader.completeFrames = {m_frameCounter};
+                endHeader.lastFrameIndex = {m_frameIndex};
+                m_acquisitionFinishedCallBack(endHeader, m_pRawDataReady);
 
                 if (m_enableWriteToFile) {
                     fclose(m_filePointer);

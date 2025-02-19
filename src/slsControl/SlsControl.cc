@@ -450,11 +450,17 @@ namespace karabo {
         VECTOR_STRING_ELEMENT(expected)
               .key("firmwareVersion")
               .displayedName("Firmware Version")
-              .displayedName("Firmware Version")
               .description(
                     "Fimware version of the detectors, in the format [0xYYMMDD]"
                     //" or an increasing 2 digit number for Eiger"
                     ". Used to be named \"detectorVersion\".")
+              .readOnly()
+              .commit();
+
+        VECTOR_STRING_ELEMENT(expected)
+              .key("hardwareVersion")
+              .displayedName("Hardware Version")
+              .description("Hardware version of detector.")
               .readOnly()
               .commit();
 
@@ -721,6 +727,9 @@ namespace karabo {
             version.push_back(ss.str());
         }
         h.set("firmwareVersion", version);
+
+        version = m_SLS->getHardwareVersion(m_positions);
+        h.set("hardwareVersion", version);
 
         h.set<std::vector<std::string>>("detServerVersion", m_SLS->getDetectorServerVersion(m_positions));
 

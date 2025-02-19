@@ -10,6 +10,7 @@
 
 #include <bitset>
 #include <cstdint>
+#include <map>
 #include <vector>
 
 #define SLS_RX_DEFAULT_PORT 1954
@@ -58,6 +59,42 @@ namespace slsDetectorDefs {
         uint8_t detType;
         uint8_t version;
     } sls_detector_header;
+
+    struct xy {
+        int x{0};
+        int y{0};
+        xy() = default;
+        xy(int x, int y) : x(x), y(y){};
+    } __attribute__((packed));
+
+    struct startCallbackHeader {
+        std::vector<uint32_t> udpPort;
+        uint32_t dynamicRange;
+        xy detectorShape;
+        size_t imageSize;
+        std::string filePath;
+        std::string fileName;
+        uint64_t fileIndex;
+        bool quad;
+        std::map<std::string, std::string> addJsonHeader;
+    };
+
+    struct endCallbackHeader {
+        std::vector<uint32_t> udpPort;
+        std::vector<uint64_t> completeFrames;
+        std::vector<uint64_t> lastFrameIndex;
+    };
+
+    struct dataCallbackHeader {
+        uint32_t udpPort;
+        xy shape;
+        uint64_t acqIndex;
+        uint64_t frameIndex;
+        double progress;
+        bool completeImage;
+        bool flipRows;
+        std::map<std::string, std::string> addJsonHeader;
+    };
 
     using sls_bitset = std::bitset<MAX_NUM_PACKETS>;
     using bitset_storage = uint8_t[MAX_NUM_PACKETS / 8];

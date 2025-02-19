@@ -223,8 +223,7 @@ namespace karabo {
         }
     }
 
-    int SlsReceiver::startAcquisitionCallBack(const std::string& filePath, const std::string& fileName,
-                                              uint64_t fileIndex, size_t bufferSize, void* context) {
+    int SlsReceiver::startAcquisitionCallBack(const slsDetectorDefs::startCallbackHeader, void* context) {
         Self* self = static_cast<Self*>(context);
 
         try {
@@ -258,7 +257,7 @@ namespace karabo {
         return 0;
     }
 
-    void SlsReceiver::acquisitionFinishedCallBack(uint64_t totalFramesCaught, void* context) {
+    void SlsReceiver::acquisitionFinishedCallBack(const slsDetectorDefs::endCallbackHeader, void* context) {
         Self* self = static_cast<Self*>(context);
 
         try {
@@ -289,8 +288,9 @@ namespace karabo {
         self->updateState(State::PASSIVE);
     }
 
-    void SlsReceiver::rawDataReadyCallBack(slsDetectorDefs::sls_receiver_header& header, char* dataPointer,
-                                           size_t dataSize, void* context) {
+    void SlsReceiver::rawDataReadyCallBack(slsDetectorDefs::sls_receiver_header& header,
+                                           const slsDetectorDefs::dataCallbackHeader, char* dataPointer,
+                                           size_t& dataSize, void* context) {
         Self* self = static_cast<Self*>(context);
         const slsDetectorDefs::sls_detector_header& detectorHeader = header.detHeader;
 

@@ -211,6 +211,15 @@ namespace sls {
         }
     }
 
+    Result<std::string> Detector::getHardwareVersion(Positions pos) const {
+        const std::string ver("2.0");
+        if (pos.size() == 0) {
+            return {};
+        } else {
+            return std::vector<std::string>(pos.size(), ver);
+        }
+    }
+
     Result<std::string> Detector::getDetectorServerVersion(Positions pos) const {
         const std::string ver = "7.0.0";
         if (pos.size() == 0) {
@@ -592,7 +601,7 @@ namespace sls {
         }
     }
 
-    void Detector::writeRegister(uint32_t addr, uint32_t val, Positions pos) {
+    void Detector::writeRegister(uint32_t addr, uint32_t val, bool validate, Positions pos) {
         m_register[addr] = val;
     }
 
