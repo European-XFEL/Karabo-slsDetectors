@@ -476,6 +476,14 @@ namespace sls {
         }
     }
 
+    Result<slsDetectorDefs::runStatus> Detector::getReceiverStatus(Positions pos) const {
+        if (pos.size() == 0) {
+            return {m_status};
+        } else {
+            return std::vector<slsDetectorDefs::runStatus>(pos.size(), m_status);
+        }
+    }
+
     Result<std::string> Detector::getFilePath(Positions pos) const {
         if (pos.size() == 0) {
             return m_filePath;
@@ -788,7 +796,7 @@ namespace sls {
         } else if (parameter == "udp_srcmac") {
             m_udp_srcmac = value;
         } else if (parameter == "rx_tcpport") {
-            m_rx_tcpport = std::stoi(value);
+            this->setRxPort(std::stoi(value));
         } else if (parameter == "udp_dstport") {
             m_udp_dstport = std::stoi(value);
         } else if (parameter == "rx_hostname") {
@@ -1009,8 +1017,16 @@ namespace sls {
         m_status = slsDetectorDefs::runStatus::RUNNING;
     }
 
+    void Detector::setRxPort(uint16_t port, int module_id) {
+        m_rx_tcpport = port;
+    }
+
     void Detector::setRxHostname(std::string rx_hostname) {
         m_rx_hostname = rx_hostname;
+    }
+
+    void Detector::setRxHostname(const std::vector<std::string>& name) {
+        if (name.size() > 0) m_rx_hostname = name[0];
     }
 
     void* Detector::dataWorker(void* self) {

@@ -68,9 +68,6 @@ namespace karabo {
         virtual void powerOn(){};
         virtual void powerOff(){};
 
-        bool isServerOnline(const std::string& host, unsigned short port, HostType hostType, std::string& errorMsg);
-        bool areDetectorsOnline();
-        bool areReceiversOnline();
         bool ping(std::string host);
 
         void createTmpDir();
