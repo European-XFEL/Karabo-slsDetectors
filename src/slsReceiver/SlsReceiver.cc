@@ -268,7 +268,7 @@ namespace karabo {
                 const double frameRate = self->m_frameCount / elapsedTime;
 
                 self->set("frameRateIn", frameRate);
-                KARABO_LOG_FRAMEWORK_INFO << "Frame rate (receiver) " << frameRate;
+                KARABO_LOG_FRAMEWORK_DEBUG << "Frame rate (receiver) " << frameRate;
             }
 
             // Reset frame rates after acquisition is over
@@ -396,9 +396,9 @@ namespace karabo {
                 KARABO_LOG_FRAMEWORK_DEBUG << "Current Frame: " << detectorHeader.frameNumber
                                            << " Last Frame: " << self->m_lastFrameNum
                                            << " Elapsed time [s]: " << elapsedTime;
-                KARABO_LOG_FRAMEWORK_INFO << "Frame rate (detector) " << frameRateIn << " Hz";
-                KARABO_LOG_FRAMEWORK_INFO << "Frame rate (receiver) " << frameRateOut << " Hz";
-                KARABO_LOG_FRAMEWORK_INFO << "Train ID " << trainId;
+                KARABO_LOG_FRAMEWORK_DEBUG << "Frame rate (detector) " << frameRateIn << " Hz";
+                KARABO_LOG_FRAMEWORK_DEBUG << "Frame rate (receiver) " << frameRateOut << " Hz";
+                KARABO_LOG_FRAMEWORK_DEBUG << "Train ID " << trainId;
 
                 self->m_frameCount = 0;
                 self->m_lastRateTime = currentTime;

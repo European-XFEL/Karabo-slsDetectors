@@ -46,6 +46,12 @@ namespace sls {
 
         void setHostname(const std::vector<std::string>& hostname);
 
+        void setRxHostname(std::string rx_hostname);
+
+        void setRxHostname(const std::vector<std::string>& name);
+
+        void setRxPort(uint16_t port, int module_id = -1);
+
         int getShmId() const {
             return m_shm_id;
         }
@@ -151,6 +157,8 @@ namespace sls {
 
         Result<slsDetectorDefs::runStatus> getDetectorStatus(Positions pos = {}) const;
 
+        Result<slsDetectorDefs::runStatus> getReceiverStatus(Positions pos = {}) const;
+
         Result<std::string> getFilePath(Positions pos = {}) const;
 
         void setFilePath(const std::string& fpath, Positions pos = {});
@@ -235,7 +243,6 @@ namespace sls {
         void toReceiver(const std::string& command, const std::string& parameters = "");
 
         void startMeasurementNoWait();
-        void setRxHostname(std::string rx_hostname);
 
         bool m_keepRunning;
         pthread_t m_dataThread;
