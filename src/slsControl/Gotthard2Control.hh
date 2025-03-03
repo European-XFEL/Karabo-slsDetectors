@@ -29,7 +29,6 @@ namespace karabo {
         static void expectedParameters(karabo::util::Schema& expected);
 
        private: // functions
-        void powerOn() override;
         void powerOff() override;
 
         void pollDetectorSpecific(karabo::util::Hash& h) override;

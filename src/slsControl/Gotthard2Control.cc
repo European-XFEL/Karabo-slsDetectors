@@ -185,10 +185,6 @@ namespace karabo {
               .commit();
     }
 
-    void Gotthard2Control::powerOn() {
-        m_SLS->setPowerChip(true, m_positions); // power on
-    }
-
     void Gotthard2Control::powerOff() {
         if (m_SLS && !m_SLS->empty()) {
             m_SLS->setHighVoltage(0, m_positions); // HV off
