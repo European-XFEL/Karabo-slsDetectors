@@ -605,11 +605,12 @@ namespace karabo {
                 }
             }
 
-            m_SLS->setRxHostname(hosts);
             for (size_t idx = 0; idx < ports.size(); ++idx) {
-                // Verify that the receivers are online
                 m_SLS->setRxPort(ports[idx], idx);
             }
+            // Verify that the receivers are online
+            // setRxHostname must be called after setting the port, otherwise will try to connect to the default one
+            m_SLS->setRxHostname(hosts);
 
             this->updateState(State::INIT, Hash("status", "Initializing detector(s)"));
             KARABO_LOG_INFO << "Initializing detector(s)";
