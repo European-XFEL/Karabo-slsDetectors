@@ -34,7 +34,7 @@ namespace karabo {
 
         explicit SlsControl(const karabo::util::Hash& config);
 
-        virtual ~SlsControl();
+        virtual ~SlsControl() = default;
 
         static void expectedParameters(karabo::util::Schema& expected);
 
@@ -52,10 +52,9 @@ namespace karabo {
 
         void connect(const boost::system::error_code& ec);
 
-        void acquireBlocking();
-
         void startPoll();
         void stopPoll();
+        void pollStatus(const boost::system::error_code& ec);
         void pollHardware(const boost::system::error_code& ec);
         void pollOnce(karabo::util::Hash& h);
         virtual void pollDetectorSpecific(karabo::util::Hash& h){};
@@ -93,6 +92,7 @@ namespace karabo {
         bool m_isConfigured; // modules can be polled only after hostnames are set
         bool m_firstPoll;
         bool m_poll;
+        boost::asio::deadline_timer m_status_timer;
         boost::asio::deadline_timer m_poll_timer;
 
         bool m_acquireForever;

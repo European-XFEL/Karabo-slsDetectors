@@ -18,6 +18,11 @@ namespace fs = boost::filesystem;
 
 namespace karabo {
 
+    const std::vector<slsDetectorDefs::runStatus> idleStates = {
+        slsDetectorDefs::runStatus::IDLE,
+        slsDetectorDefs::runStatus::ERROR,
+        slsDetectorDefs::runStatus::STOPPED};
+
     SlsControl::SlsControl(const Hash& config)
         : Device<>(config),
           m_numberOfModules(0),
@@ -26,6 +31,7 @@ namespace karabo {
           m_isConfigured(false),
           m_firstPoll(true),
           m_poll(false),
+          m_status_timer(EventLoop::getIOService()),
           m_poll_timer(EventLoop::getIOService()),
           m_acquireForever(false) {
         KARABO_INITIAL_FUNCTION(initialize);
@@ -34,14 +40,7 @@ namespace karabo {
         KARABO_SLOT(stop);
         KARABO_SLOT(reset);
 
-        // Need an additional thread as the acquire function is blocking
-        EventLoop::addThread(1);
-
         this->createTmpDir(); // Create temporary directory
-    }
-
-    SlsControl::~SlsControl() {
-        EventLoop::removeThread(1);
     }
 
     void SlsControl::expectedParameters(Schema& expected) {
@@ -509,7 +508,8 @@ namespace karabo {
     void SlsControl::start() {
         this->updateState(State::ACQUIRING, Hash("status", "Acquisition started"));
         m_acquireForever = this->get<bool>("continuousMode");
-        EventLoop::getIOService().post(boost::bind(&SlsControl::acquireBlocking, this));
+        m_SLS->startReceiver();
+        m_SLS->startDetector();
     }
 
     void SlsControl::stop() {
@@ -519,6 +519,7 @@ namespace karabo {
         KARABO_LOG_INFO << "Stopping acquisition";
         this->set("status", "Stopping acquisition");
         m_SLS->stopDetector();
+        m_SLS->stopReceiver();
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Quitting stop";
     }
@@ -653,31 +654,13 @@ namespace karabo {
         this->startPoll();
     }
 
-    void SlsControl::acquireBlocking() {
-        KARABO_LOG_FRAMEWORK_DEBUG << "In acquireBlocking";
-
-        // The following is a blocking function: it will only return when the
-        // acquisition is over!
-        // If the detector is powered off during an acquisition, this thread
-        // will never return!
-        try {
-            m_SLS->acquire();
-        } catch (const std::exception& e) {
-            KARABO_LOG_FRAMEWORK_ERROR << "Exception in acquireBlocking: " << e.what();
-        }
-
-        if (m_acquireForever) {
-            KARABO_LOG_FRAMEWORK_DEBUG << "Restarting acquisition";
-            EventLoop::getIOService().post(boost::bind(&SlsControl::acquireBlocking, this));
-        } else {
-            this->updateState(State::ON, Hash("status", "Acquisition finished"));
-        }
-
-        KARABO_LOG_FRAMEWORK_DEBUG << "Quitting acquireBlocking";
-    }
-
     void SlsControl::startPoll() {
         m_poll = true;
+
+        m_status_timer.expires_from_now(boost::posix_time::seconds(1));
+        m_status_timer.async_wait(
+              karabo::util::bind_weak(&SlsControl::pollStatus, this, boost::asio::placeholders::error));
+
         m_poll_timer.expires_from_now(boost::posix_time::seconds(1));
         m_poll_timer.async_wait(
               karabo::util::bind_weak(&SlsControl::pollHardware, this, boost::asio::placeholders::error));
@@ -685,11 +668,12 @@ namespace karabo {
 
     void SlsControl::stopPoll() {
         m_poll = false;
+        m_status_timer.cancel();
         m_poll_timer.cancel();
     }
 
-    void SlsControl::pollHardware(const boost::system::error_code& ec) {
-        KARABO_LOG_FRAMEWORK_DEBUG << "In pollHardware";
+    void SlsControl::pollStatus(const boost::system::error_code& ec) {
+        KARABO_LOG_FRAMEWORK_DEBUG << "In pollStatus";
         if (ec) {
             return;
         }
@@ -703,8 +687,30 @@ namespace karabo {
                 }
             }
 
-            m_SLS->getDetectorStatus();
+            const std::vector<slsDetectorDefs::runStatus> status = m_SLS->getDetectorStatus();
+            bool is_acquiring = false;
+            for (const slsDetectorDefs::runStatus st : status) {
+                if (std::find(idleStates.begin(), idleStates.end(), st) == idleStates.end()) {
+                    // This module is not "idle"
+                    is_acquiring = true;
+                    break;
+                }
+            }
+
+            if (this->getState() == State::ACQUIRING && !is_acquiring) {
+                // The acquisition is over: either restart it if `acquireForever` is set, or update the device state.
+                if (m_acquireForever) {
+                    KARABO_LOG_FRAMEWORK_DEBUG << "Restarting acquisition";
+                    m_SLS->startDetector();
+                } else {
+                    m_SLS->stopReceiver();
+                    this->updateState(State::ON, Hash("status", "Acquisition finished"));
+                }
+            }
+
         } catch (const std::exception& e) {
+            m_SLS->stopReceiver(); // Stops receiver
+
             // stops polling and tries to reconnect
             this->updateState(State::UNKNOWN, Hash("status", e.what()));
             KARABO_LOG_FRAMEWORK_ERROR << e.what();
@@ -730,8 +736,23 @@ namespace karabo {
                 m_SLS->getReceiverStatus();
             } catch (const std::exception& e) {
                 this->updateState(State::ERROR, Hash("status", e.what()));
-                KARABO_LOG_FRAMEWORK_ERROR << "Exception in 'pollHardware': " << e.what();
+                KARABO_LOG_FRAMEWORK_ERROR << "Exception in 'pollStatus': " << e.what();
             }
+        }
+
+        if (m_poll) {
+            m_status_timer.expires_at(m_status_timer.expires_at() +
+                                    boost::posix_time::milliseconds(100));
+            m_status_timer.async_wait(
+                  karabo::util::bind_weak(&SlsControl::pollStatus, this, boost::asio::placeholders::error));
+            return;
+        }
+    }
+
+    void SlsControl::pollHardware(const boost::system::error_code& ec) {
+        KARABO_LOG_FRAMEWORK_DEBUG << "In pollHardware";
+        if (ec) {
+            return;
         }
 
         if (m_isConfigured) {
@@ -1153,7 +1174,8 @@ namespace karabo {
     }
 
     void SlsControl::preDestruction() {
-        if (this->getState() == State::ACQUIRING && m_SLS && !m_SLS->empty()) {
+        const State state = this->getState();
+        if (state == State::ACQUIRING && m_SLS && !m_SLS->empty()) {
             // Stop acquisition
             m_acquireForever = false;
             m_SLS->loadParameters({"stop", "rx_stop", "clearbusy"});
@@ -1165,7 +1187,9 @@ namespace karabo {
         this->stopPoll();
 
         // Power off
-        this->powerOff();
+        if (state != State::UNKNOWN) {
+            this->powerOff();
+        }
 
         try {
             bool success = true;
