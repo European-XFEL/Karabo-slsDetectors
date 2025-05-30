@@ -76,3 +76,22 @@ endif()
 set(BUILD_TESTS ON CACHE BOOL "Should build unit tests?")
 
 add_subdirectory (src ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME})
+
+# if you only care that the env‐var is set to anything non‐empty / non‐FALSE
+if( $ENV{MAKE_PYPI_WHEEL} )
+  message(STATUS ">>> Building PyPI wheel, enabling wheel‐only flags")
+  add_compile_definitions(SPDLOG_FMT_EXTERNAL)
+  add_subdirectory(deviceServer)
+  set_target_properties(slsDetectors PROPERTIES
+    BUILD_WITH_INSTALL_RPATH TRUE
+    INSTALL_RPATH "\$ORIGIN"
+    INSTALL_RPATH_USE_LINK_PATH FALSE
+  )
+  install(
+    TARGETS slsDetectors
+    LIBRARY
+    DESTINATION ${PROJECT_NAME}
+  )
+else()
+  message(STATUS ">>> Not building PyPI wheel, skipping wheel‐only flags")
+endif()
