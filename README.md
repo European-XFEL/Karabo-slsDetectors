@@ -17,12 +17,37 @@ warranty under the GPLv3 license.
 If you have questions on contributing to the project, please get in touch at
 opensource@xfel.eu.
 
+## Source Code
+
+The sources for this project can be found at
+https://github.com/European-XFEL/Karabo-slsDetectors
+
 ## Dependencies
 
 - slsDetectorPackage v9.1.x
 
   https://github.com/slsdetectorgroup/slsDetectorPackage.git
 
+## Installing and Running from PyPI
+
+The device can further be installed from PyPI and ships in the form of
+a self-hosting device server. To install, run
+
+```
+pip install karabo-sls-detectors
+```
+
+To run, make sure you have activated a Karabo environment using
+
+```
+source PATH/TO/KARABO/activate
+```
+
+and then start the self-hosting server with
+
+```
+karabo-sls-server [serverId=, ... karabo-cpp-server options]
+```
 
 ## Gotthard-I Troubleshooting
 

@@ -7,11 +7,11 @@
 # To disable building of tests, please set the cache variable BUILD_TESTS to
 # 0 from the cmake configuration command-line. The default is to BUILD_TESTS.
 
-cmake_minimum_required (VERSION 3.14)
+cmake_minimum_required (VERSION 3.15)
 
 project (slsDetectors LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
