@@ -127,7 +127,7 @@ before-all = "dnf -y install perl gettext git gtest-devel"
 before-build = "pip3 install conan==2.5.0 'karabo.cpp' meson ninja && conan profile detect --force && python ci-build-deps.py && python ci-create-cpp-shim.py karabo-sls-detectors karabo-sls-server"
 
 # we need to help audit wheel find the karabo and karabo extern libs
-repair-wheel-command  = "LD_LIBRARY_PATH=/project/build/slsDetectors:/project/tmp/karabo/lib:/project/tmp/karabo/extern/lib:$LD_LIBRARY_PATH auditwheel repair -w {dest_dir} {wheel}"
+repair-wheel-command  = "LD_LIBRARY_PATH=/project/build/slsDetectors:/project/tmp/karabo/lib:/project/tmp/karabo/extern/lib:/project/tmp/karabo/extern/lib64:$LD_LIBRARY_PATH auditwheel repair -w {dest_dir} {wheel}"
 
 test-requires = ["pytest", "karabo.native"]
 # these are minimally required for a C++ server to start
