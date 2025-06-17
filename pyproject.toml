@@ -107,7 +107,7 @@ manylinux-pypy_x86_64-image = "quay.io/pypa/manylinux_2_28_x86_64"
 #    include perl and gettext. We also need git installed to resolve versions.
 #    You can add other dependencies which are necessary, and which then will
 #    will be copied onto the wheel.
-before-all = "dnf -y install perl gettext git zeromq-devel gtest-devel"
+before-all = "dnf -y install perl gettext git gtest-devel"
 # 2) - Here you should minimally install conan, karabo.cpp meson and ninja
 #      this will ensure that most Karabo based installers should work
 #    - Then, we call conan profile detect --force to have a vaild conan profile
@@ -124,7 +124,7 @@ before-all = "dnf -y install perl gettext git zeromq-devel gtest-devel"
 #
 # NOTE: this all needs to be done before-build, so it is done for any Python
 # version we are building!
-before-build = "pip3 install conan==2.5.0 'karabo.cpp' && conan profile detect --force && python ci-build-deps.py && python ci-create-cpp-shim.py karabo-sls-detectors karabo-sls-server"
+before-build = "pip3 install conan==2.5.0 'karabo.cpp' meson ninja && conan profile detect --force && python ci-build-deps.py && python ci-create-cpp-shim.py karabo-sls-detectors karabo-sls-server"
 
 # we need to help audit wheel find the karabo and karabo extern libs
 repair-wheel-command  = "LD_LIBRARY_PATH=/project/build/slsDetectors:/project/tmp/karabo/lib:/project/tmp/karabo/extern/lib:$LD_LIBRARY_PATH auditwheel repair -w {dest_dir} {wheel}"
