@@ -1,9 +1,13 @@
 import json
 import subprocess
 
-EXPECTED_OUTPUT = (
-    "[info] karabo.core.Device : 'AravisBaslerCamera' with deviceId: "
-    "'MyTestCamera' got started on server")
+EXPECTED_OUTPUT_CTRL = (
+    "[info] karabo.core.Device : 'Gotthard2Control' with deviceId: "
+    "'MyTestGh2Ctrl' got started on server")
+
+EXPECTED_OUTPUT_RECV = (
+    "[info] karabo.core.Device : 'Gotthard2Receiver' with deviceId: "
+    "'MyTestGh2Recv' got started on server")
 
 
 def _run_cmd(cmd: str) -> str:
@@ -28,16 +32,26 @@ def _run_cmd(cmd: str) -> str:
         return err.stdout.decode().rstrip("\n")
 
 
-def test_cppserver():
+def test_gh2_control():
     config = {
         "MyTestGh2Ctrl": {
-           "detectorHostName": ["scs-xox-gh22-det-gotthard2-control2"],
-           "udpSrcIp": ["10.253.15.102"],
-           "rxHostname": ["scs-rr-sys-con-jungf"],
-           "rxTcpPort": [3954],
-           "udpDstIp": ["10.253.15.101"],
-           "udpDstPort": [50001]}}
+            "classId": "Gotthard2Control",
+            "detectorHostName": ["scs-xox-gh22-det-gotthard2-control2"],
+            "udpSrcIp": ["10.253.15.102"],
+            "rxHostname": ["scs-rr-sys-con-jungf"],
+            "rxTcpPort": [3954],
+            "udpDstIp": ["10.253.15.101"],
+            "udpDstPort": [50001]}}
 
-    output = _run_cmd(f"karabo-aravis-server init='{json.dumps(config)}'")
+    output = _run_cmd(f"karabo-sls-server init='{json.dumps(config)}'")
     print(output)
-    # assert EXPECTED_OUTPUT in output
+    assert EXPECTED_OUTPUT_CTRL in output
+
+
+def test_gh2_receiver():
+    config = {
+        "MyTestGh2Recv": {"classId": "Gotthard2Receiver"}}
+
+    output = _run_cmd(f"karabo-sls-server init='{json.dumps(config)}'")
+    print(output)
+    assert EXPECTED_OUTPUT_RECV in output
