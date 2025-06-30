@@ -219,9 +219,6 @@ namespace karabo {
                     "The temperature event will be set to 'true' if temperature crosses "
                     "the threshold and the control is enabled. Fix the issue before resetting.")
               .readOnly()
-              .alarmHigh(false)
-              .info("One of the JF modules exceeded the threshold temperature")
-              .needsAcknowledging(false)
               .commit();
 
         SLOT_ELEMENT(expected)
