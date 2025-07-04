@@ -19,9 +19,7 @@ namespace fs = boost::filesystem;
 namespace karabo {
 
     const std::vector<slsDetectorDefs::runStatus> idleStates = {
-        slsDetectorDefs::runStatus::IDLE,
-        slsDetectorDefs::runStatus::ERROR,
-        slsDetectorDefs::runStatus::STOPPED};
+          slsDetectorDefs::runStatus::IDLE, slsDetectorDefs::runStatus::ERROR, slsDetectorDefs::runStatus::STOPPED};
 
     SlsControl::SlsControl(const Hash& config)
         : Device<>(config),
@@ -275,7 +273,7 @@ namespace karabo {
               .defaultValue(200)
               .unit(Unit::VOLT)
               .reconfigurable()
-              .adminAccess()
+              .expertAccess()
               .commit();
 
         VECTOR_UINT32_ELEMENT(expected)
@@ -741,8 +739,7 @@ namespace karabo {
         }
 
         if (m_poll) {
-            m_status_timer.expires_at(m_status_timer.expires_at() +
-                                    boost::posix_time::milliseconds(100));
+            m_status_timer.expires_at(m_status_timer.expires_at() + boost::posix_time::milliseconds(100));
             m_status_timer.async_wait(
                   karabo::util::bind_weak(&SlsControl::pollStatus, this, boost::asio::placeholders::error));
             return;
