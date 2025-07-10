@@ -49,7 +49,14 @@ a self-hosting device server. To install, run
 pip install karabo-sls-detectors
 ```
 
-To run, make sure you have activated a Karabo environment using
+To run, make sure you initially prepared a Karabo environment using
+
+```
+pip install karabo.services
+karabo-activate --init-to PATH/TO/KARABO
+```
+
+and have activated that Karabo environment using
 
 ```
 source PATH/TO/KARABO/activate
