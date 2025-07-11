@@ -43,8 +43,8 @@ def test_gh2_control():
             "udpDstIp": ["10.253.15.101"],
             "udpDstPort": [50001]}}
 
-    output = _run_cmd(f"karabo-sls-server init='{json.dumps(config)}'")
-    print(output)
+    output = _run_cmd(
+        f"karabo-sls-detector-server init='{json.dumps(config)}'")
     assert EXPECTED_OUTPUT_CTRL in output
 
 
@@ -52,6 +52,6 @@ def test_gh2_receiver():
     config = {
         "MyTestGh2Recv": {"classId": "Gotthard2Receiver"}}
 
-    output = _run_cmd(f"karabo-sls-server init='{json.dumps(config)}'")
-    print(output)
+    output = _run_cmd(
+        f"karabo-sls-detector-server init='{json.dumps(config)}'")
     assert EXPECTED_OUTPUT_RECV in output

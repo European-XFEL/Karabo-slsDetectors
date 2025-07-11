@@ -65,7 +65,7 @@ source PATH/TO/KARABO/activate
 and then start the self-hosting server with
 
 ```
-karabo-sls-server [serverId=, ... karabo-cpp-server options]
+karabo-sls-detector-server [serverId=, ... karabo-cpp-server options]
 ```
 
 ## Gotthard-I Troubleshooting

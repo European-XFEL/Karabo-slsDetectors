@@ -124,7 +124,7 @@ before-all = "dnf -y install perl gettext git gtest-devel"
 #
 # NOTE: this all needs to be done before-build, so it is done for any Python
 # version we are building!
-before-build = "pip3 install conan==2.5.0 'karabo.cpp' meson ninja && conan profile detect --force && python ci-build-deps.py && python ci-create-cpp-shim.py karabo-sls-detectors karabo-sls-server"
+before-build = "pip3 install conan==2.5.0 'karabo.cpp' meson ninja && conan profile detect --force && python ci-build-deps.py && python ci-create-cpp-shim.py karabo-sls-detectors karabo-sls-detector-server"
 
 # we need to help audit wheel find the karabo and karabo extern libs
 repair-wheel-command  = "LD_LIBRARY_PATH=/project/build/slsDetectors:/project/tmp/karabo/lib:/project/tmp/karabo/extern/lib:/project/tmp/karabo/extern/lib64:$LD_LIBRARY_PATH auditwheel repair -w {dest_dir} {wheel}"
@@ -137,7 +137,7 @@ test-command = "KARABO=/karabo KARABO_BROKER=amqp://xfel:karabo@exfl-broker-1:56
 [project.scripts]
 # the package path should match what we specified in the project name, and PACKAGE for ci-create-cpp-shim.py
 # the command should match the CMD arg for ci-create-cpp-shim.py with "-" replaced by "_".
-karabo-sls-server = 'karabo_sls_detectors.shims.entrypoints:karabo_sls_server'
+karabo-sls-detector-server = 'karabo_sls_detectors.shims.entrypoints:karabo_sls_detector_server'
 
 # for dynamic version specifiers
 [tool.setuptools_scm]
