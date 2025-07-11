@@ -28,7 +28,7 @@ def _run_cmd(cmd: str) -> str:
         return proc.stdout.decode().rstrip("\n")
     except subprocess.TimeoutExpired as err:
         # cleanup
-        subprocess.run("killall -9 karabo-aravis-server", shell=True)
+        subprocess.run("killall -9 karabo-sls-detector-server", shell=True)
         return err.stdout.decode().rstrip("\n")
 
 

@@ -83,7 +83,7 @@ wheel.install-dir = "karabo_sls_detectors"
 BUILD_TESTS="0"
 Boost_NO_BOOST_CMAKE="ON"
 Boost_NO_SYSTEM_PATHS="ON"
-DEVICE_SERVER_EXECUTABLE="karabo-sls-server"
+DEVICE_SERVER_EXECUTABLE="karabo-sls-detector-server"
 
 [tool.scikit-build.wheel.packages]
 # the package path should match what we specified in the project name, and PACKAGE for ci-create-cpp-shim.py
