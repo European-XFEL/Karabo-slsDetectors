@@ -14,7 +14,9 @@
 
 ## Overview
 
-The slsDetector package provides a way to interface with SLS Detectors
+The slsDetector package provides a way to interface with SLS Detectors in the
+Karabo control system. More information can be found on this webpage:
+
 
 https://www.psi.ch/en/lxn/documentation
 
@@ -36,6 +38,9 @@ https://github.com/European-XFEL/Karabo-slsDetectors
 
 ## Dependencies
 
+The Karabo slsDetector package depends on slsDetectorPackage, which is the SDK
+provided by the SLS detector group under the LGPL-3.0 license.
+
 - slsDetectorPackage v9.2.x
 
   https://github.com/slsdetectorgroup/slsDetectorPackage.git
@@ -43,7 +48,11 @@ https://github.com/European-XFEL/Karabo-slsDetectors
 ## Installing and Running from PyPI
 
 The device can further be installed from PyPI and ships in the form of
-a self-hosting device server. To install, run
+a self-hosting device server. All the needed libaries are grafted in,
+including the ones from slsDetectorPackage.
+
+
+To install, run
 
 ```
 pip install karabo-sls-detectors
