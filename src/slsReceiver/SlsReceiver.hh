@@ -37,7 +37,7 @@ namespace karabo {
         // Semaphore to protect and synchronize access
         boost::interprocess::interprocess_semaphore mutex;
 
-        karabo::util::Timestamp lastTimestamp;
+        karabo::data::Timestamp lastTimestamp;
         unsigned short accumulatedFrames;
         size_t size;
         unsigned short* adc;
@@ -80,12 +80,12 @@ namespace karabo {
             std::memset(timestamp.data(), 0, timestamp.size() * sizeof(double));
         }
 
-        void resetTimestamp(const karabo::util::Timestamp& actualTimestamp) {
+        void resetTimestamp(const karabo::data::Timestamp& actualTimestamp) {
             lastTimestamp = actualTimestamp;
         }
     };
 
-    class SlsReceiver : public karabo::core::Device<> {
+    class SlsReceiver : public karabo::core::Device {
        public:
         // Add reflection and version information to this class
         KARABO_CLASSINFO(SlsReceiver, "SlsReceiver", SLSDETECTORS_PACKAGE_VERSION)
@@ -94,9 +94,9 @@ namespace karabo {
          * Necessary method as part of the factory/configuration system
          * @param expected Will contain a description of expected parameters for this device
          */
-        static void expectedParameters(karabo::util::Schema& expected);
+        static void expectedParameters(karabo::data::Schema& expected);
 
-        virtual void preReconfigure(karabo::util::Hash& incomingReconfiguration) override;
+        virtual void preReconfigure(karabo::data::Hash& incomingReconfiguration) override;
 
         /**
          * Constructor providing the initial configuration in form of a Hash object.
@@ -104,7 +104,7 @@ namespace karabo {
          * already be validated using the information of the expectedParameters function.
          * The configuration is provided in a key/value fashion.
          */
-        explicit SlsReceiver(const karabo::util::Hash& config);
+        explicit SlsReceiver(const karabo::data::Hash& config);
 
         /**
          * The destructor will be called in case the device gets killed (i.e. the event-loop returns)
@@ -132,7 +132,7 @@ namespace karabo {
          * @param meta
          * @return true if a new trainId is arrived
          */
-        virtual bool isNewTrain(const karabo::util::Hash& meta);
+        virtual bool isNewTrain(const karabo::data::Hash& meta);
 
         virtual unsigned char getMemoryCell(const slsDetectorDefs::sls_detector_header& detectorHeader) {
             return 255;
@@ -147,7 +147,7 @@ namespace karabo {
         void signalEndOfStreams();
 
         // Write to OUTPUT channels
-        void writeToOutputs(unsigned char idx, const karabo::util::Timestamp& actualTimestamp);
+        void writeToOutputs(unsigned char idx, const karabo::data::Timestamp& actualTimestamp);
 
        private: // Raw data unpacking
         virtual size_t getDetectorSize() = 0;

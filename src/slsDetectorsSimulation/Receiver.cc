@@ -9,7 +9,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
 #include <iostream>
@@ -50,7 +50,7 @@ sls::session::session(boost::asio::io_service& io_service, Receiver* receiver)
 
 void sls::session::start() {
     boost::asio::async_read_until(m_socket, m_streambuf, ";",
-                                  boost::bind(&session::handle_read, this, boost::asio::placeholders::error));
+                                  std::bind(&session::handle_read, this, boost::asio::placeholders::error));
 }
 
 void sls::session::handle_read(const boost::system::error_code& ec) {
@@ -63,7 +63,7 @@ void sls::session::handle_read(const boost::system::error_code& ec) {
         m_receiver->processCommand(command); // process received command
 
         boost::asio::async_read_until(m_socket, m_streambuf, ";",
-                                      boost::bind(&session::handle_read, this, boost::asio::placeholders::error));
+                                      std::bind(&session::handle_read, this, boost::asio::placeholders::error));
 
     } else {
         delete this;
@@ -76,14 +76,14 @@ sls::server::server(boost::asio::io_service& io_service, short port, Receiver* r
       m_receiver(receiver) {
     session* new_session = new session(m_io_service, m_receiver);
     m_acceptor.async_accept(new_session->socket(),
-                            boost::bind(&server::handle_accept, this, new_session, boost::asio::placeholders::error));
+                            std::bind(&server::handle_accept, this, new_session, boost::asio::placeholders::error));
 }
 
 void sls::server::handle_accept(session* new_session, const boost::system::error_code& ec) {
     if (!ec) {
         new_session->start();
         new_session = new session(m_io_service, m_receiver);
-        m_acceptor.async_accept(new_session->socket(), boost::bind(&server::handle_accept, this, new_session,
+        m_acceptor.async_accept(new_session->socket(), std::bind(&server::handle_accept, this, new_session,
                                                                    boost::asio::placeholders::error));
     } else {
         delete new_session;
@@ -254,11 +254,11 @@ void* sls::Receiver::ioServWorker(void* self) {
 
 std::string sls::Receiver::generateFileName() {
     // Create filename (without path and extension)
-    boost::filesystem::path fileName =
+    std::filesystem::path fileName =
           boost::str(boost::format("%s_d0_f%012d_%d") % m_fileName % m_currFileFirstFrame % m_fileIndex);
 
     // Prepend path and append extension
-    fileName = (boost::filesystem::path(m_filePath) / fileName).replace_extension("raw");
+    fileName = (std::filesystem::path(m_filePath) / fileName).replace_extension("raw");
 
     return fileName.string();
 }

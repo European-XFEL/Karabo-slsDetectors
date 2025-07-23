@@ -25,18 +25,18 @@ namespace karabo {
        public:
         KARABO_CLASSINFO(JungfrauControl, "JungfrauControl", SLSDETECTORS_PACKAGE_VERSION)
 
-        explicit JungfrauControl(const karabo::util::Hash& config);
+        explicit JungfrauControl(const karabo::data::Hash& config);
 
 
-        static void expectedParameters(karabo::util::Schema& expected);
+        static void expectedParameters(karabo::data::Schema& expected);
 
        private:
         void resetTempEvent();
         void powerOn() override;
         void powerOff() override;
 
-        void pollDetectorSpecific(karabo::util::Hash& h) override;
-        void configureDetectorSpecific(const karabo::util::Hash& configHash) override;
+        void pollDetectorSpecific(karabo::data::Hash& h) override;
+        void configureDetectorSpecific(const karabo::data::Hash& configHash) override;
         void createCalibrationAndSettings(const std::string& settings) {
             // nothing to be done
         }
