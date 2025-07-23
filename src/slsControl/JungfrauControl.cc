@@ -17,7 +17,7 @@ USING_KARABO_NAMESPACES
 
 namespace karabo {
 
-    KARABO_REGISTER_FOR_CONFIGURATION(BaseDevice, Device<>, SlsControl, JungfrauControl)
+    KARABO_REGISTER_FOR_CONFIGURATION(Device, SlsControl, JungfrauControl)
 
 
     JungfrauControl::JungfrauControl(const Hash& config) : SlsControl(config) {
@@ -247,7 +247,7 @@ namespace karabo {
         }
     }
 
-    void JungfrauControl::pollDetectorSpecific(karabo::util::Hash& h) {
+    void JungfrauControl::pollDetectorSpecific(karabo::data::Hash& h) {
         const std::vector<int> tempAdc = m_SLS->getTemperature(slsDetectorDefs::dacIndex::TEMPERATURE_ADC, m_positions);
         h.set("tempAdc", tempAdc);
 
@@ -274,7 +274,7 @@ namespace karabo {
     }
 
 
-    void JungfrauControl::configureDetectorSpecific(const karabo::util::Hash& configHash) {
+    void JungfrauControl::configureDetectorSpecific(const karabo::data::Hash& configHash) {
         if (configHash.has("exposureTimeout")) {
             // Must set bits 16-31 of 0x7F (ASIC_CTRL) register
             const unsigned int exposureTimeout = configHash.get<unsigned int>("exposureTimeout");

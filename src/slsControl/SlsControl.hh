@@ -28,17 +28,17 @@ namespace karabo {
 
     enum class HostType { detector, receiver };
 
-    class SlsControl : public karabo::core::Device<> {
+    class SlsControl : public karabo::core::Device {
        public:
         KARABO_CLASSINFO(SlsControl, "SlsControl", SLSDETECTORS_PACKAGE_VERSION)
 
-        explicit SlsControl(const karabo::util::Hash& config);
+        explicit SlsControl(const karabo::data::Hash& config);
 
         virtual ~SlsControl() = default;
 
-        static void expectedParameters(karabo::util::Schema& expected);
+        static void expectedParameters(karabo::data::Schema& expected);
 
-        virtual void preReconfigure(karabo::util::Hash& incomingReconfiguration) override;
+        virtual void preReconfigure(karabo::data::Hash& incomingReconfiguration) override;
 
         virtual void preDestruction() final;
 
@@ -56,13 +56,13 @@ namespace karabo {
         void stopPoll();
         void pollStatus(const boost::system::error_code& ec);
         void pollHardware(const boost::system::error_code& ec);
-        void pollOnce(karabo::util::Hash& h);
-        virtual void pollDetectorSpecific(karabo::util::Hash& h){};
+        void pollOnce(karabo::data::Hash& h);
+        virtual void pollDetectorSpecific(karabo::data::Hash& h){};
 
         void sendBaseConfiguration();
         void sendInitialConfiguration();
-        void sendConfiguration(const karabo::util::Hash& configHash);
-        virtual void configureDetectorSpecific(const karabo::util::Hash& configHash){};
+        void sendConfiguration(const karabo::data::Hash& configHash);
+        virtual void configureDetectorSpecific(const karabo::data::Hash& configHash){};
 
         virtual void powerOn(){};
         virtual void powerOff(){};

@@ -14,7 +14,7 @@
 #include <fstream>
 
 USING_KARABO_NAMESPACES
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace karabo {
 
@@ -22,7 +22,7 @@ namespace karabo {
           slsDetectorDefs::runStatus::IDLE, slsDetectorDefs::runStatus::ERROR, slsDetectorDefs::runStatus::STOPPED};
 
     SlsControl::SlsControl(const Hash& config)
-        : Device<>(config),
+        : Device(config),
           m_numberOfModules(0),
           m_connect(false),
           m_connect_timer(EventLoop::getIOService()),
@@ -433,7 +433,7 @@ namespace karabo {
         // Read-only properties
 
         const std::vector<std::string> interfaces = {"Trigger"};
-        VECTOR_STRING_ELEMENT(expected).key("interfaces").expertAccess().readOnly().initialValue(interfaces).commit();
+        VECTOR_STRING_ELEMENT(expected).key("interfaces").expertAccess().readOnly().defaultValue(interfaces).commit();
 
         STRING_ELEMENT(expected)
               .key("clientVersion")
@@ -547,7 +547,7 @@ namespace karabo {
             for (size_t i = 0; i < m_numberOfModules; ++i) {
                 m_positions[i] = i;
             }
-        } catch (const karabo::util::Exception& e) {
+        } catch (const karabo::data::Exception& e) {
             KARABO_LOG_FRAMEWORK_ERROR << "Exception in initialize: " << e;
             m_numberOfModules = 0;
         }
@@ -781,7 +781,7 @@ namespace karabo {
     }
 
 
-    void SlsControl::pollOnce(karabo::util::Hash& h) {
+    void SlsControl::pollOnce(karabo::data::Hash& h) {
         std::stringstream ss;
         ss << std::hex << std::showbase << m_SLS->getClientVersion();
         h.set("clientVersion", ss.str());
@@ -889,7 +889,7 @@ namespace karabo {
         KARABO_LOG_FRAMEWORK_DEBUG << "Quitting SlsControl::sendInitialConfiguration";
     }
 
-    void SlsControl::sendConfiguration(const karabo::util::Hash& configHash) {
+    void SlsControl::sendConfiguration(const karabo::data::Hash& configHash) {
         KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::sendConfiguration";
 
         // Check that detector and receiver are online
@@ -1190,11 +1190,11 @@ namespace karabo {
 
         try {
             bool success = true;
-            std::string baseName("/dev/shm/slsDetectorPackage_multi_" + karabo::util::toString(m_shm_id));
+            std::string baseName("/dev/shm/slsDetectorPackage_multi_" + karabo::data::toString(m_shm_id));
             success &= fs::remove(baseName);
 
             for (size_t i = 0; i < m_numberOfModules; ++i) {
-                success &= fs::remove(baseName + "_sls_" + karabo::util::toString(i));
+                success &= fs::remove(baseName + "_sls_" + karabo::data::toString(i));
             }
 
             if (success) {

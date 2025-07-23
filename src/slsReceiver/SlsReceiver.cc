@@ -69,7 +69,7 @@ namespace karabo {
               .key("data.adc")
               .displayedName("ADC")
               .description("The ADC counts.")
-              .dtype(karabo::util::Types::UINT16)
+              .dtype(karabo::data::Types::UINT16)
               .readOnly()
               .commit();
 
@@ -77,7 +77,7 @@ namespace karabo {
               .key("data.gain")
               .displayedName("Gain")
               .description("The ADC gains.")
-              .dtype(karabo::util::Types::UINT8)
+              .dtype(karabo::data::Types::UINT8)
               .readOnly()
               .commit();
 
@@ -140,13 +140,13 @@ namespace karabo {
         }
     }
 
-    SlsReceiver::SlsReceiver(const karabo::util::Hash& config)
-        : Device<>(config),
+    SlsReceiver::SlsReceiver(const karabo::data::Hash& config)
+        : Device(config),
           m_receiver(nullptr),
           m_lastFrameNum(0),
           m_lastRateTime(0.),
           m_detectorDataIdx(0),
-          m_strand(boost::make_shared<karabo::net::Strand>(karabo::net::EventLoop::getIOService())),
+          m_strand(std::make_shared<karabo::net::Strand>(karabo::net::EventLoop::getIOService())),
           m_frameCount(0),
           m_maxWarnPerAcq(10),
           m_warnCounter(0) {
@@ -170,8 +170,8 @@ namespace karabo {
         // Get slsReceiver parameters from current configuration
         std::vector<std::string> __argv__;
         __argv__.push_back("ignored"); // First parameter will be ignored
-        const karabo::util::Hash config = this->getCurrentConfiguration("sls");
-        for (karabo::util::Hash::const_iterator it = config.begin(); it != config.end(); ++it) {
+        const karabo::data::Hash config = this->getCurrentConfiguration("sls");
+        for (karabo::data::Hash::const_iterator it = config.begin(); it != config.end(); ++it) {
             try {
                 const std::string key = it->getKey();
                 const std::string value = config.getAs<std::string>(key);
@@ -181,7 +181,7 @@ namespace karabo {
                 __argv__.push_back(value);
                 KARABO_LOG_FRAMEWORK_DEBUG << "Parameter for receiver: key=" << key << " alias=" << alias
                                            << " value=" << value;
-            } catch (const karabo::util::Exception& e) {
+            } catch (const karabo::data::Exception& e) {
                 status << "Error in initialize: " << e.what();
                 this->set("status", status.str());
                 KARABO_LOG_WARN << status.str();
@@ -231,7 +231,7 @@ namespace karabo {
             self->updateState(State::ACTIVE);
 
             // Set start values
-            const karabo::util::Timestamp& actualTimestamp = self->getActualTimestamp();
+            const karabo::data::Timestamp& actualTimestamp = self->getActualTimestamp();
             self->m_lastRateTime = actualTimestamp.toTimestamp();
             self->m_lastFrameNum = 0;
             self->m_warnCounter = 0;
@@ -262,7 +262,7 @@ namespace karabo {
 
         try {
             if (self->m_frameCount > 0) {
-                const karabo::util::Timestamp& actualTimestamp = self->getActualTimestamp();
+                const karabo::data::Timestamp& actualTimestamp = self->getActualTimestamp();
                 const double currentTime = actualTimestamp.toTimestamp();
                 const double elapsedTime = currentTime - self->m_lastRateTime;
                 const double frameRate = self->m_frameCount / elapsedTime;
@@ -297,7 +297,7 @@ namespace karabo {
         try {
             const unsigned short framesPerTrain = self->get<unsigned short>("framesPerTrain");
 
-            karabo::util::Timestamp actualTimestamp;
+            karabo::data::Timestamp actualTimestamp;
             // See https://slsdetectorgroup.github.io/devdoc/udpdetspec.html
             const uint64_t& bunchId = detectorHeader.detSpec1;
             if (bunchId != 0 && bunchId != 0xFFFFFFFFFFFFFFFF) {
@@ -307,11 +307,11 @@ namespace karabo {
                 actualTimestamp = self->getActualTimestamp();
             }
             const double currentTime = actualTimestamp.toTimestamp();
-            const unsigned long long trainId = actualTimestamp.getTrainId();
+            const unsigned long long trainId = actualTimestamp.getTid();
 
             // Detector data, trainId, elapsed time
             DetectorData* detectorData = &(self->m_detectorData[self->m_detectorDataIdx]);
-            const unsigned long long lastTrainId = detectorData->lastTimestamp.getTrainId();
+            const unsigned long long lastTrainId = detectorData->lastTimestamp.getTid();
             const double elapsedTime = currentTime - self->m_lastRateTime;
 
             Hash meta;
@@ -346,8 +346,8 @@ namespace karabo {
                 self->logWarning("rawDataReadyCallBack: received empty buffer. Skip!");
                 return;
             } else if (dataSize % frameSize != 0) {
-                self->logWarning("rawDataReadyCallBack: data size (" + util::toString(dataSize) +
-                                 ") is not multiple of frameSize size (" + util::toString(frameSize) + ")! Skip data.");
+                self->logWarning("rawDataReadyCallBack: data size (" + data::toString(dataSize) +
+                                 ") is not multiple of frameSize size (" + data::toString(frameSize) + ")! Skip data.");
                 return;
             }
 
@@ -412,7 +412,7 @@ namespace karabo {
         }
     }
 
-    bool SlsReceiver::isNewTrain(const karabo::util::Hash& meta) {
+    bool SlsReceiver::isNewTrain(const karabo::data::Hash& meta) {
         const auto trainId = meta.get<unsigned long long>("trainId");
         const auto lastTrainId = meta.get<unsigned long long>("lastTrainId");
 
@@ -445,8 +445,8 @@ namespace karabo {
               .key("data.adc")
               .displayedName("ADC")
               .description("The ADC counts.")
-              .dtype(karabo::util::Types::UINT16)
-              .shape(karabo::util::toString(daqShape))
+              .dtype(karabo::data::Types::UINT16)
+              .shape(karabo::data::toString(daqShape))
               .readOnly()
               .commit();
 
@@ -454,8 +454,8 @@ namespace karabo {
               .key("data.gain")
               .displayedName("Gain")
               .description("The ADC gains.")
-              .dtype(karabo::util::Types::UINT8)
-              .shape(karabo::util::toString(daqShape))
+              .dtype(karabo::data::Types::UINT8)
+              .shape(karabo::data::toString(daqShape))
               .readOnly()
               .commit();
 
@@ -499,7 +499,7 @@ namespace karabo {
         std::string outputHostname;
         try {
             outputHostname = this->get<std::string>("daqOutput.hostname");
-        } catch (const karabo::util::ParameterException& e) {
+        } catch (const karabo::data::ParameterException& e) {
             // Current configuration does not contain "output.hostname"
         }
 
@@ -518,7 +518,7 @@ namespace karabo {
         this->signalEndOfStream("display");
     }
 
-    void SlsReceiver::writeToOutputs(unsigned char idx, const karabo::util::Timestamp& actualTimestamp) {
+    void SlsReceiver::writeToOutputs(unsigned char idx, const karabo::data::Timestamp& actualTimestamp) {
         DetectorData* detectorData = &m_detectorData[idx];
 
         const auto detectorSize = this->getDetectorSize();

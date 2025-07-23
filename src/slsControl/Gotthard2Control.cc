@@ -18,7 +18,7 @@ USING_KARABO_NAMESPACES
 namespace karabo {
     static const std::vector<unsigned int> HIGH_VOLTAGE_DEFAULT = {0u};
 
-    KARABO_REGISTER_FOR_CONFIGURATION(BaseDevice, Device<>, SlsControl, Gotthard2Control)
+    KARABO_REGISTER_FOR_CONFIGURATION(Device, SlsControl, Gotthard2Control)
 
     Gotthard2Control::Gotthard2Control(const Hash& config) : SlsControl(config) {
 #ifdef SLS_SIMULATION
@@ -174,7 +174,7 @@ namespace karabo {
               .displayedName("Reverse Slave Read-Out Mode")
               .description("Reverse the readout order for the slave module.")
               .readOnly()
-              .initialValue(true)
+              .defaultValue(true)
               .commit();
 
         VECTOR_INT32_ELEMENT(expected)
@@ -191,7 +191,7 @@ namespace karabo {
         }
     }
 
-    void Gotthard2Control::configureDetectorSpecific(const karabo::util::Hash& configHash) {
+    void Gotthard2Control::configureDetectorSpecific(const karabo::data::Hash& configHash) {
         if (configHash.has("singlePhoton")) {
             const bool& singlePhoton = configHash.get<bool>("singlePhoton");
             if (singlePhoton) {
@@ -259,7 +259,7 @@ namespace karabo {
         }
     }
 
-    void Gotthard2Control::pollDetectorSpecific(karabo::util::Hash& h) {
+    void Gotthard2Control::pollDetectorSpecific(karabo::data::Hash& h) {
         const std::vector<int> tempFpga =
               m_SLS->getTemperature(slsDetectorDefs::dacIndex::TEMPERATURE_FPGA, m_positions);
         h.set("tempFpga", tempFpga);
