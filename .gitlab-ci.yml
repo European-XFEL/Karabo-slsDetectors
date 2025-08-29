@@ -1,6 +1,6 @@
 variables:
   AUTO_PYPI: "true"
-  USE_TEST_PYPI: "0"
+  USE_TEST_PYPI: "1"
 
 before_script:
     - echo '*** Install packages needed by slsDetectorsPackage ***'
