@@ -1,3 +1,7 @@
+variables:
+  AUTO_PYPI: "true"
+  USE_TEST_PYPI: "0"
+
 before_script:
     - echo '*** Install packages needed by slsDetectorsPackage ***'
     - export REL_OS_NAME=$(lsb_release -is)
