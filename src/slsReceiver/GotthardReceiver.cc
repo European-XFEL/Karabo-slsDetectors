@@ -56,8 +56,7 @@ namespace karabo {
     }
 
     std::vector<unsigned long long> GotthardReceiver::getDaqShape(unsigned short framesPerTrain) {
-        // DAQ first dimension is fastest changing one
-        return {this->getDetectorSize(), framesPerTrain};
+        return {framesPerTrain, this->getDetectorSize()};
     }
 
     void GotthardReceiver::unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain) {

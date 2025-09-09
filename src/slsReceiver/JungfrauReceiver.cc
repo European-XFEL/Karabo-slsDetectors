@@ -115,8 +115,7 @@ namespace karabo {
     }
 
     std::vector<unsigned long long> JungfrauReceiver::getDaqShape(unsigned short framesPerTrain) {
-        // DAQ first dimension is fastest changing one
-        return {JUNGFRAU_PIXEL_X, JUNGFRAU_PIXEL_Y, framesPerTrain};
+        return {framesPerTrain, JUNGFRAU_PIXEL_Y, JUNGFRAU_PIXEL_X};
     }
 
     void JungfrauReceiver::unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain) {

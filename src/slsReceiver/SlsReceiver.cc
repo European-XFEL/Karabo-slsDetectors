@@ -352,7 +352,7 @@ namespace karabo {
             }
 
             detectorData->mutex.wait(); // "lock"
-            const auto accumulatedFrames = detectorData->accumulatedFrames;
+            const unsigned short accumulatedFrames = detectorData->accumulatedFrames;
             if (accumulatedFrames >= framesPerTrain) {
                 // Already got enough frames for this train -> skip data
                 detectorData->mutex.post(); // "unlock"
@@ -434,32 +434,32 @@ namespace karabo {
     }
 
     void SlsReceiver::updateOutputSchema(unsigned short framesPerTrain) {
-        Schema daqData;
-        const auto daqShape = this->getDaqShape(framesPerTrain);
+        Schema dataSchema;
+        const std::vector<unsigned long long> shape = this->getDaqShape(framesPerTrain);
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Updating output schema";
 
-        NODE_ELEMENT(daqData).key("data").displayedName("Data").setDaqDataType(DaqDataType::TRAIN).commit();
+        NODE_ELEMENT(dataSchema).key("data").displayedName("Data").setDaqDataType(DaqDataType::TRAIN).commit();
 
-        NDARRAY_ELEMENT(daqData)
+        NDARRAY_ELEMENT(dataSchema)
               .key("data.adc")
               .displayedName("ADC")
               .description("The ADC counts.")
               .dtype(karabo::data::Types::UINT16)
-              .shape(karabo::data::toString(daqShape))
+              .shape(shape)
               .readOnly()
               .commit();
 
-        NDARRAY_ELEMENT(daqData)
+        NDARRAY_ELEMENT(dataSchema)
               .key("data.gain")
               .displayedName("Gain")
               .description("The ADC gains.")
               .dtype(karabo::data::Types::UINT8)
-              .shape(karabo::data::toString(daqShape))
+              .shape(shape)
               .readOnly()
               .commit();
 
-        VECTOR_UINT8_ELEMENT(daqData)
+        VECTOR_UINT8_ELEMENT(dataSchema)
               .key("data.memoryCell")
               .displayedName("Memory Cell")
               .description("The number of the memory cell used to store the image (only for Jungfrau).")
@@ -467,7 +467,7 @@ namespace karabo {
               .readOnly()
               .commit();
 
-        VECTOR_UINT64_ELEMENT(daqData)
+        VECTOR_UINT64_ELEMENT(dataSchema)
               .key("data.frameNumber")
               .displayedName("Frame Number")
               .description("The frame number.")
@@ -475,7 +475,7 @@ namespace karabo {
               .readOnly()
               .commit();
 
-        VECTOR_UINT64_ELEMENT(daqData)
+        VECTOR_UINT64_ELEMENT(dataSchema)
               .key("data.bunchId")
               .displayedName("Bunch ID")
               .description("The bunch ID from the beamline, if available.")
@@ -483,7 +483,7 @@ namespace karabo {
               .readOnly()
               .commit();
 
-        VECTOR_DOUBLE_ELEMENT(daqData)
+        VECTOR_DOUBLE_ELEMENT(dataSchema)
               .key("data.timestamp")
               .displayedName("Timestamp")
               .description("The data timestamp.")
@@ -494,22 +494,10 @@ namespace karabo {
         // New schema for output channel
         Schema schema;
 
-        OUTPUT_CHANNEL(schema).key("daqOutput").displayedName("DAQ Output").dataSchema(daqData).commit();
-
-        std::string outputHostname;
-        try {
-            outputHostname = this->get<std::string>("daqOutput.hostname");
-        } catch (const karabo::data::ParameterException& e) {
-            // Current configuration does not contain "output.hostname"
-        }
+        OUTPUT_CHANNEL(schema).key("daqOutput").displayedName("DAQ Output").dataSchema(dataSchema).commit();
 
         // Update the device schema
-        this->updateSchema(schema);
-
-        if (outputHostname != "") {
-            // Restore daqOutput.hostname
-            this->set("daqOutput.hostname", outputHostname);
-        }
+        this->appendSchema(schema);
     }
 
     void SlsReceiver::signalEndOfStreams() {
@@ -521,15 +509,14 @@ namespace karabo {
     void SlsReceiver::writeToOutputs(unsigned char idx, const karabo::data::Timestamp& actualTimestamp) {
         DetectorData* detectorData = &m_detectorData[idx];
 
-        const auto detectorSize = this->getDetectorSize();
+        const size_t detectorSize = this->getDetectorSize();
         const auto framesPerTrain = this->get<unsigned short>("framesPerTrain");
         const size_t size = detectorSize * framesPerTrain;
 
         // The Pipeline shape is an array of display shapes
-        auto vPPShape = this->getDisplayShape();
+        std::vector<unsigned long long> vPPShape = this->getDisplayShape();
         vPPShape.insert(vPPShape.begin(), framesPerTrain);
         const Dims ppShape = vPPShape;
-        const Dims daqShape = this->getDaqShape(framesPerTrain);
         NDArray adcTrainData(detectorData->adc, size, NDArray::NullDeleter(), ppShape);   // No-copy constructor
         NDArray gainTrainData(detectorData->gain, size, NDArray::NullDeleter(), ppShape); // No-copy constructor
 
@@ -537,7 +524,6 @@ namespace karabo {
         //         " lastTrainId=" << lastTrainId << " accumulatedFrames=" << detectorData.accumulatedFrames;
 
         // Send unpacked data to output channel - for PP
-
         Hash output;
         output.set("data.adc", adcTrainData);
         output.set("data.gain", gainTrainData);
@@ -547,11 +533,7 @@ namespace karabo {
         output.set("data.timestamp", detectorData->timestamp);
         this->writeChannel("output", output, detectorData->lastTimestamp);
 
-        // Reshape ADC/gain arrays and send them to DAQ
-        adcTrainData.setShape(daqShape);
-        gainTrainData.setShape(daqShape);
-        output.set("data.adc", adcTrainData);
-        output.set("data.gain", gainTrainData);
+        // Then send data to the DAQ
         this->writeChannel("daqOutput", output, detectorData->lastTimestamp);
 
         if (this->get<bool>("onlineDisplayEnable")) {
@@ -560,7 +542,7 @@ namespace karabo {
             if (frameToDisplay < framesPerTrain) {
                 const unsigned short* adcOffset = detectorData->adc + frameToDisplay * detectorSize;
                 const unsigned char* gainOffset = detectorData->gain + frameToDisplay * detectorSize;
-                auto displayShape = this->getDisplayShape();
+                std::vector<unsigned long long> displayShape = this->getDisplayShape();
                 Hash display;
 
                 if (displayShape.size() == 1) {
