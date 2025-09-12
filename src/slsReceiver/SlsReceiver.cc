@@ -494,6 +494,8 @@ namespace karabo {
         // New schema for output channel
         Schema schema;
 
+        OUTPUT_CHANNEL(schema).key("output").displayedName("PP Output").dataSchema(dataSchema).commit();
+
         OUTPUT_CHANNEL(schema).key("daqOutput").displayedName("DAQ Output").dataSchema(dataSchema).commit();
 
         // Update the device schema
