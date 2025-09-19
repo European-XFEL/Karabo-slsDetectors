@@ -1,13 +1,18 @@
 import json
+import re
 import subprocess
 
+
 EXPECTED_OUTPUT_CTRL = (
-    "[info] karabo.core.Device : 'Gotthard2Control' with deviceId: "
-    "'MyTestGh2Ctrl' got started on server")
+    r"^.*\[info\] karabo\.core\.Device : 'Gotthard2Control' \(version '.*'\)"
+    r" with deviceId: '.*' got started on server.*$"
+)
+
 
 EXPECTED_OUTPUT_RECV = (
-    "[info] karabo.core.Device : 'Gotthard2Receiver' with deviceId: "
-    "'MyTestGh2Recv' got started on server")
+    r"^.*\[info\] karabo\.core\.Device : 'Gotthard2Receiver' \(version '.*'\)"
+    r" with deviceId: '.*' got started on server.*$"
+)
 
 
 def _run_cmd(cmd: str) -> str:
@@ -45,7 +50,7 @@ def test_gh2_control():
 
     output = _run_cmd(
         f"karabo-sls-detector-server init='{json.dumps(config)}'")
-    assert EXPECTED_OUTPUT_CTRL in output
+    assert re.findall(EXPECTED_OUTPUT_CTRL, output, re.MULTILINE)
 
 
 def test_gh2_receiver():
@@ -54,4 +59,4 @@ def test_gh2_receiver():
 
     output = _run_cmd(
         f"karabo-sls-detector-server init='{json.dumps(config)}'")
-    assert EXPECTED_OUTPUT_RECV in output
+    assert re.findall(EXPECTED_OUTPUT_RECV, output, re.MULTILINE)
