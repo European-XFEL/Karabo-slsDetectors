@@ -1,0 +1,18 @@
+before_script:
+    - echo '*** Install packages needed by slsDetectorsPackage ***'
+    - . /etc/os-release
+    - >
+      if [ "$ID" == "rhel" ]; then
+        yum install -y zeromq-devel
+      elif [ "$ID" = "ubuntu" ]; then
+        apt-get update
+        apt-get install -y libzmq3-dev
+      fi
+
+include:
+  - project: karabo/gitlabci
+    file: .cpp-ci.yml
+    ref: main
+  - project: karabo/gitlabci
+    file: .mirror-device.yml
+    ref: main
