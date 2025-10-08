@@ -7,8 +7,6 @@
  */
 
 
-#define KARABO_LOG_PRIORITY_WARN krb_log4cpp::Priority::WARN
-
 #include "SlsReceiver.hh"
 
 USING_KARABO_NAMESPACES
@@ -71,7 +69,7 @@ namespace karabo {
               .key("data.adc")
               .displayedName("ADC")
               .description("The ADC counts.")
-              .dtype(karabo::util::Types::UINT16)
+              .dtype(karabo::data::Types::UINT16)
               .readOnly()
               .commit();
 
@@ -79,7 +77,7 @@ namespace karabo {
               .key("data.gain")
               .displayedName("Gain")
               .description("The ADC gains.")
-              .dtype(karabo::util::Types::UINT8)
+              .dtype(karabo::data::Types::UINT8)
               .readOnly()
               .commit();
 
@@ -142,13 +140,13 @@ namespace karabo {
         }
     }
 
-    SlsReceiver::SlsReceiver(const karabo::util::Hash& config)
-        : Device<>(config),
+    SlsReceiver::SlsReceiver(const karabo::data::Hash& config)
+        : Device(config),
           m_receiver(nullptr),
           m_lastFrameNum(0),
           m_lastRateTime(0.),
           m_detectorDataIdx(0),
-          m_strand(boost::make_shared<karabo::net::Strand>(karabo::net::EventLoop::getIOService())),
+          m_strand(std::make_shared<karabo::net::Strand>(karabo::net::EventLoop::getIOService())),
           m_frameCount(0),
           m_maxWarnPerAcq(10),
           m_warnCounter(0) {
@@ -172,8 +170,8 @@ namespace karabo {
         // Get slsReceiver parameters from current configuration
         std::vector<std::string> __argv__;
         __argv__.push_back("ignored"); // First parameter will be ignored
-        const karabo::util::Hash config = this->getCurrentConfiguration("sls");
-        for (karabo::util::Hash::const_iterator it = config.begin(); it != config.end(); ++it) {
+        const karabo::data::Hash config = this->getCurrentConfiguration("sls");
+        for (karabo::data::Hash::const_iterator it = config.begin(); it != config.end(); ++it) {
             try {
                 const std::string key = it->getKey();
                 const std::string value = config.getAs<std::string>(key);
@@ -183,7 +181,7 @@ namespace karabo {
                 __argv__.push_back(value);
                 KARABO_LOG_FRAMEWORK_DEBUG << "Parameter for receiver: key=" << key << " alias=" << alias
                                            << " value=" << value;
-            } catch (const karabo::util::Exception& e) {
+            } catch (const karabo::data::Exception& e) {
                 status << "Error in initialize: " << e.what();
                 this->set("status", status.str());
                 KARABO_LOG_WARN << status.str();
@@ -225,8 +223,7 @@ namespace karabo {
         }
     }
 
-    int SlsReceiver::startAcquisitionCallBack(const std::string& filePath, const std::string& fileName,
-                                              uint64_t fileIndex, size_t bufferSize, void* context) {
+    int SlsReceiver::startAcquisitionCallBack(const slsDetectorDefs::startCallbackHeader, void* context) {
         Self* self = static_cast<Self*>(context);
 
         try {
@@ -234,7 +231,7 @@ namespace karabo {
             self->updateState(State::ACTIVE);
 
             // Set start values
-            const karabo::util::Timestamp& actualTimestamp = self->getActualTimestamp();
+            const karabo::data::Timestamp& actualTimestamp = self->getActualTimestamp();
             self->m_lastRateTime = actualTimestamp.toTimestamp();
             self->m_lastFrameNum = 0;
             self->m_warnCounter = 0;
@@ -250,9 +247,9 @@ namespace karabo {
             self->m_detectorData[1].reset();
 
         } catch (const std::exception& e) {
-            self->log() << KARABO_LOG_PRIORITY_WARN << "startAcquisitionCallBack: " << e.what();
+            KARABO_LOG_FRAMEWORK_WARN << "startAcquisitionCallBack: " << e.what();
         } catch (...) {
-            self->log() << KARABO_LOG_PRIORITY_WARN << "startAcquisitionCallBack: other exception";
+            KARABO_LOG_FRAMEWORK_WARN << "startAcquisitionCallBack: other exception";
         }
 
         // From "slsReceiverUsers.h": return value is insignificant at the moment, we write depending on file
@@ -260,18 +257,18 @@ namespace karabo {
         return 0;
     }
 
-    void SlsReceiver::acquisitionFinishedCallBack(uint64_t totalFramesCaught, void* context) {
+    void SlsReceiver::acquisitionFinishedCallBack(const slsDetectorDefs::endCallbackHeader, void* context) {
         Self* self = static_cast<Self*>(context);
 
         try {
             if (self->m_frameCount > 0) {
-                const karabo::util::Timestamp& actualTimestamp = self->getActualTimestamp();
+                const karabo::data::Timestamp& actualTimestamp = self->getActualTimestamp();
                 const double currentTime = actualTimestamp.toTimestamp();
                 const double elapsedTime = currentTime - self->m_lastRateTime;
                 const double frameRate = self->m_frameCount / elapsedTime;
 
                 self->set("frameRateIn", frameRate);
-                KARABO_LOG_FRAMEWORK_INFO << "Frame rate (receiver) " << frameRate;
+                KARABO_LOG_FRAMEWORK_DEBUG << "Frame rate (receiver) " << frameRate;
             }
 
             // Reset frame rates after acquisition is over
@@ -283,23 +280,24 @@ namespace karabo {
             self->m_strand->post(karabo::util::bind_weak(&SlsReceiver::signalEndOfStreams, self));
 
         } catch (const std::exception& e) {
-            self->log() << KARABO_LOG_PRIORITY_WARN << "acquisitionFinishedCallBack: " << e.what();
+            KARABO_LOG_FRAMEWORK_WARN << "acquisitionFinishedCallBack: " << e.what();
         } catch (...) {
-            self->log() << KARABO_LOG_PRIORITY_WARN << "acquisitionFinishedCallBack: other exception";
+            KARABO_LOG_FRAMEWORK_WARN << "acquisitionFinishedCallBack: other exception";
         }
 
         self->updateState(State::PASSIVE);
     }
 
-    void SlsReceiver::rawDataReadyCallBack(slsDetectorDefs::sls_receiver_header& header, char* dataPointer,
-                                           size_t dataSize, void* context) {
+    void SlsReceiver::rawDataReadyCallBack(slsDetectorDefs::sls_receiver_header& header,
+                                           const slsDetectorDefs::dataCallbackHeader, char* dataPointer,
+                                           size_t& dataSize, void* context) {
         Self* self = static_cast<Self*>(context);
         const slsDetectorDefs::sls_detector_header& detectorHeader = header.detHeader;
 
         try {
             const unsigned short framesPerTrain = self->get<unsigned short>("framesPerTrain");
 
-            karabo::util::Timestamp actualTimestamp;
+            karabo::data::Timestamp actualTimestamp;
             // See https://slsdetectorgroup.github.io/devdoc/udpdetspec.html
             const uint64_t& bunchId = detectorHeader.detSpec1;
             if (bunchId != 0 && bunchId != 0xFFFFFFFFFFFFFFFF) {
@@ -309,11 +307,11 @@ namespace karabo {
                 actualTimestamp = self->getActualTimestamp();
             }
             const double currentTime = actualTimestamp.toTimestamp();
-            const unsigned long long trainId = actualTimestamp.getTrainId();
+            const unsigned long long trainId = actualTimestamp.getTid();
 
             // Detector data, trainId, elapsed time
             DetectorData* detectorData = &(self->m_detectorData[self->m_detectorDataIdx]);
-            const unsigned long long lastTrainId = detectorData->lastTimestamp.getTrainId();
+            const unsigned long long lastTrainId = detectorData->lastTimestamp.getTid();
             const double elapsedTime = currentTime - self->m_lastRateTime;
 
             Hash meta;
@@ -348,13 +346,13 @@ namespace karabo {
                 self->logWarning("rawDataReadyCallBack: received empty buffer. Skip!");
                 return;
             } else if (dataSize % frameSize != 0) {
-                self->logWarning("rawDataReadyCallBack: data size (" + util::toString(dataSize) +
-                                 ") is not multiple of frameSize size (" + util::toString(frameSize) + ")! Skip data.");
+                self->logWarning("rawDataReadyCallBack: data size (" + data::toString(dataSize) +
+                                 ") is not multiple of frameSize size (" + data::toString(frameSize) + ")! Skip data.");
                 return;
             }
 
             detectorData->mutex.wait(); // "lock"
-            const auto accumulatedFrames = detectorData->accumulatedFrames;
+            const unsigned short accumulatedFrames = detectorData->accumulatedFrames;
             if (accumulatedFrames >= framesPerTrain) {
                 // Already got enough frames for this train -> skip data
                 detectorData->mutex.post(); // "unlock"
@@ -398,9 +396,9 @@ namespace karabo {
                 KARABO_LOG_FRAMEWORK_DEBUG << "Current Frame: " << detectorHeader.frameNumber
                                            << " Last Frame: " << self->m_lastFrameNum
                                            << " Elapsed time [s]: " << elapsedTime;
-                KARABO_LOG_FRAMEWORK_INFO << "Frame rate (detector) " << frameRateIn << " Hz";
-                KARABO_LOG_FRAMEWORK_INFO << "Frame rate (receiver) " << frameRateOut << " Hz";
-                KARABO_LOG_FRAMEWORK_INFO << "Train ID " << trainId;
+                KARABO_LOG_FRAMEWORK_DEBUG << "Frame rate (detector) " << frameRateIn << " Hz";
+                KARABO_LOG_FRAMEWORK_DEBUG << "Frame rate (receiver) " << frameRateOut << " Hz";
+                KARABO_LOG_FRAMEWORK_DEBUG << "Train ID " << trainId;
 
                 self->m_frameCount = 0;
                 self->m_lastRateTime = currentTime;
@@ -408,13 +406,13 @@ namespace karabo {
             }
 
         } catch (const std::exception& e) {
-            self->log() << KARABO_LOG_PRIORITY_WARN << "rawDataReadyCallBack: " << e.what();
+            KARABO_LOG_FRAMEWORK_WARN << "rawDataReadyCallBack: " << e.what();
         } catch (...) {
-            self->log() << KARABO_LOG_PRIORITY_WARN << "rawDataReadyCallBack: other exception";
+            KARABO_LOG_FRAMEWORK_WARN << "rawDataReadyCallBack: other exception";
         }
     }
 
-    bool SlsReceiver::isNewTrain(const karabo::util::Hash& meta) {
+    bool SlsReceiver::isNewTrain(const karabo::data::Hash& meta) {
         const auto trainId = meta.get<unsigned long long>("trainId");
         const auto lastTrainId = meta.get<unsigned long long>("lastTrainId");
 
@@ -436,32 +434,32 @@ namespace karabo {
     }
 
     void SlsReceiver::updateOutputSchema(unsigned short framesPerTrain) {
-        Schema daqData;
-        const auto daqShape = this->getDaqShape(framesPerTrain);
+        Schema dataSchema;
+        const std::vector<unsigned long long> shape = this->getDaqShape(framesPerTrain);
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Updating output schema";
 
-        NODE_ELEMENT(daqData).key("data").displayedName("Data").setDaqDataType(DaqDataType::TRAIN).commit();
+        NODE_ELEMENT(dataSchema).key("data").displayedName("Data").setDaqDataType(DaqDataType::TRAIN).commit();
 
-        NDARRAY_ELEMENT(daqData)
+        NDARRAY_ELEMENT(dataSchema)
               .key("data.adc")
               .displayedName("ADC")
               .description("The ADC counts.")
-              .dtype(karabo::util::Types::UINT16)
-              .shape(karabo::util::toString(daqShape))
+              .dtype(karabo::data::Types::UINT16)
+              .shape(shape)
               .readOnly()
               .commit();
 
-        NDARRAY_ELEMENT(daqData)
+        NDARRAY_ELEMENT(dataSchema)
               .key("data.gain")
               .displayedName("Gain")
               .description("The ADC gains.")
-              .dtype(karabo::util::Types::UINT8)
-              .shape(karabo::util::toString(daqShape))
+              .dtype(karabo::data::Types::UINT8)
+              .shape(shape)
               .readOnly()
               .commit();
 
-        VECTOR_UINT8_ELEMENT(daqData)
+        VECTOR_UINT8_ELEMENT(dataSchema)
               .key("data.memoryCell")
               .displayedName("Memory Cell")
               .description("The number of the memory cell used to store the image (only for Jungfrau).")
@@ -469,7 +467,7 @@ namespace karabo {
               .readOnly()
               .commit();
 
-        VECTOR_UINT64_ELEMENT(daqData)
+        VECTOR_UINT64_ELEMENT(dataSchema)
               .key("data.frameNumber")
               .displayedName("Frame Number")
               .description("The frame number.")
@@ -477,7 +475,7 @@ namespace karabo {
               .readOnly()
               .commit();
 
-        VECTOR_UINT64_ELEMENT(daqData)
+        VECTOR_UINT64_ELEMENT(dataSchema)
               .key("data.bunchId")
               .displayedName("Bunch ID")
               .description("The bunch ID from the beamline, if available.")
@@ -485,7 +483,7 @@ namespace karabo {
               .readOnly()
               .commit();
 
-        VECTOR_DOUBLE_ELEMENT(daqData)
+        VECTOR_DOUBLE_ELEMENT(dataSchema)
               .key("data.timestamp")
               .displayedName("Timestamp")
               .description("The data timestamp.")
@@ -496,22 +494,12 @@ namespace karabo {
         // New schema for output channel
         Schema schema;
 
-        OUTPUT_CHANNEL(schema).key("daqOutput").displayedName("DAQ Output").dataSchema(daqData).commit();
+        OUTPUT_CHANNEL(schema).key("output").displayedName("PP Output").dataSchema(dataSchema).commit();
 
-        std::string outputHostname;
-        try {
-            outputHostname = this->get<std::string>("daqOutput.hostname");
-        } catch (const karabo::util::ParameterException& e) {
-            // Current configuration does not contain "output.hostname"
-        }
+        OUTPUT_CHANNEL(schema).key("daqOutput").displayedName("DAQ Output").dataSchema(dataSchema).commit();
 
         // Update the device schema
-        this->updateSchema(schema);
-
-        if (outputHostname != "") {
-            // Restore daqOutput.hostname
-            this->set("daqOutput.hostname", outputHostname);
-        }
+        this->appendSchema(schema);
     }
 
     void SlsReceiver::signalEndOfStreams() {
@@ -520,18 +508,17 @@ namespace karabo {
         this->signalEndOfStream("display");
     }
 
-    void SlsReceiver::writeToOutputs(unsigned char idx, const karabo::util::Timestamp& actualTimestamp) {
+    void SlsReceiver::writeToOutputs(unsigned char idx, const karabo::data::Timestamp& actualTimestamp) {
         DetectorData* detectorData = &m_detectorData[idx];
 
-        const auto detectorSize = this->getDetectorSize();
+        const size_t detectorSize = this->getDetectorSize();
         const auto framesPerTrain = this->get<unsigned short>("framesPerTrain");
         const size_t size = detectorSize * framesPerTrain;
 
         // The Pipeline shape is an array of display shapes
-        auto vPPShape = this->getDisplayShape();
+        std::vector<unsigned long long> vPPShape = this->getDisplayShape();
         vPPShape.insert(vPPShape.begin(), framesPerTrain);
         const Dims ppShape = vPPShape;
-        const Dims daqShape = this->getDaqShape(framesPerTrain);
         NDArray adcTrainData(detectorData->adc, size, NDArray::NullDeleter(), ppShape);   // No-copy constructor
         NDArray gainTrainData(detectorData->gain, size, NDArray::NullDeleter(), ppShape); // No-copy constructor
 
@@ -539,7 +526,6 @@ namespace karabo {
         //         " lastTrainId=" << lastTrainId << " accumulatedFrames=" << detectorData.accumulatedFrames;
 
         // Send unpacked data to output channel - for PP
-
         Hash output;
         output.set("data.adc", adcTrainData);
         output.set("data.gain", gainTrainData);
@@ -549,11 +535,7 @@ namespace karabo {
         output.set("data.timestamp", detectorData->timestamp);
         this->writeChannel("output", output, detectorData->lastTimestamp);
 
-        // Reshape ADC/gain arrays and send them to DAQ
-        adcTrainData.setShape(daqShape);
-        gainTrainData.setShape(daqShape);
-        output.set("data.adc", adcTrainData);
-        output.set("data.gain", gainTrainData);
+        // Then send data to the DAQ
         this->writeChannel("daqOutput", output, detectorData->lastTimestamp);
 
         if (this->get<bool>("onlineDisplayEnable")) {
@@ -562,7 +544,7 @@ namespace karabo {
             if (frameToDisplay < framesPerTrain) {
                 const unsigned short* adcOffset = detectorData->adc + frameToDisplay * detectorSize;
                 const unsigned char* gainOffset = detectorData->gain + frameToDisplay * detectorSize;
-                auto displayShape = this->getDisplayShape();
+                std::vector<unsigned long long> displayShape = this->getDisplayShape();
                 Hash display;
 
                 if (displayShape.size() == 1) {

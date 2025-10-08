@@ -20,7 +20,7 @@ USING_KARABO_NAMESPACES
 
 namespace karabo {
 
-    KARABO_REGISTER_FOR_CONFIGURATION(BaseDevice, Device<>, SlsReceiver, JungfrauReceiver)
+    KARABO_REGISTER_FOR_CONFIGURATION(Device, SlsReceiver, JungfrauReceiver)
 
     void JungfrauReceiver::expectedParameters(Schema& expected) {
         Schema displayData;
@@ -28,13 +28,13 @@ namespace karabo {
         NODE_ELEMENT(displayData).key("data").displayedName("Data").commit();
 
         std::vector<unsigned long long> shape = {JUNGFRAU_PIXEL_Y, JUNGFRAU_PIXEL_X};
-        std::string dims = karabo::util::toString(shape);
+        std::string dims = karabo::data::toString(shape);
 
         IMAGEDATA_ELEMENT(displayData)
               .key("data.adc")
               .displayedName("ADC")
               .description("The ADC counts.")
-              .setType(karabo::util::Types::UINT16)
+              .setType(karabo::data::Types::UINT16)
               .setDimensions(dims)
               .commit();
 
@@ -42,7 +42,7 @@ namespace karabo {
               .key("data.gain")
               .displayedName("Gain")
               .description("The ADC gain.")
-              .setType(karabo::util::Types::UINT8)
+              .setType(karabo::data::Types::UINT8)
               .setDimensions(dims)
               .commit();
 
@@ -73,11 +73,11 @@ namespace karabo {
               .commit();
     }
 
-    JungfrauReceiver::JungfrauReceiver(const karabo::util::Hash& config) : SlsReceiver(config) {}
+    JungfrauReceiver::JungfrauReceiver(const karabo::data::Hash& config) : SlsReceiver(config) {}
 
     JungfrauReceiver::~JungfrauReceiver() {}
 
-    bool JungfrauReceiver::isNewTrain(const karabo::util::Hash& meta) {
+    bool JungfrauReceiver::isNewTrain(const karabo::data::Hash& meta) {
         const auto trainId = meta.get<unsigned long long>("trainId");
         const auto lastTrainId = meta.get<unsigned long long>("lastTrainId");
 
@@ -115,8 +115,7 @@ namespace karabo {
     }
 
     std::vector<unsigned long long> JungfrauReceiver::getDaqShape(unsigned short framesPerTrain) {
-        // DAQ first dimension is fastest changing one
-        return {JUNGFRAU_PIXEL_X, JUNGFRAU_PIXEL_Y, framesPerTrain};
+        return {framesPerTrain, JUNGFRAU_PIXEL_Y, JUNGFRAU_PIXEL_X};
     }
 
     void JungfrauReceiver::unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain) {

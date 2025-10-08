@@ -17,7 +17,7 @@ USING_KARABO_NAMESPACES
 
 namespace karabo {
 
-    KARABO_REGISTER_FOR_CONFIGURATION(BaseDevice, Device<>, SlsControl, JungfrauControl)
+    KARABO_REGISTER_FOR_CONFIGURATION(Device, SlsControl, JungfrauControl)
 
 
     JungfrauControl::JungfrauControl(const Hash& config) : SlsControl(config) {
@@ -59,16 +59,21 @@ namespace karabo {
                     "Options: 0|60-200 V.")
               .commit();
 
+        std::vector<std::string> timingOptions = {"auto", "trigger"};
+        OVERWRITE_ELEMENT(expected).key("timing").setNewOptions(timingOptions).commit();
+
         OVERWRITE_ELEMENT(expected)
               .key("exposureTime")
+              .setNewDefaultValue(1.e-5) // 10 us
               .setNewMinExc(0.)
               .setNewMaxInc(0.001) // 1 ms
               .commit();
 
-        OVERWRITE_ELEMENT(expected).key("exposurePeriod").setNewMinExc(0.).commit();
-
-        std::vector<std::string> timingOptions = {"auto", "trigger"};
-        OVERWRITE_ELEMENT(expected).key("timing").setNewOptions(timingOptions).commit();
+        OVERWRITE_ELEMENT(expected)
+              .key("exposurePeriod")
+              .setNewMinExc(0.)
+              .setNewDefaultValue(0.1) // 100 ms
+              .commit();
 
         INT16_ELEMENT(expected)
               .key("storageCells")
@@ -214,9 +219,6 @@ namespace karabo {
                     "The temperature event will be set to 'true' if temperature crosses "
                     "the threshold and the control is enabled. Fix the issue before resetting.")
               .readOnly()
-              .alarmHigh(false)
-              .info("One of the JF modules exceeded the threshold temperature")
-              .needsAcknowledging(false)
               .commit();
 
         SLOT_ELEMENT(expected)
@@ -235,8 +237,8 @@ namespace karabo {
 
 
     void JungfrauControl::powerOn() {
-        m_SLS->setPowerChip(true, m_positions);            // power on
-        m_SLS->writeRegister(0x4d, 0x108000, m_positions); // set additional read-out timeout (bit 15)
+        m_SLS->setPowerChip(true, m_positions);                   // power on
+        m_SLS->writeRegister(0x4d, 0x108000, false, m_positions); // set additional read-out timeout (bit 15)
     }
 
     void JungfrauControl::powerOff() {
@@ -245,7 +247,7 @@ namespace karabo {
         }
     }
 
-    void JungfrauControl::pollDetectorSpecific(karabo::util::Hash& h) {
+    void JungfrauControl::pollDetectorSpecific(karabo::data::Hash& h) {
         const std::vector<int> tempAdc = m_SLS->getTemperature(slsDetectorDefs::dacIndex::TEMPERATURE_ADC, m_positions);
         h.set("tempAdc", tempAdc);
 
@@ -272,7 +274,7 @@ namespace karabo {
     }
 
 
-    void JungfrauControl::configureDetectorSpecific(const karabo::util::Hash& configHash) {
+    void JungfrauControl::configureDetectorSpecific(const karabo::data::Hash& configHash) {
         if (configHash.has("exposureTimeout")) {
             // Must set bits 16-31 of 0x7F (ASIC_CTRL) register
             const unsigned int exposureTimeout = configHash.get<unsigned int>("exposureTimeout");
@@ -287,7 +289,7 @@ namespace karabo {
                 // Replace bits 16-31
                 asicCtrl = (asicCtrl & 0xFFFF) | (exposureTimer << 16);
 
-                m_SLS->writeRegister(addr, asicCtrl, {i++});
+                m_SLS->writeRegister(addr, asicCtrl, false, {i++});
             }
         }
     }

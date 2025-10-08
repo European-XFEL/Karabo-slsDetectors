@@ -24,16 +24,15 @@ namespace karabo {
        public:
         KARABO_CLASSINFO(Gotthard2Control, "Gotthard2Control", SLSDETECTORS_PACKAGE_VERSION)
 
-        explicit Gotthard2Control(const karabo::util::Hash& config);
+        explicit Gotthard2Control(const karabo::data::Hash& config);
 
-        static void expectedParameters(karabo::util::Schema& expected);
+        static void expectedParameters(karabo::data::Schema& expected);
 
        private: // functions
-        void powerOn() override;
         void powerOff() override;
 
-        void pollDetectorSpecific(karabo::util::Hash& h) override;
-        void configureDetectorSpecific(const karabo::util::Hash& configHash) override;
+        void pollDetectorSpecific(karabo::data::Hash& h) override;
+        void configureDetectorSpecific(const karabo::data::Hash& configHash) override;
         void createCalibrationAndSettings(const std::string& settings) {
             // nothing to be done
         }

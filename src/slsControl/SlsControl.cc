@@ -14,18 +14,22 @@
 #include <fstream>
 
 USING_KARABO_NAMESPACES
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace karabo {
 
+    const std::vector<slsDetectorDefs::runStatus> idleStates = {
+          slsDetectorDefs::runStatus::IDLE, slsDetectorDefs::runStatus::ERROR, slsDetectorDefs::runStatus::STOPPED};
+
     SlsControl::SlsControl(const Hash& config)
-        : Device<>(config),
+        : Device(config),
           m_numberOfModules(0),
           m_connect(false),
           m_connect_timer(EventLoop::getIOService()),
           m_isConfigured(false),
           m_firstPoll(true),
           m_poll(false),
+          m_status_timer(EventLoop::getIOService()),
           m_poll_timer(EventLoop::getIOService()),
           m_acquireForever(false) {
         KARABO_INITIAL_FUNCTION(initialize);
@@ -34,14 +38,7 @@ namespace karabo {
         KARABO_SLOT(stop);
         KARABO_SLOT(reset);
 
-        // Need an additional thread as the acquire function is blocking
-        EventLoop::addThread(1);
-
         this->createTmpDir(); // Create temporary directory
-    }
-
-    SlsControl::~SlsControl() {
-        EventLoop::removeThread(1);
     }
 
     void SlsControl::expectedParameters(Schema& expected) {
@@ -276,7 +273,7 @@ namespace karabo {
               .defaultValue(200)
               .unit(Unit::VOLT)
               .reconfigurable()
-              .adminAccess()
+              .expertAccess()
               .commit();
 
         VECTOR_UINT32_ELEMENT(expected)
@@ -313,8 +310,8 @@ namespace karabo {
               .displayedName("Exposure Time")
               .description("The exposure time.")
               .assignmentOptional()
-              .defaultValue(1.e-5) // 10 us
-              // .minExc(0.) // Set in the derived classes
+              .noDefaultValue()
+              .minInc(0.)
               .unit(Unit::SECOND)
               .reconfigurable()
               .allowedStates(State::ON)
@@ -327,8 +324,8 @@ namespace karabo {
               .displayedName("Exposure Period")
               .description("The period between frames.")
               .assignmentOptional()
-              .defaultValue(0.1) // 100 ms
-              // .minExc(0.) // Set in the derived classes
+              .defaultValue(0.)
+              .minInc(0.)
               .unit(Unit::SECOND)
               .reconfigurable()
               .allowedStates(State::ON)
@@ -366,7 +363,7 @@ namespace karabo {
               .displayedName("Number of Triggers")
               .description("Number of triggers per acquisition. Used to be named \"numberOfCycles\".")
               .assignmentOptional()
-              .defaultValue(1)
+              .defaultValue(10000000)
               .reconfigurable()
               .allowedStates(State::ON)
               .commit();
@@ -378,7 +375,7 @@ namespace karabo {
                     "Set this to 'True' to automatically restart image "
                     "sending when the acquisition time is over.")
               .assignmentOptional()
-              .defaultValue(false)
+              .defaultValue(true)
               .reconfigurable()
               .allowedStates(State::ON)
               .commit();
@@ -401,7 +398,7 @@ namespace karabo {
               .displayedName("Timing Mode")
               .description("The timing mode of the detector.")
               .assignmentOptional()
-              .defaultValue("auto")
+              .defaultValue("trigger")
               .options({"auto", "gating", "trigger", "ro_trigger", "triggered_gating"}) // OVERWRITE in derived class
               .reconfigurable()
               .allowedStates(State::ON)
@@ -436,7 +433,7 @@ namespace karabo {
         // Read-only properties
 
         const std::vector<std::string> interfaces = {"Trigger"};
-        VECTOR_STRING_ELEMENT(expected).key("interfaces").expertAccess().readOnly().initialValue(interfaces).commit();
+        VECTOR_STRING_ELEMENT(expected).key("interfaces").expertAccess().readOnly().defaultValue(interfaces).commit();
 
         STRING_ELEMENT(expected)
               .key("clientVersion")
@@ -450,11 +447,17 @@ namespace karabo {
         VECTOR_STRING_ELEMENT(expected)
               .key("firmwareVersion")
               .displayedName("Firmware Version")
-              .displayedName("Firmware Version")
               .description(
                     "Fimware version of the detectors, in the format [0xYYMMDD]"
                     //" or an increasing 2 digit number for Eiger"
                     ". Used to be named \"detectorVersion\".")
+              .readOnly()
+              .commit();
+
+        VECTOR_STRING_ELEMENT(expected)
+              .key("hardwareVersion")
+              .displayedName("Hardware Version")
+              .description("Hardware version of detector.")
               .readOnly()
               .commit();
 
@@ -503,7 +506,8 @@ namespace karabo {
     void SlsControl::start() {
         this->updateState(State::ACQUIRING, Hash("status", "Acquisition started"));
         m_acquireForever = this->get<bool>("continuousMode");
-        EventLoop::getIOService().post(boost::bind(&SlsControl::acquireBlocking, this));
+        m_SLS->startReceiver();
+        m_SLS->startDetector();
     }
 
     void SlsControl::stop() {
@@ -513,29 +517,26 @@ namespace karabo {
         KARABO_LOG_INFO << "Stopping acquisition";
         this->set("status", "Stopping acquisition");
         m_SLS->stopDetector();
+        m_SLS->stopReceiver();
 
         KARABO_LOG_FRAMEWORK_DEBUG << "Quitting stop";
     }
 
     void SlsControl::reset() {
-        if (this->areReceiversOnline()) {
-            try {
-                this->updateState(State::INIT);
-                KARABO_LOG_INFO << "Connected to detector(s)";
-                this->set("status", "Connected to detector(s)");
+        try {
+            this->updateState(State::INIT, Hash("status", "Initializing detector(s)"));
+            KARABO_LOG_INFO << "Initializing detector(s)";
 
-                m_isConfigured = false;
-                this->sendBaseConfiguration();
-                this->sendInitialConfiguration();
-                const Hash& config = this->getCurrentConfiguration();
-                this->configureDetectorSpecific(config);
+            m_isConfigured = false;
+            this->sendBaseConfiguration();
+            this->sendInitialConfiguration();
+            const Hash& config = this->getCurrentConfiguration();
+            this->configureDetectorSpecific(config);
 
-                this->updateState(State::ON);
-            } catch (const std::exception& e) {
-                const std::string msg = std::string("Exception in 'reset': ") + e.what();
-                this->updateState(State::ERROR, Hash("status", msg));
-                KARABO_LOG_FRAMEWORK_ERROR << msg;
-            }
+            this->updateState(State::ON, Hash("status", "Connected to detector(s)"));
+        } catch (const std::exception& e) {
+            this->updateState(State::ERROR, Hash("status", e.what()));
+            KARABO_LOG_FRAMEWORK_ERROR << "Exception in 'reset': " << e.what();
         }
     }
 
@@ -546,7 +547,7 @@ namespace karabo {
             for (size_t i = 0; i < m_numberOfModules; ++i) {
                 m_positions[i] = i;
             }
-        } catch (const karabo::util::Exception& e) {
+        } catch (const karabo::data::Exception& e) {
             KARABO_LOG_FRAMEWORK_ERROR << "Exception in initialize: " << e;
             m_numberOfModules = 0;
         }
@@ -578,76 +579,86 @@ namespace karabo {
             return;
         }
 
-        bool detectorOnline, receiverOnline;
+        bool detectorOnline = false;
 
-        detectorOnline = this->areDetectorsOnline();
-        if (detectorOnline) {
-            // Only check receiver if detector is online
-            receiverOnline = this->areReceiversOnline();
-        } else {
-            receiverOnline = true;
-        }
-
-        if (detectorOnline) {
-            if (receiverOnline) {
-                KARABO_LOG_INFO << "Connected to detector(s)";
-                this->set("status", "Connected to detector(s)");
-                try {
-                    this->updateState(State::INIT);
-
-                    this->sendBaseConfiguration();
-                    this->sendInitialConfiguration();
-                    const Hash& config = this->getCurrentConfiguration();
-                    this->configureDetectorSpecific(config);
-#ifdef SLS_SIMULATION
-                    m_SLS->setDetectorType(m_detectorType);
-#endif
-                    this->updateState(State::ON);
-                } catch (const std::exception& e) {
-                    const std::string msg = std::string("Exception in 'connect': ") + e.what();
-                    this->updateState(State::ERROR, Hash("status", msg));
-                    KARABO_LOG_FRAMEWORK_ERROR << msg;
+        try {
+            std::vector<std::string> hosts = this->get<std::vector<std::string>>("detectorHostName");
+            for (const std::string& hostname : hosts) {
+                // Verify that the detector is online
+                if (!this->ping(hostname)) {
+                    throw std::runtime_error(hostname + " is not pingable");
                 }
-            } else { // !receiverOnline
-                this->updateState(State::ERROR);
             }
 
-            this->startPoll();
-        } else if (m_connect) {
-            if (this->getState() != State::UNKNOWN) this->updateState(State::UNKNOWN);
-            m_connect_timer.expires_at(m_connect_timer.expires_at() + boost::posix_time::milliseconds(m_reconnectTime));
-            m_connect_timer.async_wait(
-                  karabo::util::bind_weak(&SlsControl::connect, this, boost::asio::placeholders::error));
-        } else {
-            return;
-        }
-    }
+            // Verify that the detector server(s) is (are) running
+            m_SLS->setHostname(hosts);
+            detectorOnline = true;
 
-    void SlsControl::acquireBlocking() {
-        KARABO_LOG_FRAMEWORK_DEBUG << "In acquireBlocking";
+            hosts = this->get<std::vector<std::string>>("rxHostname");
+            const std::vector<unsigned short> ports = this->get<std::vector<unsigned short>>("rxTcpPort");
 
-        // The following is a blocking function: it will only return when the
-        // acquisition is over!
-        // If the detector is powered off during an acquisition, this thread
-        // will never return!
-        try {
-            m_SLS->acquire();
+            for (const std::string& hostname : hosts) {
+                // Verify that the receiver host is online
+                if (!this->ping(hostname)) {
+                    throw std::runtime_error(hostname + " is not pingable");
+                }
+            }
+
+            for (size_t idx = 0; idx < ports.size(); ++idx) {
+                m_SLS->setRxPort(ports[idx], idx);
+            }
+            // Verify that the receivers are online
+            // setRxHostname must be called after setting the port, otherwise will try to connect to the default one
+            m_SLS->setRxHostname(hosts);
+
+            this->updateState(State::INIT, Hash("status", "Initializing detector(s)"));
+            KARABO_LOG_INFO << "Initializing detector(s)";
+
+            this->sendBaseConfiguration();
+            this->sendInitialConfiguration();
+            const Hash& config = this->getCurrentConfiguration();
+            this->configureDetectorSpecific(config);
+#ifdef SLS_SIMULATION
+            m_SLS->setDetectorType(m_detectorType);
+#endif
+            this->updateState(State::ON, Hash("status", "Connected to detector(s)"));
+
         } catch (const std::exception& e) {
-            KARABO_LOG_FRAMEWORK_ERROR << "Exception in acquireBlocking: " << e.what(); 
+            if (this->get<std::string>("status") != e.what()) {
+                this->set("status", e.what());
+                KARABO_LOG_FRAMEWORK_ERROR << "Exception in 'connect': " << e.what();
+            }
+
+            if (!detectorOnline) {
+                if (this->getState() != State::UNKNOWN) {
+                    this->updateState(State::UNKNOWN);
+                }
+
+                if (m_connect) {
+                    m_connect_timer.expires_at(m_connect_timer.expires_at() +
+                                               boost::posix_time::milliseconds(m_reconnectTime));
+                    m_connect_timer.async_wait(
+                          karabo::util::bind_weak(&SlsControl::connect, this, boost::asio::placeholders::error));
+                }
+
+                return;
+
+            } else if (this->getState() != State::ERROR) {
+                this->updateState(State::ERROR);
+            }
         }
 
-        if (m_acquireForever) {
-            KARABO_LOG_FRAMEWORK_DEBUG << "Restarting acquisition";
-            EventLoop::getIOService().post(boost::bind(&SlsControl::acquireBlocking, this));
-        } else {
-            this->updateState(State::ON, Hash("status", "Acquisition finished"));
-        }
-
-        KARABO_LOG_FRAMEWORK_DEBUG << "Quitting acquireBlocking";
+        // Start to poll
+        this->startPoll();
     }
 
     void SlsControl::startPoll() {
         m_poll = true;
+
+        m_status_timer.expires_from_now(boost::posix_time::seconds(1));
+        m_status_timer.async_wait(
+              karabo::util::bind_weak(&SlsControl::pollStatus, this, boost::asio::placeholders::error));
+
         m_poll_timer.expires_from_now(boost::posix_time::seconds(1));
         m_poll_timer.async_wait(
               karabo::util::bind_weak(&SlsControl::pollHardware, this, boost::asio::placeholders::error));
@@ -655,29 +666,90 @@ namespace karabo {
 
     void SlsControl::stopPoll() {
         m_poll = false;
+        m_status_timer.cancel();
         m_poll_timer.cancel();
+    }
+
+    void SlsControl::pollStatus(const boost::system::error_code& ec) {
+        KARABO_LOG_FRAMEWORK_DEBUG << "In pollStatus";
+        if (ec) {
+            return;
+        }
+
+        try {
+            const std::vector<std::string> hosts = this->get<std::vector<std::string>>("detectorHostName");
+            for (const std::string& hostname : hosts) {
+                // Verify that the detector is online
+                if (!this->ping(hostname)) {
+                    throw std::runtime_error(hostname + " is not pingable");
+                }
+            }
+
+            const std::vector<slsDetectorDefs::runStatus> status = m_SLS->getDetectorStatus();
+            bool is_acquiring = false;
+            for (const slsDetectorDefs::runStatus st : status) {
+                if (std::find(idleStates.begin(), idleStates.end(), st) == idleStates.end()) {
+                    // This module is not "idle"
+                    is_acquiring = true;
+                    break;
+                }
+            }
+
+            if (this->getState() == State::ACQUIRING && !is_acquiring) {
+                // The acquisition is over: either restart it if `acquireForever` is set, or update the device state.
+                if (m_acquireForever) {
+                    KARABO_LOG_FRAMEWORK_DEBUG << "Restarting acquisition";
+                    m_SLS->startDetector();
+                } else {
+                    m_SLS->stopReceiver();
+                    this->updateState(State::ON, Hash("status", "Acquisition finished"));
+                }
+            }
+
+        } catch (const std::exception& e) {
+            m_SLS->stopReceiver(); // Stops receiver
+
+            // stops polling and tries to reconnect
+            this->updateState(State::UNKNOWN, Hash("status", e.what()));
+            KARABO_LOG_FRAMEWORK_ERROR << e.what();
+            m_isConfigured = false;
+            m_firstPoll = true;
+            m_connect = true;
+            m_connect_timer.expires_from_now(boost::posix_time::milliseconds(m_reconnectTime));
+            m_connect_timer.async_wait(
+                  karabo::util::bind_weak(&SlsControl::connect, this, boost::asio::placeholders::error));
+            return;
+        }
+
+        if (this->getState() != State::ERROR) {
+            try {
+                const std::vector<std::string> hosts = this->get<std::vector<std::string>>("rxHostname");
+                for (const std::string& hostname : hosts) {
+                    // Verify that the receiver host is online
+                    if (!this->ping(hostname)) {
+                        throw std::runtime_error(hostname + " is not pingable");
+                    }
+                }
+
+                m_SLS->getReceiverStatus();
+            } catch (const std::exception& e) {
+                this->updateState(State::ERROR, Hash("status", e.what()));
+                KARABO_LOG_FRAMEWORK_ERROR << "Exception in 'pollStatus': " << e.what();
+            }
+        }
+
+        if (m_poll) {
+            m_status_timer.expires_at(m_status_timer.expires_at() + boost::posix_time::milliseconds(100));
+            m_status_timer.async_wait(
+                  karabo::util::bind_weak(&SlsControl::pollStatus, this, boost::asio::placeholders::error));
+            return;
+        }
     }
 
     void SlsControl::pollHardware(const boost::system::error_code& ec) {
         KARABO_LOG_FRAMEWORK_DEBUG << "In pollHardware";
         if (ec) {
             return;
-        }
-
-        if (!this->areDetectorsOnline()) {
-            // stops polling and tries to reconnect
-            this->updateState(State::UNKNOWN);
-            m_isConfigured = false;
-            m_firstPoll = true;
-            m_connect = true;
-            m_connect_timer.expires_from_now(boost::posix_time::milliseconds(0));
-            m_connect_timer.async_wait(
-                  karabo::util::bind_weak(&SlsControl::connect, this, boost::asio::placeholders::error));
-            return;
-        }
-
-        if (!this->areReceiversOnline() && this->getState() != State::ERROR) {
-            this->updateState(State::ERROR);
         }
 
         if (m_isConfigured) {
@@ -709,7 +781,7 @@ namespace karabo {
     }
 
 
-    void SlsControl::pollOnce(karabo::util::Hash& h) {
+    void SlsControl::pollOnce(karabo::data::Hash& h) {
         std::stringstream ss;
         ss << std::hex << std::showbase << m_SLS->getClientVersion();
         h.set("clientVersion", ss.str());
@@ -721,6 +793,9 @@ namespace karabo {
             version.push_back(ss.str());
         }
         h.set("firmwareVersion", version);
+
+        version = m_SLS->getHardwareVersion(m_positions);
+        h.set("hardwareVersion", version);
 
         h.set<std::vector<std::string>>("detServerVersion", m_SLS->getDetectorServerVersion(m_positions));
 
@@ -814,7 +889,7 @@ namespace karabo {
         KARABO_LOG_FRAMEWORK_DEBUG << "Quitting SlsControl::sendInitialConfiguration";
     }
 
-    void SlsControl::sendConfiguration(const karabo::util::Hash& configHash) {
+    void SlsControl::sendConfiguration(const karabo::data::Hash& configHash) {
         KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::sendConfiguration";
 
         // Check that detector and receiver are online
@@ -878,128 +953,6 @@ namespace karabo {
         }
 
         KARABO_LOG_DEBUG << "Quitting SlsControl::sendConfiguration";
-    }
-
-    // Return true if a TCP server is running on host:port
-    bool SlsControl::isServerOnline(const std::string& host, unsigned short port, HostType hostType,
-                                    std::string& errorMsg) {
-        KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::isServerOnline";
-
-        if (!this->ping(host)) {
-            errorMsg = host + " is not pingable";
-            return false;
-        }
-
-        bool online;
-        const std::string portString = std::to_string(port);
-
-        try {
-            boost::asio::ip::tcp::iostream s;
-
-            // The entire sequence of I/O operations must complete within 5 seconds.
-            // If an expiry occurs, the socket is automatically closed and the stream
-            // becomes bad.
-            s.expires_after(std::chrono::duration<int>(5));
-
-            // Establish a connection to the server.
-            s.connect(host, portString);
-
-            if (s) {
-                errorMsg = "";
-                online = true;
-            } else if (hostType == HostType::detector) {
-                errorMsg = "No detector server process running on " + host + ":" + portString;
-                online = false;
-
-            } else { // HostType::receiver
-                errorMsg =
-                      "No receiver process running on " + host + ":" + portString + ". Is the Karabo device running?";
-                online = false;
-            }
-        } catch (const std::exception& e) {
-            // Check failed
-            errorMsg = "Cannot connect to " + host + ":" + portString + ". " + e.what();
-            online = false;
-        }
-
-        KARABO_LOG_FRAMEWORK_DEBUG << "Quitting SlsControl::isServerOnline";
-        return online;
-    }
-
-    bool SlsControl::areDetectorsOnline() {
-        KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::areDetectorsOnline";
-
-        const auto hosts = this->get<std::vector<std::string>>("detectorHostName");
-        std::vector<unsigned short> ports;
-        try {
-            ports = this->get<std::vector<unsigned short>>("detectorHostPort");
-            ports.resize(hosts.size(), m_defaultPort); // If size mismatch: extend with default / truncate (as needed)
-        } catch (const karabo::util::ParameterException& e) { // key not found
-            ports.assign(hosts.size(), m_defaultPort);        // Default value
-        }
-
-#ifndef SLS_SIMULATION
-        bool online = true;
-        std::string errorMsg;
-        for (size_t i = 0; i < hosts.size(); ++i) {
-            if (!this->isServerOnline(hosts[i], ports[i], HostType::detector, errorMsg)) {
-                online = false;
-                break;
-            }
-        }
-
-        const std::string status = this->get<std::string>("status");
-        if (!online && (this->getState() != State::UNKNOWN || status == "")) { // only once
-            KARABO_LOG_ERROR << errorMsg;
-            this->set("status", errorMsg);
-        }
-
-#else
-        bool online = !(this->get<bool>("setDetOffline"));
-#endif
-
-        KARABO_LOG_FRAMEWORK_DEBUG << "Quitting SlsControl::areDetectorsOnline";
-        return online;
-    }
-
-    bool SlsControl::areReceiversOnline() {
-        /* Note: When called on 5.0.1 receiver, the latter will print out an error like:
-         *     17:17:49.184 ERROR: TCP socket read 0 bytes instead of 4 bytes
-         *     17:17:49.184 ERROR: TCP socket sent 0 bytes instead of 1000 bytes
-         *     17:17:49.185 ERROR: Accept failed
-         * This is because a connection is established, but no data exchanged.
-         */
-
-        KARABO_LOG_FRAMEWORK_DEBUG << "Entering SlsControl::areReceiversOnline";
-
-        const auto hosts = this->get<std::vector<std::string>>("rxHostname");
-        const auto ports = this->get<std::vector<unsigned short>>("rxTcpPort");
-        if (ports.size() < hosts.size()) {
-            KARABO_LOG_FRAMEWORK_ERROR << "len(rxTcpPort) < len(rxHostname)";
-        }
-
-#ifndef SLS_SIMULATION
-        bool online = true;
-        std::string errorMsg;
-        for (size_t i = 0; i < hosts.size(); ++i) {
-            if (!this->isServerOnline(hosts[i], ports[i], HostType::receiver, errorMsg)) {
-                online = false;
-                break;
-            }
-        }
-
-        const std::string status = this->get<std::string>("status");
-        if (!online && (this->getState() != State::ERROR || status == "")) { // only once
-            KARABO_LOG_ERROR << errorMsg;
-            this->set("status", errorMsg);
-        }
-
-#else
-        bool online = true;
-#endif
-
-        KARABO_LOG_FRAMEWORK_DEBUG << "Quitting SlsControl::areReceiversOnline";
-        return online;
     }
 
     // Return true if host is pingable.
@@ -1218,7 +1171,8 @@ namespace karabo {
     }
 
     void SlsControl::preDestruction() {
-        if (this->getState() == State::ACQUIRING && m_SLS && !m_SLS->empty()) {
+        const State state = this->getState();
+        if (state == State::ACQUIRING && m_SLS && !m_SLS->empty()) {
             // Stop acquisition
             m_acquireForever = false;
             m_SLS->loadParameters({"stop", "rx_stop", "clearbusy"});
@@ -1230,15 +1184,17 @@ namespace karabo {
         this->stopPoll();
 
         // Power off
-        this->powerOff();
+        if (state != State::UNKNOWN) {
+            this->powerOff();
+        }
 
         try {
             bool success = true;
-            std::string baseName("/dev/shm/slsDetectorPackage_multi_" + karabo::util::toString(m_shm_id));
+            std::string baseName("/dev/shm/slsDetectorPackage_multi_" + karabo::data::toString(m_shm_id));
             success &= fs::remove(baseName);
 
             for (size_t i = 0; i < m_numberOfModules; ++i) {
-                success &= fs::remove(baseName + "_sls_" + karabo::util::toString(i));
+                success &= fs::remove(baseName + "_sls_" + karabo::data::toString(i));
             }
 
             if (success) {

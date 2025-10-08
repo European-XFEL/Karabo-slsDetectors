@@ -68,24 +68,26 @@ namespace sls {
 
         int64_t getReceiverVersion();
 
-        void registerCallBackStartAcquisition(int (*func)(const std::string& filepath, const std::string& filename,
-                                                          uint64_t fileindex, size_t datasize, void*),
+        void registerCallBackStartAcquisition(int (*func)(const slsDetectorDefs::startCallbackHeader, void*),
                                               void* arg);
 
-        void registerCallBackAcquisitionFinished(void (*func)(uint64_t nf, void*), void* arg);
+        void registerCallBackAcquisitionFinished(void (*func)(const slsDetectorDefs::endCallbackHeader, void*),
+                                                 void* arg);
 
-        void registerCallBackRawDataReady(void (*func)(slsDetectorDefs::sls_receiver_header& header, char* datapointer,
-                                                       size_t datasize, void*),
+        void registerCallBackRawDataReady(void (*func)(slsDetectorDefs::sls_receiver_header&,
+                                                       const slsDetectorDefs::dataCallbackHeader, char*, size_t&,
+                                                       void*),
                                           void* arg);
 
         void processCommand(const std::string& command);
 
        private:
-        int (*m_startAcquisitionCallBack)(const std::string&, const std::string&, uint64_t, size_t, void*);
+        int (*m_startAcquisitionCallBack)(const slsDetectorDefs::startCallbackHeader, void*);
         void* m_pStartAcquisition;
-        void (*m_acquisitionFinishedCallBack)(uint64_t, void*);
+        void (*m_acquisitionFinishedCallBack)(const slsDetectorDefs::endCallbackHeader, void*);
         void* m_pAcquisitionFinished;
-        void (*m_rawDataReadyCallBack)(slsDetectorDefs::sls_receiver_header&, char*, size_t, void*);
+        void (*m_rawDataReadyCallBack)(slsDetectorDefs::sls_receiver_header&, const slsDetectorDefs::dataCallbackHeader,
+                                       char*, size_t&, void*);
         void* m_pRawDataReady;
 
        private: // Simulation properties
@@ -102,6 +104,8 @@ namespace sls {
         int m_rx_tcpport;
         int m_settings;
 
+        uint64_t m_acqIndex;
+        uint64_t m_frameIndex;
         uint64_t m_frameCounter;
         int m_currAcqFrameCounter;
         int m_currFileFirstFrame;

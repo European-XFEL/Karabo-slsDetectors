@@ -1,25 +1,14 @@
-before_script:
-    - echo '*** Install packages needed by slsDetectorsPackage ***'
-    - export REL_OS_NAME=$(lsb_release -is)
-    - >
-      if [ "$REL_OS_NAME" = "CentOS" ]; then
-        if [ -x "/opt/rh/devtoolset-7/enable" ]; then
-            source /opt/rh/devtoolset-7/enable
-        fi
-        yum install -y zeromq-devel
-      elif [ "$REL_OS_NAME" = "AlmaLinux" ]; then
-        yum install -y zeromq-devel
-      elif [ "$REL_OS_NAME" = "Ubuntu" ]; then
-        apt-get update
-        apt-get install -y libzmq3-dev
-      fi
+Push:
+  trigger:
+    include: .cpp-ci.yml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
 
-include:
-  - project: karabo/gitlabci
-    file: .cpp-ci.yml
-    ref: main
-  - project: karabo/gitlabci
-    file: .cpp-package.yml
-    ref: main
-  - project: karabo/gitlabci
-    file: .mirror-device.yml
+Release:
+  trigger:
+    include:
+      - project: karabo/gitlabci
+        file: .cpp-custom-package.yml
+        ref: main
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "trigger"
