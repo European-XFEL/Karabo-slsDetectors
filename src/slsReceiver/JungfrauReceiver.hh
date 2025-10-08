@@ -28,7 +28,7 @@ namespace karabo {
          * Necessary method as part of the factory/configuration system
          * @param expected Will contain a description of expected parameters for this device
          */
-        static void expectedParameters(karabo::util::Schema& expected);
+        static void expectedParameters(karabo::data::Schema& expected);
 
         /**
          * Constructor providing the initial configuration in form of a Hash object.
@@ -36,7 +36,7 @@ namespace karabo {
          * already be validated using the information of the expectedParameters function.
          * The configuration is provided in a key/value fashion.
          */
-        explicit JungfrauReceiver(const karabo::util::Hash& config);
+        explicit JungfrauReceiver(const karabo::data::Hash& config);
 
         /**
          * The destructor will be called in case the device gets killed (i.e. the event-loop returns)
@@ -45,7 +45,7 @@ namespace karabo {
 
        private: // State-machine call-backs (override)
        private: // Functions
-        virtual bool isNewTrain(const karabo::util::Hash& meta) override;
+        virtual bool isNewTrain(const karabo::data::Hash& meta) override;
         virtual unsigned char getMemoryCell(const slsDetectorDefs::sls_detector_header& detectorHeader) override;
 
        private: // Raw data unpacking

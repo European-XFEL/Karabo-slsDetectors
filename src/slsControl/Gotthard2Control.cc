@@ -18,7 +18,7 @@ USING_KARABO_NAMESPACES
 namespace karabo {
     static const std::vector<unsigned int> HIGH_VOLTAGE_DEFAULT = {0u};
 
-    KARABO_REGISTER_FOR_CONFIGURATION(BaseDevice, Device<>, SlsControl, Gotthard2Control)
+    KARABO_REGISTER_FOR_CONFIGURATION(Device, SlsControl, Gotthard2Control)
 
     Gotthard2Control::Gotthard2Control(const Hash& config) : SlsControl(config) {
 #ifdef SLS_SIMULATION
@@ -78,6 +78,7 @@ namespace karabo {
               .allowedStates(State::ON)
               .commit();
 
+        const std::vector<std::string> burstModeOptions = {"burst_internal", "cw_external"};
         STRING_ELEMENT(expected)
               .key("burstMode")
               .alias("burstmode")
@@ -85,7 +86,7 @@ namespace karabo {
               .displayedName("Burst Mode")
               .assignmentOptional()
               .defaultValue("burst_internal")
-              .options({"burst_internal", "burst_external", "cw_internal", "cw_external"})
+              .options(burstModeOptions)
               .reconfigurable()
               .allowedStates(State::ON)
               .commit();
@@ -173,7 +174,7 @@ namespace karabo {
               .displayedName("Reverse Slave Read-Out Mode")
               .description("Reverse the readout order for the slave module.")
               .readOnly()
-              .initialValue(true)
+              .defaultValue(true)
               .commit();
 
         VECTOR_INT32_ELEMENT(expected)
@@ -184,17 +185,13 @@ namespace karabo {
               .commit();
     }
 
-    void Gotthard2Control::powerOn() {
-        m_SLS->setPowerChip(true, m_positions); // power on
-    }
-
     void Gotthard2Control::powerOff() {
         if (m_SLS && !m_SLS->empty()) {
             m_SLS->setHighVoltage(0, m_positions); // HV off
         }
     }
 
-    void Gotthard2Control::configureDetectorSpecific(const karabo::util::Hash& configHash) {
+    void Gotthard2Control::configureDetectorSpecific(const karabo::data::Hash& configHash) {
         if (configHash.has("singlePhoton")) {
             const bool& singlePhoton = configHash.get<bool>("singlePhoton");
             if (singlePhoton) {
@@ -262,7 +259,7 @@ namespace karabo {
         }
     }
 
-    void Gotthard2Control::pollDetectorSpecific(karabo::util::Hash& h) {
+    void Gotthard2Control::pollDetectorSpecific(karabo::data::Hash& h) {
         const std::vector<int> tempFpga =
               m_SLS->getTemperature(slsDetectorDefs::dacIndex::TEMPERATURE_FPGA, m_positions);
         h.set("tempFpga", tempFpga);

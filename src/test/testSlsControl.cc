@@ -8,7 +8,7 @@
 
 #include <gtest/gtest.h>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <thread>
 #include <utility>
 
@@ -16,7 +16,7 @@
 #include "karabo/core/DeviceClient.hh"
 #include "karabo/core/DeviceServer.hh"
 #include "karabo/net/EventLoop.hh"
-#include "karabo/util/Hash.hh"
+#include "karabo/data/types/Hash.hh"
 #include "karabo/util/PluginLoader.hh"
 
 
@@ -44,15 +44,15 @@ class SlsControlFixture : public testing::Test {
         m_eventLoopThread = std::thread(&karabo::net::EventLoop::work);
 
         // Load the library dynamically
-        const karabo::util::Hash& pluginConfig = karabo::util::Hash("pluginDirectory", ".");
+        const karabo::data::Hash& pluginConfig = karabo::data::Hash("pluginDirectory", ".");
         karabo::util::PluginLoader::create("PluginLoader", pluginConfig)->update();
 
         // Instantiate C++ Device Server.
-        karabo::util::Hash config("serverId", DEVICE_SERVER_ID, "scanPlugins", true, "Logger.priority", LOG_PRIORITY);
+        karabo::data::Hash config("serverId", DEVICE_SERVER_ID,"log.level", LOG_PRIORITY);
         m_deviceSrv = karabo::core::DeviceServer::create("DeviceServer", config);
         m_deviceSrv->finalizeInternalInitialization();
         // Instantiate Device Client.
-        m_deviceCli = boost::make_shared<karabo::core::DeviceClient>();
+        m_deviceCli = std::make_shared<karabo::core::DeviceClient>();
     }
 
     void TearDown() {
@@ -62,8 +62,8 @@ class SlsControlFixture : public testing::Test {
         m_eventLoopThread.join();
     }
 
-    void instantiateTestDevice0(const karabo::util::Hash& devSpecificCfg) {
-        karabo::util::Hash devCfg("deviceId", TEST_DEVICE_ID_0);
+    void instantiateTestDevice0(const karabo::data::Hash& devSpecificCfg) {
+        karabo::data::Hash devCfg("deviceId", TEST_DEVICE_ID_0);
         devCfg.merge(devSpecificCfg);
 
         std::pair<bool, std::string> success =
@@ -72,8 +72,8 @@ class SlsControlFixture : public testing::Test {
         ASSERT_FALSE(success.first) << "Error instantiating '" << TEST_DEVICE_ID_0 << "':\n" << success.second;
     }
 
-    void instantiateTestDevice1(const karabo::util::Hash& devSpecificCfg) {
-        karabo::util::Hash devCfg("deviceId", TEST_DEVICE_ID_1);
+    void instantiateTestDevice1(const karabo::data::Hash& devSpecificCfg) {
+        karabo::data::Hash devCfg("deviceId", TEST_DEVICE_ID_1);
         devCfg.merge(devSpecificCfg);
 
         std::pair<bool, std::string> success =
@@ -82,8 +82,8 @@ class SlsControlFixture : public testing::Test {
         ASSERT_FALSE(success.first) << "Error instantiating '" << TEST_DEVICE_ID_1 << "':\n" << success.second;
     }
 
-    void instantiateTestDevice2(const karabo::util::Hash& devSpecificCfg) {
-        karabo::util::Hash devCfg("deviceId", TEST_DEVICE_ID_2);
+    void instantiateTestDevice2(const karabo::data::Hash& devSpecificCfg) {
+        karabo::data::Hash devCfg("deviceId", TEST_DEVICE_ID_2);
         devCfg.merge(devSpecificCfg);
 
         std::pair<bool, std::string> success =
@@ -92,8 +92,8 @@ class SlsControlFixture : public testing::Test {
         ASSERT_FALSE(success.first) << "Error instantiating '" << TEST_DEVICE_ID_2 << "':\n" << success.second;
     }
 
-    void instantiateTestDevice3(const karabo::util::Hash& devSpecificCfg) {
-        karabo::util::Hash devCfg("deviceId", TEST_DEVICE_ID_3);
+    void instantiateTestDevice3(const karabo::data::Hash& devSpecificCfg) {
+        karabo::data::Hash devCfg("deviceId", TEST_DEVICE_ID_3);
         devCfg.set("detectorHostName", std::vector<std::string>({"blah1", "blah2"}));
         devCfg.set("udpSrcIp", std::vector<std::string>({"1.2.3.4", "2.3.4.5"}));
         devCfg.set("rxHostname", std::vector<std::string>({"1halb", "2halb"}));
@@ -108,8 +108,8 @@ class SlsControlFixture : public testing::Test {
         ASSERT_TRUE(success.first) << "Error instantiating '" << TEST_DEVICE_ID_3 << "':\n" << success.second;
     }
 
-    void instantiateTestDevice4(const karabo::util::Hash& devSpecificCfg) {
-        karabo::util::Hash devCfg("deviceId", TEST_DEVICE_ID_4);
+    void instantiateTestDevice4(const karabo::data::Hash& devSpecificCfg) {
+        karabo::data::Hash devCfg("deviceId", TEST_DEVICE_ID_4);
         devCfg.set("detectorHostName", std::vector<std::string>({"blah1", "blah2"}));
         devCfg.set("udpSrcIp", std::vector<std::string>({"1.2.3.4", "2.3.4.5"}));
         devCfg.set("rxHostname", std::vector<std::string>({"1halb", "2halb"}));
@@ -124,8 +124,8 @@ class SlsControlFixture : public testing::Test {
         ASSERT_TRUE(success.first) << "Error instantiating '" << TEST_DEVICE_ID_4 << "':\n" << success.second;
     }
 
-    void instantiateTestDevice5(const karabo::util::Hash& devSpecificCfg) {
-        karabo::util::Hash devCfg("deviceId", TEST_DEVICE_ID_5);
+    void instantiateTestDevice5(const karabo::data::Hash& devSpecificCfg) {
+        karabo::data::Hash devCfg("deviceId", TEST_DEVICE_ID_5);
         devCfg.set("detectorHostName", std::vector<std::string>({"blah1", "blah2"}));
         devCfg.set("udpSrcIp", std::vector<std::string>({"1.2.3.4", "2.3.4.5"}));
         devCfg.set("rxHostname", std::vector<std::string>({"1halb", "2halb"}));
@@ -160,12 +160,12 @@ class SlsControlFixture : public testing::Test {
 
 TEST_F(SlsControlFixture, testSlsControl) {
     // TODO: Provide a non-empty config for the device under test.
-    instantiateTestDevice0(karabo::util::Hash());
-    instantiateTestDevice1(karabo::util::Hash());
-    instantiateTestDevice2(karabo::util::Hash());
-    instantiateTestDevice3(karabo::util::Hash());
-    instantiateTestDevice4(karabo::util::Hash());
-    instantiateTestDevice5(karabo::util::Hash());
+    instantiateTestDevice0(karabo::data::Hash());
+    instantiateTestDevice1(karabo::data::Hash());
+    instantiateTestDevice2(karabo::data::Hash());
+    instantiateTestDevice3(karabo::data::Hash());
+    instantiateTestDevice4(karabo::data::Hash());
+    instantiateTestDevice5(karabo::data::Hash());
 
     // TODO: Define a test body.
 

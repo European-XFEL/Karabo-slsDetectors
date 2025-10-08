@@ -46,6 +46,12 @@ namespace sls {
 
         void setHostname(const std::vector<std::string>& hostname);
 
+        void setRxHostname(std::string rx_hostname);
+
+        void setRxHostname(const std::vector<std::string>& name);
+
+        void setRxPort(uint16_t port, int module_id = -1);
+
         int getShmId() const {
             return m_shm_id;
         }
@@ -59,6 +65,8 @@ namespace sls {
         }
 
         Result<int64_t> getFirmwareVersion(Positions pos = {}) const;
+
+        Result<std::string> getHardwareVersion(Positions pos = {}) const;
 
         Result<std::string> getDetectorServerVersion(Positions pos = {}) const;
 
@@ -149,6 +157,8 @@ namespace sls {
 
         Result<slsDetectorDefs::runStatus> getDetectorStatus(Positions pos = {}) const;
 
+        Result<slsDetectorDefs::runStatus> getReceiverStatus(Positions pos = {}) const;
+
         Result<std::string> getFilePath(Positions pos = {}) const;
 
         void setFilePath(const std::string& fpath, Positions pos = {});
@@ -185,7 +195,7 @@ namespace sls {
 
         Result<uint32_t> readRegister(uint32_t addr, Positions pos = {}) const;
 
-        void writeRegister(uint32_t addr, uint32_t val, Positions pos = {});
+        void writeRegister(uint32_t addr, uint32_t val, bool validate = false, Positions pos = {});
 
         // Not available in "real" Detector
         slsDetectorDefs::detectorType setDetectorType(slsDetectorDefs::detectorType type);
@@ -233,7 +243,6 @@ namespace sls {
         void toReceiver(const std::string& command, const std::string& parameters = "");
 
         void startMeasurementNoWait();
-        void setRxHostname(std::string rx_hostname);
 
         bool m_keepRunning;
         pthread_t m_dataThread;

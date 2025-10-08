@@ -8,7 +8,7 @@
 
 #include <gtest/gtest.h>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <thread>
 #include <utility>
 
@@ -16,7 +16,7 @@
 #include "karabo/core/DeviceClient.hh"
 #include "karabo/core/DeviceServer.hh"
 #include "karabo/net/EventLoop.hh"
-#include "karabo/util/Hash.hh"
+#include "karabo/data/types/Hash.hh"
 #include "karabo/util/PluginLoader.hh"
 
 
@@ -41,15 +41,15 @@ class SlsControlFixture : public testing::Test {
         m_eventLoopThread = std::thread(&karabo::net::EventLoop::work);
 
         // Load the library dynamically
-        const karabo::util::Hash& pluginConfig = karabo::util::Hash("pluginDirectory", ".");
+        const karabo::data::Hash& pluginConfig = karabo::data::Hash("pluginDirectory", ".");
         karabo::util::PluginLoader::create("PluginLoader", pluginConfig)->update();
 
         // Instantiate C++ Device Server.
-        karabo::util::Hash config("serverId", DEVICE_SERVER_ID, "scanPlugins", true, "Logger.priority", LOG_PRIORITY);
+        karabo::data::Hash config("serverId", DEVICE_SERVER_ID,"log.level", LOG_PRIORITY);
         m_deviceSrv = karabo::core::DeviceServer::create("DeviceServer", config);
         m_deviceSrv->finalizeInternalInitialization();
         // Instantiate Device Client.
-        m_deviceCli = boost::make_shared<karabo::core::DeviceClient>();
+        m_deviceCli = std::make_shared<karabo::core::DeviceClient>();
     }
 
     void TearDown() {
@@ -59,8 +59,8 @@ class SlsControlFixture : public testing::Test {
         m_eventLoopThread.join();
     }
 
-    void instantiateTestDevice0(const karabo::util::Hash& devSpecificCfg) {
-        karabo::util::Hash devCfg("deviceId", TEST_DEVICE_ID_0, "rxTcpPort", 1954);
+    void instantiateTestDevice0(const karabo::data::Hash& devSpecificCfg) {
+        karabo::data::Hash devCfg("deviceId", TEST_DEVICE_ID_0, "rxTcpPort", 1954);
         devCfg.merge(devSpecificCfg);
 
         std::pair<bool, std::string> success =
@@ -69,8 +69,8 @@ class SlsControlFixture : public testing::Test {
         ASSERT_TRUE(success.first) << "Error instantiating '" << TEST_DEVICE_ID_0 << "':\n" << success.second;
     }
 
-    void instantiateTestDevice1(const karabo::util::Hash& devSpecificCfg) {
-        karabo::util::Hash devCfg("deviceId", TEST_DEVICE_ID_1, "rxTcpPort", 2954);
+    void instantiateTestDevice1(const karabo::data::Hash& devSpecificCfg) {
+        karabo::data::Hash devCfg("deviceId", TEST_DEVICE_ID_1, "rxTcpPort", 2954);
         devCfg.merge(devSpecificCfg);
 
         std::pair<bool, std::string> success =
@@ -79,8 +79,8 @@ class SlsControlFixture : public testing::Test {
         ASSERT_TRUE(success.first) << "Error instantiating '" << TEST_DEVICE_ID_1 << "':\n" << success.second;
     }
 
-    void instantiateTestDevice2(const karabo::util::Hash& devSpecificCfg) {
-        karabo::util::Hash devCfg("deviceId", TEST_DEVICE_ID_2, "rxTcpPort", 3954);
+    void instantiateTestDevice2(const karabo::data::Hash& devSpecificCfg) {
+        karabo::data::Hash devCfg("deviceId", TEST_DEVICE_ID_2, "rxTcpPort", 3954);
         devCfg.merge(devSpecificCfg);
 
         std::pair<bool, std::string> success =
@@ -109,9 +109,9 @@ class SlsControlFixture : public testing::Test {
 
 TEST_F(SlsControlFixture, testSlsReceiver) {
     // TODO: Provide a non-empty config for the device under test.
-    instantiateTestDevice0(karabo::util::Hash());
-    instantiateTestDevice1(karabo::util::Hash());
-    instantiateTestDevice2(karabo::util::Hash());
+    instantiateTestDevice0(karabo::data::Hash());
+    instantiateTestDevice1(karabo::data::Hash());
+    instantiateTestDevice2(karabo::data::Hash());
 
     // TODO: Define a test body.
 

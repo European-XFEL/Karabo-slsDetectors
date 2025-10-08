@@ -20,7 +20,7 @@ USING_KARABO_NAMESPACES
 
 namespace karabo {
 
-    KARABO_REGISTER_FOR_CONFIGURATION(BaseDevice, Device<>, SlsReceiver, GotthardReceiver)
+    KARABO_REGISTER_FOR_CONFIGURATION(Device, SlsReceiver, GotthardReceiver)
 
     void GotthardReceiver::expectedParameters(Schema& expected) {
         Schema displayData;
@@ -43,7 +43,7 @@ namespace karabo {
         OUTPUT_CHANNEL(expected).key("display").displayedName("Display").dataSchema(displayData).commit();
     }
 
-    GotthardReceiver::GotthardReceiver(const karabo::util::Hash& config) : SlsReceiver(config) {}
+    GotthardReceiver::GotthardReceiver(const karabo::data::Hash& config) : SlsReceiver(config) {}
 
     GotthardReceiver::~GotthardReceiver() {}
 
@@ -56,8 +56,7 @@ namespace karabo {
     }
 
     std::vector<unsigned long long> GotthardReceiver::getDaqShape(unsigned short framesPerTrain) {
-        // DAQ first dimension is fastest changing one
-        return {this->getDetectorSize(), framesPerTrain};
+        return {framesPerTrain, this->getDetectorSize()};
     }
 
     void GotthardReceiver::unpackRawData(const char* data, size_t idx, unsigned short* adc, unsigned char* gain) {

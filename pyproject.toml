@@ -1,0 +1,144 @@
+[build-system]
+requires = ["scikit-build-core"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "karabo-sls-detectors"
+description = "A Karabo device to control and acquire data from SLS detectors."
+readme = "README.md"
+requires-python = "==3.12.*"
+license = "GPL-3.0"
+keywords = ["Karabo", "SCADA", "camera", "control system", "SLS"]
+authors = [{ name = "European XFEL GmbH", email = "opensource@xfel.eu" }]
+maintainers = [
+  { name = "A. Parenti", email = "andrea.parenti@xfel.eu" },
+]
+
+dynamic = ["version"]
+
+# Classifiers help users find your project by categorizing it.
+#
+# For a list of valid classifiers, see https://pypi.org/classifiers/
+classifiers = [
+  # How mature is this project? Common values are
+  #   3 - Alpha
+  #   4 - Beta
+  #   5 - Production/Stable
+  "Development Status :: 5 - Production/Stable",
+
+  # Indicate who your project is intended for
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+]
+
+# This field lists other packages that your project depends on to run.
+# Any package you put here will be installed by pip when your project is
+# installed, so they must be valid existing projects.
+#
+# For an analysis of this field vs pip's requirements files see:
+# https://packaging.python.org/discussions/install-requires-vs-requirements/
+dependencies = [
+  "karabo[cpp]",
+]
+
+
+[project.optional-dependencies]
+
+
+# List URLs that are relevant to your project
+#
+# This field corresponds to the "Project-URL" and "Home-Page" metadata fields:
+# https://packaging.python.org/specifications/core-metadata/#project-url-multiple-use
+# https://packaging.python.org/specifications/core-metadata/#home-page-optional
+#
+# Examples listed include a pattern for specifying where the package tracks
+# issues, where the source is hosted, where to say thanks to the package
+# maintainers, and where to support the project financially. The key is
+# what's used to render the link text on PyPI.
+[project.urls]
+"Homepage" = "https://github.com/European-XFEL/Karabo-slsDetectors"
+"Bug Reports" = "https://github.com/European-XFEL/Karabo-slsDetectors/issues"
+"Source" = "https://github.com/European-XFEL/Karabo-slsDetectors"
+
+[tool.scikit-build]
+cmake.build-type = "Release"
+logging.level = "INFO"
+build.verbose = true
+# need to be explicty here, as otherwise git versioning will
+# not work
+build-dir = "./build"
+
+metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
+sdist.include = ["src/_version.py"]
+
+build.requires = ["conan", "karabo.cpp"]
+
+# avoid default
+search.site-packages = false
+wheel.install-dir = "karabo_sls_detectors"
+
+# Add any CMAKE defines (without the D) prefix here. These should be e.g.
+# defines present in the .install.sh script's call to CMake.
+[tool.scikit-build.cmake.define]
+BUILD_TESTS="0"
+Boost_NO_BOOST_CMAKE="ON"
+Boost_NO_SYSTEM_PATHS="ON"
+DEVICE_SERVER_EXECUTABLE="karabo-sls-detector-server"
+
+[tool.scikit-build.wheel.packages]
+# the package path should match what we specified in the project name, and PACKAGE for ci-create-cpp-shim.py
+"karabo_sls_detectors/shims" = "python/src/shims"
+
+[tool.cibuildwheel]
+# change this if docker is available (and podman not)
+container-engine = "podman"
+
+# Karabo requires a GCC and glibc version that support C++20
+# The usual manylinux2014 version is to old for this (it's Centos7 based).
+# We thus use manylinux_x_y, with glibc version 2.28.
+# Quay.io hosts the pypa refence builds.
+archs = ["x86_64"]
+skip = "*-musllinux*"  # the daemontools don't compile on musllinux so we skip it here as well
+manylinux-x86_64-image = "quay.io/pypa/manylinux_2_28_x86_64"
+manylinux-pypy_x86_64-image = "quay.io/pypa/manylinux_2_28_x86_64"
+
+# we need a few things to happen before building:
+# 1) install supporting libraries. For conan to work this should minimally
+#    include perl and gettext. We also need git installed to resolve versions.
+#    You can add other dependencies which are necessary, and which then will
+#    will be copied onto the wheel.
+before-all = "dnf -y install perl gettext git gtest-devel"
+# 2) - Here you should minimally install conan, karabo.cpp meson and ninja
+#      this will ensure that most Karabo based installers should work
+#    - Then, we call conan profile detect --force to have a vaild conan profile
+#    - Next python cibuild-deps.py [--skip-dependency] will resolve and install dependencies
+#
+#    We can use the --skip-dependency option to avoid installing a dependency we've resolved through
+#    conan or even a system install in before-all
+#
+#    - Finally, we run ci-create-cpp-shim.py PACKAGE CMD which will create shims for the entry point
+#    definition. Note that PACKAGE should match your package name, and
+#    CMD should match the DEVICE_SERVER_EXECUTABLE variable.
+#
+#    to trigger any conan or karabo DEPENDS builds
+#
+# NOTE: this all needs to be done before-build, so it is done for any Python
+# version we are building!
+before-build = "pip3 install conan==2.5.0 'karabo.cpp' meson ninja && conan profile detect --force && python ci-build-deps.py && python ci-create-cpp-shim.py karabo-sls-detectors karabo-sls-detector-server"
+
+# we need to help audit wheel find the karabo and karabo extern libs
+repair-wheel-command  = "LD_LIBRARY_PATH=/project/build/slsDetectors:/project/tmp/karabo/lib:/project/tmp/karabo/extern/lib:/project/tmp/karabo/extern/lib64:$LD_LIBRARY_PATH auditwheel repair -w {dest_dir} {wheel}"
+
+test-requires = ["pytest", "karabo.native"]
+# these are minimally required for a C++ server to start
+before-test = "mkdir /karabo && mkdir /karabo/var && mkdir /karabo/var/data && mkdir /karabo/plugins"
+test-command = "KARABO=/karabo KARABO_BROKER=amqp://xfel:karabo@exfl-broker-1:5672 pytest {project}/wheel_tests"
+
+[project.scripts]
+# the package path should match what we specified in the project name, and PACKAGE for ci-create-cpp-shim.py
+# the command should match the CMD arg for ci-create-cpp-shim.py with "-" replaced by "_".
+karabo-sls-detector-server = 'karabo_sls_detectors.shims.entrypoints:karabo_sls_detector_server'
+
+# for dynamic version specifiers
+[tool.setuptools_scm]
+write_to = "src/_version.py"

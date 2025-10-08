@@ -17,7 +17,7 @@ USING_KARABO_NAMESPACES
 
 namespace karabo {
 
-    KARABO_REGISTER_FOR_CONFIGURATION(BaseDevice, Device<>, SlsControl, GotthardControl)
+    KARABO_REGISTER_FOR_CONFIGURATION(Device, SlsControl, GotthardControl)
 
 
     GotthardControl::GotthardControl(const Hash& config) : SlsControl(config) {
@@ -87,7 +87,7 @@ namespace karabo {
     }
 
 
-    void GotthardControl::pollDetectorSpecific(karabo::util::Hash& h) {
+    void GotthardControl::pollDetectorSpecific(karabo::data::Hash& h) {
         const std::vector<int> tempAdc = m_SLS->getTemperature(slsDetectorDefs::dacIndex::TEMPERATURE_ADC, m_positions);
         h.set("tempAdc", tempAdc);
 

@@ -62,7 +62,6 @@ else()
         PUBLIC
         SlsDetector
         SlsReceiver
-        zmq
         rt
         ${KARABO_LIB_TARGET_NAME}
     )
