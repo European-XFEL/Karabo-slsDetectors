@@ -22,6 +22,7 @@ using namespace boost::asio::ip;
 
 namespace slsDetectorDefs {
     std::unordered_map<int, const int> channels{{static_cast<int>(detectorType::GENERIC), 0}, // UNDEFINED
+                                                {static_cast<int>(detectorType::GOTTHARD2), 1280},
                                                 {static_cast<int>(detectorType::GOTTHARD), 1280},
                                                 {static_cast<int>(detectorType::JUNGFRAU), 1024 * 512}};
 
