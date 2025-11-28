@@ -9,9 +9,9 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
-#include <filesystem>
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
+#include <filesystem>
 #include <iostream>
 #include <unordered_map>
 
@@ -45,8 +45,8 @@ namespace slsDetectorDefs {
     };
 } // namespace slsDetectorDefs
 
-sls::session::session(boost::asio::io_service& io_service, Receiver* receiver)
-    : m_socket(io_service), m_receiver(receiver) {}
+sls::session::session(boost::asio::io_context& io_context, Receiver* receiver)
+    : m_socket(io_context), m_receiver(receiver) {}
 
 void sls::session::start() {
     boost::asio::async_read_until(m_socket, m_streambuf, ";",
@@ -70,11 +70,11 @@ void sls::session::handle_read(const boost::system::error_code& ec) {
     }
 }
 
-sls::server::server(boost::asio::io_service& io_service, short port, Receiver* receiver)
-    : m_io_service(io_service),
-      m_acceptor(io_service, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
+sls::server::server(boost::asio::io_context& io_context, short port, Receiver* receiver)
+    : m_io_context(io_context),
+      m_acceptor(io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
       m_receiver(receiver) {
-    session* new_session = new session(m_io_service, m_receiver);
+    session* new_session = new session(m_io_context, m_receiver);
     m_acceptor.async_accept(new_session->socket(),
                             std::bind(&server::handle_accept, this, new_session, boost::asio::placeholders::error));
 }
@@ -82,15 +82,15 @@ sls::server::server(boost::asio::io_service& io_service, short port, Receiver* r
 void sls::server::handle_accept(session* new_session, const boost::system::error_code& ec) {
     if (!ec) {
         new_session->start();
-        new_session = new session(m_io_service, m_receiver);
-        m_acceptor.async_accept(new_session->socket(), std::bind(&server::handle_accept, this, new_session,
-                                                                   boost::asio::placeholders::error));
+        new_session = new session(m_io_context, m_receiver);
+        m_acceptor.async_accept(new_session->socket(),
+                                std::bind(&server::handle_accept, this, new_session, boost::asio::placeholders::error));
     } else {
         delete new_session;
     }
 }
 
-sls::Receiver::Receiver(int argc, char* argv[]) : m_filePath("/tmp"), m_fileName("run") {
+sls::Receiver::Receiver(uint16_t port) : m_filePath("/tmp"), m_fileName("run") {
     m_acquisitionStarted = false;
     m_delay_us = 0;
     m_exptime_us = 10;
@@ -113,16 +113,10 @@ sls::Receiver::Receiver(int argc, char* argv[]) : m_filePath("/tmp"), m_fileName
     m_rawDataReadyCallBack = NULL;
     m_pRawDataReady = NULL;
 
-    for (int i = 0; i < argc; ++i) {
-        if (strcmp(argv[i], "--rx_tcpport") == 0 || strcmp(argv[i], "-t") == 0) {
-            if (++i < argc) { // port number is the next argument
-                m_rx_tcpport = std::stoi(argv[i]);
-            }
-        }
-    }
+    m_rx_tcpport = port;
 
     try {
-        m_server = new server(m_io_service, m_rx_tcpport, this);
+        m_server = new server(m_io_context, m_rx_tcpport, this);
         pthread_create(&m_ioServThread, NULL, ioServWorker, (void*)this);
     } catch (const std::exception& e) {
         std::cout << "Receiver::Receiver: " << e.what() << std::endl;
@@ -132,19 +126,8 @@ sls::Receiver::Receiver(int argc, char* argv[]) : m_filePath("/tmp"), m_fileName
     srand(time(NULL));
 }
 
-sls::Receiver::Receiver(int tcpip_port_no) {
-    const std::string tcpip_port_no_str = std::to_string(tcpip_port_no);
-    const int argc = 3;
-    char* argv[argc];
-    argv[0] = const_cast<char*>("ignored"); //  First parameter will be ignored
-    argv[1] = const_cast<char*>("--rx_tcpport");
-    argv[2] = const_cast<char*>(tcpip_port_no_str.c_str());
-
-    Receiver(argc, argv);
-}
-
 sls::Receiver::~Receiver() {
-    m_io_service.stop();
+    m_io_context.stop();
     pthread_join(m_ioServThread, NULL);
     if (m_data) delete[] m_data;
     if (m_server) delete m_server;
@@ -154,7 +137,7 @@ int64_t sls::Receiver::getReceiverVersion() {
     return int64_t(7022809911320);
 }
 
-void sls::Receiver::registerCallBackStartAcquisition(int (*func)(const slsDetectorDefs::startCallbackHeader, void*),
+void sls::Receiver::registerCallBackStartAcquisition(void (*func)(const slsDetectorDefs::startCallbackHeader, void*),
                                                      void* arg) {
     m_startAcquisitionCallBack = func;
     m_pStartAcquisition = arg;
@@ -248,7 +231,7 @@ void* sls::Receiver::dataWorker(void* self) {
 
 void* sls::Receiver::ioServWorker(void* self) {
     Receiver* receiver = static_cast<Receiver*>(self);
-    receiver->m_io_service.run();
+    receiver->m_io_context.run();
     return nullptr;
 }
 

@@ -76,6 +76,9 @@ namespace sls {
 
     using namespace slsDetectorDefs;
 
+    void freeSharedMemory(const int detectorIndex, const int moduleIndex) {}
+
+
     Detector::Detector(int shm_id) {
         m_shm_id = shm_id;
 
@@ -460,6 +463,10 @@ namespace sls {
         }
     }
 
+    void Detector::startDetector(Positions pos) {
+        this->startMeasurementNoWait();
+    }
+
     void Detector::stopDetector(Positions pos) {
         m_status = slsDetectorDefs::runStatus::IDLE;
         for (int i = 0; i < this->size(); ++i) {
@@ -614,8 +621,6 @@ namespace sls {
     }
 
     int Detector::dumpDetectorSetup(std::string const fname) {
-        char line[MAX_LEN];
-        char* args[] = {line};
         std::ofstream cfile;
 
         cfile.open(fname, std::ofstream::out | std::ofstream::trunc);

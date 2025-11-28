@@ -960,10 +960,14 @@ namespace karabo {
     // network, but in the latter case the device will fail in the
     // configuration step.
     bool SlsControl::ping(std::string host) {
+#ifndef SLS_SIMULATION
         const std::string command = std::string("ping -c1 -s1 -W2 ") + host + " > /dev/null 2>&1";
 
         const int err = system(command.c_str());
         return (err == 0);
+#else
+        return true;
+#endif
     }
 
     void SlsControl::createTmpDir() {
@@ -1189,22 +1193,12 @@ namespace karabo {
         }
 
         try {
-            bool success = true;
-            std::string baseName("/dev/shm/slsDetectorPackage_multi_" + karabo::data::toString(m_shm_id));
-            success &= fs::remove(baseName);
-
-            for (size_t i = 0; i < m_numberOfModules; ++i) {
-                success &= fs::remove(baseName + "_sls_" + karabo::data::toString(i));
-            }
-
-            if (success) {
-                KARABO_LOG_FRAMEWORK_DEBUG << "Deleted shared memory segment " << m_shm_id;
-            } else {
-                KARABO_LOG_FRAMEWORK_WARN << "Could not remove shared memory segment " << m_shm_id;
-            }
+            // Free shared memory
+            sls::freeSharedMemory(m_shm_id, -1);
+            KARABO_LOG_FRAMEWORK_DEBUG << "Deleted shared memory segment " << m_shm_id;
 
             // Remove temporary directory and its content
-            success = fs::remove_all(m_tmpDir);
+            const bool success = fs::remove_all(m_tmpDir);
             if (success) {
                 KARABO_LOG_FRAMEWORK_DEBUG << "Removed temporary dir " << m_tmpDir;
             } else {

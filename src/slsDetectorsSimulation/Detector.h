@@ -27,14 +27,14 @@ namespace sls {
     // forward declarations
     class detectorData;
 
+    void freeSharedMemory(const int detectorIndex = 0, const int moduleIndex = -1);
+
 
     class Detector {
        public:
         Detector(int shm_id = 0);
 
         virtual ~Detector();
-
-        void freeSharedMemory();
 
         void loadConfig(const std::string& fname);
 
@@ -153,6 +153,10 @@ namespace sls {
 
         void acquire();
 
+        void startReceiver(){};
+        void stopReceiver(){};
+
+        void startDetector(Positions pos = {});
         void stopDetector(Positions pos = {});
 
         Result<slsDetectorDefs::runStatus> getDetectorStatus(Positions pos = {}) const;
@@ -233,6 +237,8 @@ namespace sls {
         std::unordered_map<uint32_t, uint32_t> m_register; // XXX std::vector
 
        private:
+        void freeSharedMemory();
+
         int dumpDetectorSetup(std::string const fname);
         int retrieveDetectorSetup(std::string const fname);
 
