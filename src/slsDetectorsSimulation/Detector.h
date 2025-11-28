@@ -57,11 +57,11 @@ namespace sls {
         }
 
         std::string getPackageVersion() const {
-            return "7.0.1";
-        } // 7.0.1 API
+            return "10.0.0";
+        } // 10.0.0 API
 
         std::string getClientVersion() const {
-            return "7.0.1";
+            return "10.0.0";
         }
 
         Result<int64_t> getFirmwareVersion(Positions pos = {}) const;
