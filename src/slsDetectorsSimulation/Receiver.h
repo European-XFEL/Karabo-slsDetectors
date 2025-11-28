@@ -28,7 +28,7 @@ namespace sls {
     class session {
         // Mainly from boost's async_tcp_echo_server.cpp example
        public:
-        session(boost::asio::io_service& io_service, Receiver* receiver);
+        session(boost::asio::io_context& io_context, Receiver* receiver);
 
         boost::asio::ip::tcp::socket& socket() {
             return m_socket;
@@ -48,12 +48,12 @@ namespace sls {
     class server {
         // Mainly from boost's async_tcp_echo_server.cpp example
        public:
-        server(boost::asio::io_service& io_service, short port, Receiver* receiver);
+        server(boost::asio::io_context& io_context, short port, Receiver* receiver);
 
         void handle_accept(session* new_session, const boost::system::error_code& ec);
 
        private:
-        boost::asio::io_service& m_io_service;
+        boost::asio::io_context& m_io_context;
         boost::asio::ip::tcp::acceptor m_acceptor;
         Receiver* m_receiver;
     };
@@ -61,14 +61,13 @@ namespace sls {
 
     class Receiver {
        public:
-        Receiver(int argc, char* argv[]);
-        Receiver(int tcpip_port_no = 1954);
+        Receiver(uint16_t port = 1954);
 
         ~Receiver();
 
         int64_t getReceiverVersion();
 
-        void registerCallBackStartAcquisition(int (*func)(const slsDetectorDefs::startCallbackHeader, void*),
+        void registerCallBackStartAcquisition(void (*func)(const slsDetectorDefs::startCallbackHeader, void*),
                                               void* arg);
 
         void registerCallBackAcquisitionFinished(void (*func)(const slsDetectorDefs::endCallbackHeader, void*),
@@ -82,7 +81,7 @@ namespace sls {
         void processCommand(const std::string& command);
 
        private:
-        int (*m_startAcquisitionCallBack)(const slsDetectorDefs::startCallbackHeader, void*);
+        void (*m_startAcquisitionCallBack)(const slsDetectorDefs::startCallbackHeader, void*);
         void* m_pStartAcquisition;
         void (*m_acquisitionFinishedCallBack)(const slsDetectorDefs::endCallbackHeader, void*);
         void* m_pAcquisitionFinished;
@@ -117,7 +116,7 @@ namespace sls {
         FILE* m_filePointer;
 
        private:
-        boost::asio::io_service m_io_service;
+        boost::asio::io_context m_io_context;
         server* m_server;
         pthread_t m_dataThread, m_ioServThread;
         static void* dataWorker(void* self);
