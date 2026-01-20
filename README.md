@@ -41,7 +41,7 @@ https://github.com/European-XFEL/Karabo-slsDetectors
 The Karabo slsDetector package depends on slsDetectorPackage, which is the SDK
 provided by the SLS detector group under the LGPL-3.0 license.
 
-- slsDetectorPackage v9.2.x
+- slsDetectorPackage v10.0.x
 
   https://github.com/slsdetectorgroup/slsDetectorPackage.git
 
@@ -76,22 +76,6 @@ and then start the self-hosting server with
 ```
 karabo-sls-detector-server [serverId=, ... karabo-cpp-server options]
 ```
-
-## Gotthard-I Troubleshooting
-
-It happens sometimes that Gotthard starts sending data and cannot be stopped.
-If you click `stop` the Karabo device will be stuck in "CHANGING".
-Usually this problem occurs with short exposure time and period.
-
-In this case, it is usually enough to execute the script `gotthard_restart.py`
-and then `reset` the Karabo "detector" device.
-
-If it does not help, you may need to:
-
-- Shutdown or `karabo-kill -k` the cppServer
-- run the `sls_detector_get free` command on the control server
-- `telnet` on the Gotthard and `reboot` it
-- restart Karabo servers and devices
 
 
 ## Update to SLS Detector Software v5.0.1
