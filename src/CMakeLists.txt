@@ -14,12 +14,10 @@ target_sources(
     ${CMAKE_PROJECT_NAME}
     PRIVATE
     slsControl/Gotthard2Control.cc
-    slsControl/GotthardControl.cc
     slsControl/JungfrauControl.cc
     slsControl/SlsControl.cc
 
     slsReceiver/Gotthard2Receiver.cc
-    slsReceiver/GotthardReceiver.cc
     slsReceiver/JungfrauReceiver.cc
     slsReceiver/SlsReceiver.cc
     # Add any other source file in here.
