@@ -77,18 +77,15 @@ namespace karabo {
 
         INT16_ELEMENT(expected)
               .key("storageCells")
-              .alias("extrastoragecells")  // was previously "storagecells"
+              .alias("extrastoragecells") // was previously "storagecells"
               .tags("sls")
               .displayedName("Additional Storage Cells")
-              .description(
-                    "Number of additional storage cells. "
-                    "For very advanced users only!")
+              .description("Number of additional storage cells.")
               .assignmentOptional()
               .defaultValue(0)
               .minInc(0)
               .maxInc(15)
               .reconfigurable()
-              .expertAccess()
               .allowedStates(State::ON)
               .commit();
 
@@ -97,15 +94,12 @@ namespace karabo {
               .alias("storagecell_start")
               .tags("sls")
               .displayedName("Storage Cell Start")
-              .description(
-                    "First storage cell to be used. "
-                    "For very advanced users only!")
+              .description("First storage cell to be used.")
               .assignmentOptional()
               .defaultValue(15)
               .minInc(0)
               .maxInc(15)
               .reconfigurable()
-              .expertAccess()
               .allowedStates(State::ON)
               .commit();
 
