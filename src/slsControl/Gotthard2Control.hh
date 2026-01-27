@@ -28,7 +28,12 @@ namespace karabo {
 
         static void expectedParameters(karabo::data::Schema& expected);
 
+       private: // Slots
+        void enableCurrentSource();
+        void disableCurrentSource();
+
        private: // functions
+        void powerOn() override;
         void powerOff() override;
 
         void pollDetectorSpecific(karabo::data::Hash& h) override;

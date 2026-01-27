@@ -145,6 +145,10 @@ namespace sls {
 
         Result<int> getTemperature(slsDetectorDefs::dacIndex index, Positions pos = {}) const;
 
+        Result<slsDetectorDefs::currentSrcParameters> getCurrentSource(Positions pos = {}) const;
+
+        void setCurrentSource(slsDetectorDefs::currentSrcParameters par, Positions pos = {});
+
         /**************************************************
          *                                                *
          *    Acquisition                                 *
@@ -186,6 +190,8 @@ namespace sls {
          *    Jungfrau Specific                           *
          *                                                *
          * ************************************************/
+
+        Result<double> getChipVersion(Positions pos = {}) const;
 
         Result<int> getTemperatureEvent(Positions pos = {}) const;
 
@@ -235,6 +241,7 @@ namespace sls {
         int m_udp_dstport;                                 // receiver UDP port
         std::string m_udp_srcmac;                          // detector UDP MAC
         std::unordered_map<uint32_t, uint32_t> m_register; // XXX std::vector
+        slsDetectorDefs::currentSrcParameters m_currentSrcParameters;
 
        private:
         void freeSharedMemory();

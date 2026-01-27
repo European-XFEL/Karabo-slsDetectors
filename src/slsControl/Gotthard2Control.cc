@@ -21,6 +21,9 @@ namespace karabo {
     KARABO_REGISTER_FOR_CONFIGURATION(Device, SlsControl, Gotthard2Control)
 
     Gotthard2Control::Gotthard2Control(const Hash& config) : SlsControl(config) {
+        KARABO_SLOT(enableCurrentSource);
+        KARABO_SLOT(disableCurrentSource);
+
 #ifdef SLS_SIMULATION
         m_detectorType = slsDetectorDefs::detectorType::GOTTHARD2;
 #endif
@@ -152,6 +155,7 @@ namespace karabo {
               .allowedStates(State::ON)
               .commit();
 
+        const std::vector<std::string> acquisitionRateOptions = {"1.1", "2.25", "4.5"};
         STRING_ELEMENT(expected)
               .key("acquisitionRate")
               .displayedName("Acquisition Rate")
@@ -160,7 +164,7 @@ namespace karabo {
                     "sampling and readout rate that allows operation at 1.1 MHz.")
               .assignmentOptional()
               .defaultValue("4.5")
-              .options("1.1,2.25,4.5")
+              .options(acquisitionRateOptions)
               .unit(Unit::HERTZ)
               .metricPrefix(MetricPrefix::MEGA)
               .reconfigurable()
@@ -183,6 +187,48 @@ namespace karabo {
               .unit(Unit::DEGREE_CELSIUS)
               .readOnly()
               .commit();
+
+        BOOL_ELEMENT(expected)
+              .key("currentSourceEnabled")
+              .displayedName("Current Source Enabled")
+              .readOnly()
+              .expertAccess()
+              .defaultValue(false)
+              .commit();
+
+        SLOT_ELEMENT(expected)
+              .key("enableCurrentSource")
+              .displayedName("Enable Current Source")
+              .expertAccess()
+              .allowedStates(State::ON)
+              .commit();
+
+        SLOT_ELEMENT(expected)
+              .key("disableCurrentSource")
+              .displayedName("Disable Current Source")
+              .expertAccess()
+              .allowedStates(State::ON)
+              .commit();
+    }
+
+    void Gotthard2Control::enableCurrentSource() {
+        const slsDetectorDefs::currentSrcParameters par(true);
+        if (m_SLS && !m_SLS->empty()) {
+            m_SLS->setCurrentSource(par, m_positions); // Enable current source
+            this->set("currentSourceEnabled", true);
+        }
+    }
+
+    void Gotthard2Control::disableCurrentSource() {
+        const slsDetectorDefs::currentSrcParameters par;
+        if (m_SLS && !m_SLS->empty()) {
+            m_SLS->setCurrentSource(par, m_positions); // Disable current source
+            this->set("currentSourceEnabled", false);
+        }
+    }
+
+    void Gotthard2Control::powerOn() {
+        this->disableCurrentSource();
     }
 
     void Gotthard2Control::powerOff() {
