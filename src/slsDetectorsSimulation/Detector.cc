@@ -468,6 +468,14 @@ namespace sls {
         return std::vector<int>(pos.size(), 40);
     }
 
+    Result<slsDetectorDefs::currentSrcParameters> Detector::getCurrentSource(Positions pos) const {
+        return std::vector<slsDetectorDefs::currentSrcParameters>(pos.size(), m_currentSrcParameters);
+    }
+
+    void Detector::setCurrentSource(slsDetectorDefs::currentSrcParameters par, Positions pos) {
+        m_currentSrcParameters = par;
+    }
+
     void Detector::acquire() {
         this->startMeasurementNoWait();
 
@@ -614,6 +622,10 @@ namespace sls {
 
     void Detector::setTimingMode(slsDetectorDefs::timingMode value, Positions pos) {
         m_timingMode = value;
+    }
+
+    Result<double> Detector::getChipVersion(Positions pos) const {
+        return std::vector<double>(pos.size(), 1.0);
     }
 
     Result<int> Detector::getTemperatureEvent(Positions pos) const {

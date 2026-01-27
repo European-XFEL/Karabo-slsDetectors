@@ -30,6 +30,10 @@ namespace karabo {
 
         static void expectedParameters(karabo::data::Schema& expected);
 
+       private: // Slots
+        void enableCurrentSource();
+        void disableCurrentSource();
+
        private:
         void resetTempEvent();
         void powerOn() override;

@@ -808,6 +808,12 @@ namespace karabo {
         h.set("serialNumber", version);
 
         h.set<std::vector<std::string>>("receiverVersion", m_SLS->getReceiverVersion(m_positions));
+
+        const karabo::data::Schema schema = this->getFullSchema();
+        if (schema.has("chipVersion")) { // Jungfrau only
+            const std::vector<double> chipVersion = m_SLS->getChipVersion(m_positions);
+            h.set("chipVersion", chipVersion);
+        }
     }
 
     void SlsControl::sendBaseConfiguration() {
