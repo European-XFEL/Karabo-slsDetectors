@@ -242,11 +242,11 @@ namespace karabo {
             const bool& singlePhoton = configHash.get<bool>("singlePhoton");
             if (singlePhoton) {
                 // Change to 'single photon' settings
-                this->sendConfiguration("dac", "vref_rstore 0");   // shift the Vref of the storage cells
-                this->sendConfiguration("cdsgain", "1");           // increase the CDS gain
-            } else {                                               // Restore default conditions
-                this->sendConfiguration("dac", "vref_rstore 150"); // shift back the Vref
-                this->sendConfiguration("cdsgain", "0");           // lower the CDS gain
+                this->sendConfiguration("cdsgain", "1"); // increase the CDS gain
+                this->sendConfiguration("filterresistor", "2");
+            } else {                                     // Restore default conditions
+                this->sendConfiguration("cdsgain", "0"); // lower the CDS gain
+                this->sendConfiguration("filterresistor", "0");
             }
         }
 
