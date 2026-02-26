@@ -504,6 +504,10 @@ namespace karabo {
     }
 
     void SlsControl::start() {
+        // If the 'start' slot is called while 'pollStatus' is also running, the acquisition might
+        // be stopped immediately.
+        std::scoped_lock lock(m_status_mtx);
+
         this->updateState(State::ACQUIRING, Hash("status", "Acquisition started"));
         m_acquireForever = this->get<bool>("continuousMode");
         m_SLS->startReceiver();
@@ -677,6 +681,9 @@ namespace karabo {
         }
 
         try {
+            std::scoped_lock lock(m_status_mtx);
+            // If the 'start' slot is called concurrently, we might stop here the acquisition mistakingly
+
             const std::vector<std::string> hosts = this->get<std::vector<std::string>>("detectorHostName");
             for (const std::string& hostname : hosts) {
                 // Verify that the detector is online
