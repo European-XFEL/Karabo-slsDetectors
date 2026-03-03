@@ -512,6 +512,25 @@ namespace karabo {
         m_acquireForever = this->get<bool>("continuousMode");
         m_SLS->startReceiver();
         m_SLS->startDetector();
+        bool is_acquiring = false;
+        int attempts = 10;
+        while (!is_acquiring && attempts > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            const std::vector<slsDetectorDefs::runStatus> status = m_SLS->getDetectorStatus();
+            for (const slsDetectorDefs::runStatus st : status) {
+                if (std::find(idleStates.begin(), idleStates.end(), st) == idleStates.end()) {
+                    // This module is not "idle"
+                    is_acquiring = true;
+                    break;
+                }
+            }
+            attempts--;
+        }
+        if (attempts < 10) {
+            KARABO_LOG_FRAMEWORK_WARN << "Acquisition started after " << 10 - attempts << " attempts";
+        } else  if (attempts <= 0) {
+            KARABO_LOG_FRAMEWORK_ERROR << "Status is still idle after check 10 attempts";
+        }
     }
 
     void SlsControl::stop() {
