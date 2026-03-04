@@ -526,10 +526,10 @@ namespace karabo {
             }
             attempts--;
         }
-        if (attempts < 10) {
-            KARABO_LOG_FRAMEWORK_WARN << "Acquisition started after " << 10 - attempts << " attempts";
-        } else  if (attempts <= 0) {
+        if (!is_acquiring) {
             KARABO_LOG_FRAMEWORK_ERROR << "Status is still idle after check 10 attempts";
+        } else if (attempts < 9) {
+            KARABO_LOG_FRAMEWORK_WARN << "Acquisition started after " << 10 - attempts << " attempts";
         }
     }
 
