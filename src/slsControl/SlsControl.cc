@@ -513,8 +513,9 @@ namespace karabo {
         m_SLS->startReceiver();
         m_SLS->startDetector();
         bool is_acquiring = false;
-        int attempts = 10;
-        while (!is_acquiring && attempts > 0) {
+        const unsigned short maxAttempts = 10;
+        unsigned short attempts = 0;
+        while (!is_acquiring && attempts++ < maxAttempts) {
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
             const std::vector<slsDetectorDefs::runStatus> status = m_SLS->getDetectorStatus();
             for (const slsDetectorDefs::runStatus st : status) {
@@ -524,12 +525,12 @@ namespace karabo {
                     break;
                 }
             }
-            attempts--;
         }
+
         if (!is_acquiring) {
-            KARABO_LOG_FRAMEWORK_ERROR << "Status is still idle after check 10 attempts";
-        } else if (attempts < 9) {
-            KARABO_LOG_FRAMEWORK_WARN << "Acquisition started after " << 10 - attempts << " attempts";
+            KARABO_LOG_FRAMEWORK_ERROR << "Status is still idle after " << attempts << " attempts";
+        } else if (attempts > 1) {
+            KARABO_LOG_FRAMEWORK_WARN << "Acquisition started after " << attempts << " attempts";
         }
     }
 
