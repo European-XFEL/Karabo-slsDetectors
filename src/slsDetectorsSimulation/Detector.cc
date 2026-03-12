@@ -18,6 +18,7 @@
 
 namespace slsDetectorDefs {
     std::unordered_map<int, std::string> detector_type_string{{static_cast<int>(detectorType::GENERIC), "Undefined"},
+                                                              {static_cast<int>(detectorType::GOTTHARD2), "Gotthard2"},
                                                               {static_cast<int>(detectorType::GOTTHARD), "Gotthard"},
                                                               {static_cast<int>(detectorType::JUNGFRAU), "Jungfrau"}};
 
@@ -75,6 +76,9 @@ namespace slsDetectorDefs {
 namespace sls {
 
     using namespace slsDetectorDefs;
+
+    void freeSharedMemory(const int detectorIndex, const int moduleIndex) {}
+
 
     Detector::Detector(int shm_id) {
         m_shm_id = shm_id;
@@ -203,25 +207,39 @@ namespace sls {
     };
 
     Result<int64_t> Detector::getFirmwareVersion(Positions pos) const {
-        const int64_t ver = 0x200724; // 2020.07.24
         if (pos.size() == 0) {
             return {};
         } else {
+            int64_t ver = 0;
+            if (m_detectorType == GOTTHARD2) {
+                ver = 0x241003; // 2024.10.03
+            } else if (m_detectorType == GOTTHARD) {
+                ver = 0x180208; // 2018.02.08
+            } else if (m_detectorType == JUNGFRAU) {
+                ver = 0x250208; // 2025.02.08
+            }
             return std::vector<int64_t>(pos.size(), ver);
         }
     }
 
     Result<std::string> Detector::getHardwareVersion(Positions pos) const {
-        const std::string ver("2.0");
         if (pos.size() == 0) {
             return {};
         } else {
+            std::string ver("0.0");
+            if (m_detectorType == GOTTHARD2) {
+                ver = "1.2";
+            } else if (m_detectorType == GOTTHARD) {
+                ver = "50um";
+            } else if (m_detectorType == JUNGFRAU) {
+                ver = "2.0";
+            }
             return std::vector<std::string>(pos.size(), ver);
         }
     }
 
     Result<std::string> Detector::getDetectorServerVersion(Positions pos) const {
-        const std::string ver = "7.0.0";
+        const std::string ver = "10.0.0";
         if (pos.size() == 0) {
             return {};
         } else {
@@ -243,7 +261,7 @@ namespace sls {
     }
 
     Result<std::string> Detector::getReceiverVersion(Positions pos) const {
-        const std::string ver = "7.0.0";
+        const std::string ver = "10.0.0";
         if (pos.size() == 0) {
             return {ver};
         } else {
@@ -450,6 +468,14 @@ namespace sls {
         return std::vector<int>(pos.size(), 40);
     }
 
+    Result<slsDetectorDefs::currentSrcParameters> Detector::getCurrentSource(Positions pos) const {
+        return std::vector<slsDetectorDefs::currentSrcParameters>(pos.size(), m_currentSrcParameters);
+    }
+
+    void Detector::setCurrentSource(slsDetectorDefs::currentSrcParameters par, Positions pos) {
+        m_currentSrcParameters = par;
+    }
+
     void Detector::acquire() {
         this->startMeasurementNoWait();
 
@@ -458,6 +484,10 @@ namespace sls {
             if (m_status != slsDetectorDefs::runStatus::RUNNING) break;
             else boost::this_thread::sleep(boost::posix_time::milliseconds(100));
         }
+    }
+
+    void Detector::startDetector(Positions pos) {
+        this->startMeasurementNoWait();
     }
 
     void Detector::stopDetector(Positions pos) {
@@ -594,6 +624,10 @@ namespace sls {
         m_timingMode = value;
     }
 
+    Result<double> Detector::getChipVersion(Positions pos) const {
+        return std::vector<double>(pos.size(), 1.0);
+    }
+
     Result<int> Detector::getTemperatureEvent(Positions pos) const {
         return std::vector<int>(pos.size(), 0);
     }
@@ -614,8 +648,6 @@ namespace sls {
     }
 
     int Detector::dumpDetectorSetup(std::string const fname) {
-        char line[MAX_LEN];
-        char* args[] = {line};
         std::ofstream cfile;
 
         cfile.open(fname, std::ofstream::out | std::ofstream::trunc);

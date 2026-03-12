@@ -22,6 +22,8 @@ namespace karabo {
 
     JungfrauControl::JungfrauControl(const Hash& config) : SlsControl(config) {
         KARABO_SLOT(resetTempEvent);
+        KARABO_SLOT(enableCurrentSource);
+        KARABO_SLOT(disableCurrentSource);
 
 #ifdef SLS_SIMULATION
         m_detectorType = slsDetectorDefs::detectorType::JUNGFRAU;
@@ -77,18 +79,15 @@ namespace karabo {
 
         INT16_ELEMENT(expected)
               .key("storageCells")
-              .alias("storagecells")
+              .alias("extrastoragecells") // was previously "storagecells"
               //.tags("sls")
               .displayedName("Additional Storage Cells")
-              .description(
-                    "Number of additional storage cells. "
-                    "For very advanced users only!")
+              .description("Number of additional storage cells.")
               .assignmentOptional()
               .defaultValue(0)
               .minInc(0)
               .maxInc(15)
               .reconfigurable()
-              .expertAccess()
               .allowedStates(State::ON)
               .commit();
 
@@ -97,15 +96,12 @@ namespace karabo {
               .alias("storagecell_start")
               .tags("sls")
               .displayedName("Storage Cell Start")
-              .description(
-                    "First storage cell to be used. "
-                    "For very advanced users only!")
+              .description("First storage cell to be used.")
               .assignmentOptional()
               .defaultValue(15)
               .minInc(0)
               .maxInc(15)
               .reconfigurable()
-              .expertAccess()
               .allowedStates(State::ON)
               .commit();
 
@@ -151,6 +147,13 @@ namespace karabo {
               .description("This value is obtained from the exposure timeout as: ET = t_ET / 25 ns - 1.")
               .readOnly()
               .expertAccess()
+              .commit();
+
+        VECTOR_DOUBLE_ELEMENT(expected)
+              .key("chipVersion")
+              .displayedName("Chip Version")
+              .description("The chip version. It can be 1.0 or 1.1.")
+              .readOnly()
               .commit();
 
         VECTOR_INT32_ELEMENT(expected)
@@ -226,6 +229,95 @@ namespace karabo {
               .displayedName("Reset Temperature Event")
               .allowedStates(State::DISABLED)
               .commit();
+
+        BOOL_ELEMENT(expected)
+              .key("currentSourceEnabled")
+              .displayedName("Current Source Enabled")
+              .readOnly()
+              .expertAccess()
+              .defaultValue(false)
+              .commit();
+
+        NODE_ELEMENT(expected)
+              .key("currentSourceSettings")
+              .displayedName("Current Source Settings")
+              .expertAccess()
+              .commit();
+
+        BOOL_ELEMENT(expected)
+              .key("currentSourceSettings.fixCurrent")
+              .displayedName("Fix Current")
+              .assignmentOptional()
+              .defaultValue(false)
+              .reconfigurable()
+              .expertAccess()
+              .allowedStates(State::ON)
+              .commit();
+
+        UINT64_ELEMENT(expected)
+              .key("currentSourceSettings.selectCurrent")
+              .displayedName("Select Current")
+              .description("The source is 0-63 for chip v1.0 and a 64 bit mask for v1.1.")
+              .assignmentOptional()
+              .defaultValue(0)
+              .reconfigurable()
+              .expertAccess()
+              .allowedStates(State::ON)
+              .commit();
+
+        BOOL_ELEMENT(expected)
+              .key("currentSourceSettings.normalCurrent")
+              .displayedName("Normal Current")
+              .description("Only available on chip v1.1. True: normal current; False: low current.")
+              .assignmentOptional()
+              .defaultValue(true)
+              .reconfigurable()
+              .expertAccess()
+              .allowedStates(State::ON)
+              .commit();
+
+        SLOT_ELEMENT(expected)
+              .key("enableCurrentSource")
+              .displayedName("Enable Current Source")
+              .expertAccess()
+              .allowedStates(State::ON)
+              .commit();
+
+        SLOT_ELEMENT(expected)
+              .key("disableCurrentSource")
+              .displayedName("Disable Current Source")
+              .expertAccess()
+              .allowedStates(State::ON)
+              .commit();
+    }
+
+
+    void JungfrauControl::enableCurrentSource() {
+        const bool fixCurrent = this->get<bool>("currentSourceSettings.fixCurrent");
+        const uint64_t selectCurrent = this->get<unsigned long long>("currentSourceSettings.selectCurrent");
+        const bool normalCurrent = this->get<bool>("currentSourceSettings.normalCurrent");
+        const slsDetectorDefs::currentSrcParameters par_v1_0(fixCurrent, selectCurrent);                // chipv1.0
+        const slsDetectorDefs::currentSrcParameters par_v1_1(fixCurrent, selectCurrent, normalCurrent); // chipv1.1
+        if (m_SLS && !m_SLS->empty()) {
+            const std::vector<double> chipVersion = this->get<std::vector<double>>("chipVersion");
+            for (int idx : m_positions) {
+                if (std::abs(chipVersion[idx] - 1.0) < 0.01) { // v1.0
+                    m_SLS->setCurrentSource(par_v1_0, {idx});
+                } else if (std::abs(chipVersion[idx] - 1.1) < 0.01) { // v1.1
+                    m_SLS->setCurrentSource(par_v1_1, {idx});
+                }
+            }
+            this->set("currentSourceEnabled", true);
+        }
+    }
+
+
+    void JungfrauControl::disableCurrentSource() {
+        const slsDetectorDefs::currentSrcParameters par;
+        if (m_SLS && !m_SLS->empty()) {
+            m_SLS->setCurrentSource(par, m_positions); // Disable current source
+            this->set("currentSourceEnabled", false);
+        }
     }
 
 
@@ -239,6 +331,7 @@ namespace karabo {
     void JungfrauControl::powerOn() {
         m_SLS->setPowerChip(true, m_positions);                   // power on
         m_SLS->writeRegister(0x4d, 0x108000, false, m_positions); // set additional read-out timeout (bit 15)
+        this->disableCurrentSource();
     }
 
     void JungfrauControl::powerOff() {

@@ -15,15 +15,14 @@
 #include "../slsReceiver/SlsReceiver.hh"
 #include "karabo/core/DeviceClient.hh"
 #include "karabo/core/DeviceServer.hh"
-#include "karabo/net/EventLoop.hh"
 #include "karabo/data/types/Hash.hh"
+#include "karabo/net/EventLoop.hh"
 #include "karabo/util/PluginLoader.hh"
 
 
 #define DEVICE_SERVER_ID "testDeviceSrvCpp"
 #define TEST_DEVICE_ID_0 "testGotthard2Receiver"
-#define TEST_DEVICE_ID_1 "testGotthardRceiver"
-#define TEST_DEVICE_ID_2 "testJFReceiver"
+#define TEST_DEVICE_ID_1 "testJFReceiver"
 
 #define LOG_PRIORITY "FATAL" // Can also be "DEBUG", "INFO" or "ERROR"
 
@@ -45,7 +44,7 @@ class SlsControlFixture : public testing::Test {
         karabo::util::PluginLoader::create("PluginLoader", pluginConfig)->update();
 
         // Instantiate C++ Device Server.
-        karabo::data::Hash config("serverId", DEVICE_SERVER_ID,"log.level", LOG_PRIORITY);
+        karabo::data::Hash config("serverId", DEVICE_SERVER_ID, "log.level", LOG_PRIORITY);
         m_deviceSrv = karabo::core::DeviceServer::create("DeviceServer", config);
         m_deviceSrv->finalizeInternalInitialization();
         // Instantiate Device Client.
@@ -70,23 +69,13 @@ class SlsControlFixture : public testing::Test {
     }
 
     void instantiateTestDevice1(const karabo::data::Hash& devSpecificCfg) {
-        karabo::data::Hash devCfg("deviceId", TEST_DEVICE_ID_1, "rxTcpPort", 2954);
-        devCfg.merge(devSpecificCfg);
-
-        std::pair<bool, std::string> success =
-              m_deviceCli->instantiate(DEVICE_SERVER_ID, "GotthardReceiver", devCfg, DEV_CLI_TIMEOUT_SEC);
-
-        ASSERT_TRUE(success.first) << "Error instantiating '" << TEST_DEVICE_ID_1 << "':\n" << success.second;
-    }
-
-    void instantiateTestDevice2(const karabo::data::Hash& devSpecificCfg) {
-        karabo::data::Hash devCfg("deviceId", TEST_DEVICE_ID_2, "rxTcpPort", 3954);
+        karabo::data::Hash devCfg("deviceId", TEST_DEVICE_ID_1, "rxTcpPort", 3954);
         devCfg.merge(devSpecificCfg);
 
         std::pair<bool, std::string> success =
               m_deviceCli->instantiate(DEVICE_SERVER_ID, "JungfrauReceiver", devCfg, DEV_CLI_TIMEOUT_SEC);
 
-        ASSERT_TRUE(success.first) << "Error instantiating '" << TEST_DEVICE_ID_2 << "':\n" << success.second;
+        ASSERT_TRUE(success.first) << "Error instantiating '" << TEST_DEVICE_ID_1 << "':\n" << success.second;
     }
 
     void deinstantiateTestDevice() {
@@ -94,10 +83,7 @@ class SlsControlFixture : public testing::Test {
               << "Failed to deinstantiate device '" << TEST_DEVICE_ID_0 << "'";
 
         ASSERT_NO_THROW(m_deviceCli->killDevice(TEST_DEVICE_ID_1, DEV_CLI_TIMEOUT_SEC))
-              << "Failed to deinstantiate device '" << TEST_DEVICE_ID_2 << "'";
-
-        ASSERT_NO_THROW(m_deviceCli->killDevice(TEST_DEVICE_ID_2, DEV_CLI_TIMEOUT_SEC))
-              << "Failed to deinstantiate device '" << TEST_DEVICE_ID_2 << "'";
+              << "Failed to deinstantiate device '" << TEST_DEVICE_ID_1 << "'";
     }
 
     std::thread m_eventLoopThread;
@@ -111,7 +97,6 @@ TEST_F(SlsControlFixture, testSlsReceiver) {
     // TODO: Provide a non-empty config for the device under test.
     instantiateTestDevice0(karabo::data::Hash());
     instantiateTestDevice1(karabo::data::Hash());
-    instantiateTestDevice2(karabo::data::Hash());
 
     // TODO: Define a test body.
 

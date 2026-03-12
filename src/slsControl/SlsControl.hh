@@ -92,6 +92,7 @@ namespace karabo {
         bool m_isConfigured; // modules can be polled only after hostnames are set
         bool m_firstPoll;
         bool m_poll;
+        std::mutex m_status_mtx; // Mutex for status updates
         boost::asio::deadline_timer m_status_timer;
         boost::asio::deadline_timer m_poll_timer;
 

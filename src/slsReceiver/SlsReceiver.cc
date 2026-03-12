@@ -24,7 +24,6 @@ namespace karabo {
         UINT16_ELEMENT(expected)
               .key("rxTcpPort")
               .tags("sls")
-              .alias("--rx_tcpport")
               .displayedName("rxTcpPort")
               .description("Receiver TCP Port")
               .assignmentOptional()
@@ -164,37 +163,11 @@ namespace karabo {
     }
 
     void SlsReceiver::initialize() {
-        std::string rxTcpPort = "1954"; // Default port
+        const unsigned short rxTcpPort = this->get<unsigned short>("rxTcpPort");
         std::stringstream status;
 
-        // Get slsReceiver parameters from current configuration
-        std::vector<std::string> __argv__;
-        __argv__.push_back("ignored"); // First parameter will be ignored
-        const karabo::data::Hash config = this->getCurrentConfiguration("sls");
-        for (karabo::data::Hash::const_iterator it = config.begin(); it != config.end(); ++it) {
-            try {
-                const std::string key = it->getKey();
-                const std::string value = config.getAs<std::string>(key);
-                const std::string alias = getAliasFromKey<std::string>(key);
-                if (alias == "--rx_tcpport") rxTcpPort = value;
-                __argv__.push_back(alias);
-                __argv__.push_back(value);
-                KARABO_LOG_FRAMEWORK_DEBUG << "Parameter for receiver: key=" << key << " alias=" << alias
-                                           << " value=" << value;
-            } catch (const karabo::data::Exception& e) {
-                status << "Error in initialize: " << e.what();
-                this->set("status", status.str());
-                KARABO_LOG_WARN << status.str();
-            }
-        }
-
-        // Create list of arguments for slsReceiverUsers object
-        const int argc = __argv__.size();
-        char* argv[argc];
-        for (int i = 0; i < argc; ++i) argv[i] = (char*)__argv__.at(i).c_str();
-
         try {
-            std::shared_ptr<sls::Receiver> receiver(new sls::Receiver(argc, argv));
+            std::shared_ptr<sls::Receiver> receiver(new sls::Receiver(rxTcpPort));
 
             // Register callback functions
             receiver->registerCallBackStartAcquisition(startAcquisitionCallBack, static_cast<void*>(this));
@@ -223,7 +196,7 @@ namespace karabo {
         }
     }
 
-    int SlsReceiver::startAcquisitionCallBack(const slsDetectorDefs::startCallbackHeader, void* context) {
+    void SlsReceiver::startAcquisitionCallBack(const slsDetectorDefs::startCallbackHeader, void* context) {
         Self* self = static_cast<Self*>(context);
 
         try {
@@ -251,10 +224,6 @@ namespace karabo {
         } catch (...) {
             KARABO_LOG_FRAMEWORK_WARN << "startAcquisitionCallBack: other exception";
         }
-
-        // From "slsReceiverUsers.h": return value is insignificant at the moment, we write depending on file
-        // write enable, users get data to write depending on call backs registered
-        return 0;
     }
 
     void SlsReceiver::acquisitionFinishedCallBack(const slsDetectorDefs::endCallbackHeader, void* context) {

@@ -117,7 +117,7 @@ namespace karabo {
         void initialize();
 
        private: // Functions
-        static int startAcquisitionCallBack(const slsDetectorDefs::startCallbackHeader, void* context);
+        static void startAcquisitionCallBack(const slsDetectorDefs::startCallbackHeader, void* context);
 
         static void acquisitionFinishedCallBack(const slsDetectorDefs::endCallbackHeader, void* context);
 

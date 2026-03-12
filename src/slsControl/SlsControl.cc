@@ -504,10 +504,33 @@ namespace karabo {
     }
 
     void SlsControl::start() {
+        // If the 'start' slot is called while 'pollStatus' is also running, the acquisition might
+        // be stopped immediately.
+        std::scoped_lock lock(m_status_mtx);
+
         this->updateState(State::ACQUIRING, Hash("status", "Acquisition started"));
         m_acquireForever = this->get<bool>("continuousMode");
         m_SLS->startReceiver();
         m_SLS->startDetector();
+        bool is_acquiring = false;
+        int attempts = 10;
+        while (!is_acquiring && attempts > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            const std::vector<slsDetectorDefs::runStatus> status = m_SLS->getDetectorStatus();
+            for (const slsDetectorDefs::runStatus st : status) {
+                if (std::find(idleStates.begin(), idleStates.end(), st) == idleStates.end()) {
+                    // This module is not "idle"
+                    is_acquiring = true;
+                    break;
+                }
+            }
+            attempts--;
+        }
+        if (!is_acquiring) {
+            KARABO_LOG_FRAMEWORK_ERROR << "Status is still idle after check 10 attempts";
+        } else if (attempts < 9) {
+            KARABO_LOG_FRAMEWORK_WARN << "Acquisition started after " << 10 - attempts << " attempts";
+        }
     }
 
     void SlsControl::stop() {
@@ -677,6 +700,9 @@ namespace karabo {
         }
 
         try {
+            std::scoped_lock lock(m_status_mtx);
+            // If the 'start' slot is called concurrently, we might stop here the acquisition mistakingly
+
             const std::vector<std::string> hosts = this->get<std::vector<std::string>>("detectorHostName");
             for (const std::string& hostname : hosts) {
                 // Verify that the detector is online
@@ -808,6 +834,12 @@ namespace karabo {
         h.set("serialNumber", version);
 
         h.set<std::vector<std::string>>("receiverVersion", m_SLS->getReceiverVersion(m_positions));
+
+        const karabo::data::Schema schema = this->getFullSchema();
+        if (schema.has("chipVersion")) { // Jungfrau only
+            const std::vector<double> chipVersion = m_SLS->getChipVersion(m_positions);
+            h.set("chipVersion", chipVersion);
+        }
     }
 
     void SlsControl::sendBaseConfiguration() {
@@ -960,10 +992,14 @@ namespace karabo {
     // network, but in the latter case the device will fail in the
     // configuration step.
     bool SlsControl::ping(std::string host) {
+#ifndef SLS_SIMULATION
         const std::string command = std::string("ping -c1 -s1 -W2 ") + host + " > /dev/null 2>&1";
 
         const int err = system(command.c_str());
         return (err == 0);
+#else
+        return true;
+#endif
     }
 
     void SlsControl::createTmpDir() {
@@ -1189,22 +1225,12 @@ namespace karabo {
         }
 
         try {
-            bool success = true;
-            std::string baseName("/dev/shm/slsDetectorPackage_multi_" + karabo::data::toString(m_shm_id));
-            success &= fs::remove(baseName);
-
-            for (size_t i = 0; i < m_numberOfModules; ++i) {
-                success &= fs::remove(baseName + "_sls_" + karabo::data::toString(i));
-            }
-
-            if (success) {
-                KARABO_LOG_FRAMEWORK_DEBUG << "Deleted shared memory segment " << m_shm_id;
-            } else {
-                KARABO_LOG_FRAMEWORK_WARN << "Could not remove shared memory segment " << m_shm_id;
-            }
+            // Free shared memory
+            sls::freeSharedMemory(m_shm_id, -1);
+            KARABO_LOG_FRAMEWORK_DEBUG << "Deleted shared memory segment " << m_shm_id;
 
             // Remove temporary directory and its content
-            success = fs::remove_all(m_tmpDir);
+            const bool success = fs::remove_all(m_tmpDir);
             if (success) {
                 KARABO_LOG_FRAMEWORK_DEBUG << "Removed temporary dir " << m_tmpDir;
             } else {

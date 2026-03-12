@@ -172,6 +172,34 @@ namespace slsDetectorDefs {
     /** staus mask */
     enum runStatus { IDLE, ERROR, WAITING, RUN_FINISHED, TRANSMITTING, RUNNING, STOPPED };
 
+    struct currentSrcParameters {
+        int enable;
+        int fix;
+        int normal;
+        uint64_t select;
+
+        /** [Gotthard2][Jungfrau] disable */
+        currentSrcParameters() : enable(0), fix(-1), normal(-1), select(0) {}
+
+        /** [Gotthard2] enable or disable */
+        explicit currentSrcParameters(bool srcEnable)
+            : enable(static_cast<int>(srcEnable)), fix(-1), normal(-1), select(0) {}
+
+        /** [Jungfrau](chipv1.0) enable current src with fix or no fix,
+         * select is 0 to 63 columns only */
+        currentSrcParameters(bool fixCurrent, uint64_t selectCurrent)
+            : enable(1), fix(static_cast<int>(fixCurrent)), normal(-1), select(selectCurrent) {}
+
+        /** [Jungfrau](chipv1.1) enable current src, fix[fix|no fix],
+         * select is a mask of 63 bits (muliple columns can be selected
+         * simultaneously, normal [normal|low] */
+        currentSrcParameters(bool fixCurrent, uint64_t selectCurrent, bool normalCurrent)
+            : enable(1),
+              fix(static_cast<int>(fixCurrent)),
+              normal(static_cast<int>(normalCurrent)),
+              select(selectCurrent) {}
+    };
+
 } // namespace slsDetectorDefs
 
 
