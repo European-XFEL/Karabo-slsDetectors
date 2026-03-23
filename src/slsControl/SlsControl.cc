@@ -29,6 +29,7 @@ namespace karabo {
           m_isConfigured(false),
           m_firstPoll(true),
           m_poll(false),
+          m_failedPings(0),
           m_status_timer(EventLoop::getIOService()),
           m_poll_timer(EventLoop::getIOService()),
           m_acquireForever(false) {
@@ -708,9 +709,20 @@ namespace karabo {
             for (const std::string& hostname : hosts) {
                 // Verify that the detector is online
                 if (!this->ping(hostname)) {
-                    throw std::runtime_error(hostname + " is not pingable");
+                    if (m_failedPings++ > m_maxFailedPings) {
+                        throw std::runtime_error(hostname + " is not pingable");
+                    } else if (m_poll) { // Retry
+                        m_status_timer.expires_at(m_status_timer.expires_at() +
+                                                  boost::posix_time::milliseconds(m_pingRetryTime));
+                        m_status_timer.async_wait(
+                              karabo::util::bind_weak(&SlsControl::pollStatus, this, boost::asio::placeholders::error));
+                        return;
+                    } else {
+                        return;
+                    }
                 }
             }
+            m_failedPings = 0;
 
             const std::vector<slsDetectorDefs::runStatus> status = m_SLS->getDetectorStatus();
             bool is_acquiring = false;

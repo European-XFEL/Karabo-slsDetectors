@@ -86,12 +86,15 @@ namespace karabo {
         const unsigned short m_defaultPort = 1952;
 
         bool m_connect;
-        const unsigned int m_reconnectTime = 5000;
+        const unsigned short m_reconnectTime = 5000;
         boost::asio::deadline_timer m_connect_timer;
 
         bool m_isConfigured; // modules can be polled only after hostnames are set
         bool m_firstPoll;
         bool m_poll;
+        const unsigned short m_pingRetryTime = 1000;
+        const unsigned short m_maxFailedPings = 5;
+        unsigned short m_failedPings;
         std::mutex m_status_mtx; // Mutex for status updates
         boost::asio::deadline_timer m_status_timer;
         boost::asio::deadline_timer m_poll_timer;
