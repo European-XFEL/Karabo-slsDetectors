@@ -709,9 +709,12 @@ namespace karabo {
             for (const std::string& hostname : hosts) {
                 // Verify that the detector is online
                 if (!this->ping(hostname)) {
+                    // Ping failed
                     if (m_failedPings++ > m_maxFailedPings) {
                         throw std::runtime_error(hostname + " is not pingable");
-                    } else if (m_poll) { // Retry
+                    } else if (m_poll) { // Retry after some time
+                        KARABO_LOG_FRAMEWORK_DEBUG << "Failed to ping " << hostname << ". Will retry in "
+                                                   << m_pingRetryTime << " ms.";
                         m_status_timer.expires_at(m_status_timer.expires_at() +
                                                   boost::posix_time::milliseconds(m_pingRetryTime));
                         m_status_timer.async_wait(
@@ -722,7 +725,7 @@ namespace karabo {
                     }
                 }
             }
-            m_failedPings = 0;
+            m_failedPings = 0; // Reset error count
 
             const std::vector<slsDetectorDefs::runStatus> status = m_SLS->getDetectorStatus();
             bool is_acquiring = false;
@@ -746,7 +749,8 @@ namespace karabo {
             }
 
         } catch (const std::exception& e) {
-            m_SLS->stopReceiver(); // Stops receiver
+            m_SLS->stopDetector();
+            m_SLS->stopReceiver();
 
             // stops polling and tries to reconnect
             this->updateState(State::UNKNOWN, Hash("status", e.what()));
