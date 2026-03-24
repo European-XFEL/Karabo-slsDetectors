@@ -799,15 +799,19 @@ namespace karabo {
             // Can only poll after the base cfg (i.e. host) has been applied
             Hash h;
 
-            if (m_firstPoll) {
-                this->pollOnce(h);
+            try {
+                if (m_firstPoll) {
+                    this->pollOnce(h);
 
-                // Poll only once
-                m_firstPoll = false;
+                    // Poll only once
+                    m_firstPoll = false;
+                }
+
+                // Poll detector specific parameters
+                this->pollDetectorSpecific(h);
+            } catch (const std::exception& e) {
+                KARABO_LOG_FRAMEWORK_ERROR << e.what();
             }
-
-            // Poll detector specific parameters
-            this->pollDetectorSpecific(h);
 
             if (!h.empty()) {
                 this->set(h); // bulk set
