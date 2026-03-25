@@ -89,6 +89,7 @@ namespace karabo {
         const unsigned short m_reconnectTime = 5000;
         boost::asio::deadline_timer m_connect_timer;
 
+        bool m_hostnameSet; // Once hostname is set we can send commands, e.g. stop
         bool m_isConfigured; // modules can be polled only after hostnames are set
         bool m_firstPoll;
         bool m_poll;
@@ -99,7 +100,7 @@ namespace karabo {
         boost::asio::deadline_timer m_status_timer;
         boost::asio::deadline_timer m_poll_timer;
 
-        bool m_acquireForever;
+        bool m_acquireForever; // Acquisition will run until explicitly stopped
 
         std::string m_tmpDir;
         unsigned int m_shm_id; // shared memory segment index
