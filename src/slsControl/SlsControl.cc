@@ -759,7 +759,7 @@ namespace karabo {
             }
 
         } catch (const std::exception& e) {
-            m_SLS->stopReceiver();  // Make the receiver go back to PASSIVE
+            m_SLS->stopReceiver(); // Make the receiver go back to PASSIVE
 
             // Stops polling and tries to reconnect
             this->updateState(State::UNKNOWN, Hash("status", e.what()));
@@ -808,19 +808,15 @@ namespace karabo {
             // Can only poll after the base cfg (i.e. host) has been applied
             Hash h;
 
-            try {
-                if (m_firstPoll) {
-                    this->pollOnce(h);
+            if (m_firstPoll) {
+                this->pollOnce(h);
 
-                    // Poll only once
-                    m_firstPoll = false;
-                }
-
-                // Poll detector specific parameters
-                this->pollDetectorSpecific(h);
-            } catch (const std::exception& e) {
-                KARABO_LOG_FRAMEWORK_ERROR << e.what();
+                // Poll only once
+                m_firstPoll = false;
             }
+
+            // Poll detector specific parameters
+            this->pollDetectorSpecific(h);
 
             if (!h.empty()) {
                 this->set(h); // bulk set
