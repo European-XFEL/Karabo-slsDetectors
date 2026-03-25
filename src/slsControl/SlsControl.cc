@@ -617,9 +617,9 @@ namespace karabo {
             }
 
             if (m_hostnameSet) {
-                // m_SLS had been configured already with hostname, which means
+                // m_SLS had been configured already with hostnames, which means
                 // the network connection to it has been lost.
-                // Make sure that the detector is not acquiring before
+                // Make sure that the detectors are not acquiring before
                 // reconnecting.
                 m_SLS->stopDetector();
             }
