@@ -618,8 +618,8 @@ namespace karabo {
 
             if (m_hostnameSet) {
                 // m_SLS had been configured already with hostnames, which means
-                // the network connection to it has been lost.
-                // Make sure that the detectors are not acquiring before
+                // the network connection to detector(s) has been lost.
+                // Make sure that the detector(s) are not acquiring before
                 // reconnecting.
                 m_SLS->stopDetector();
             }
