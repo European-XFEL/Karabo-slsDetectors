@@ -622,7 +622,6 @@ namespace karabo {
                 // Make sure that the detector is not acquiring before
                 // reconnecting.
                 m_SLS->stopDetector();
-                m_SLS->stopReceiver();
             }
 
             // Verify that the detector server(s) is (are) running
@@ -760,6 +759,8 @@ namespace karabo {
             }
 
         } catch (const std::exception& e) {
+            m_SLS->stopReceiver();  // Make the receiver go back to PASSIVE
+
             // Stops polling and tries to reconnect
             this->updateState(State::UNKNOWN, Hash("status", e.what()));
             KARABO_LOG_FRAMEWORK_ERROR << e.what();
